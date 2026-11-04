@@ -90,3 +90,6 @@ Side project explored in sessions — a browser extension that audits online che
 - Brand: ink `#0B1220` + green "honest" signal `#19E39A` + red "flagged" `#FF5A5F`; fonts Sora / Manrope / JetBrains Mono.
 - Live prototype artifact: https://claude.ai/artifact/SreKDLXgPY81yz7Q7bYefY
 - Logo: still being chosen (not a checkmark — user finds those basic).
+
+## Personal context
+- Mayoor Private School, Al Wathba, Abu Dhabi = user's brother's school (e.g. "Kaleidoscope Kreations" event invite/agenda edits, Nov 2026).
