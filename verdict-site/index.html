@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Verdict is a browser extension that shows what a checkout is hiding: fake timers, hidden fees, pre-ticked add-ons and trial traps.">
+<title>Verdict</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+</head>
+<body>
+<canvas id="aurora" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <div class="nav-bg"></div>
+  <div class="wrap nav-in">
+    <a class="brand" href="#top" aria-label="Verdict, back to top"><i></i>Verdict</a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#xray">The audit</a>
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+    </nav>
+    <a class="btn btn-go btn-sm magnetic" href="https://claude.ai/artifact/SreKDLXgPY81yz7Q7bYefY">Try the demo</a>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero" id="top">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow mono">A browser extension for anyone who shops online</p>
+        <h1 class="split" id="heroTitle">The truth about <span class="tint">every</span> checkout.</h1>
+        <p class="hero-sub" data-hero>Verdict reads the shopping page you are on and shows you what it is hiding: timers that reset, fees that appear at the last step, add-ons ticked for you, and free trials built to be forgotten.</p>
+        <div class="hero-cta" data-hero>
+          <a class="btn btn-go magnetic" href="https://claude.ai/artifact/SreKDLXgPY81yz7Q7bYefY">Try the live demo <span class="arr">→</span></a>
+          <a class="btn btn-ghost" href="#xray">Watch an audit</a>
+        </div>
+        <div class="hero-meta mono" data-hero>
+          <span><b>0</b> bank logins</span>
+          <span><b>1</b> click to install</span>
+          <span><b>4</b> tricks it catches</span>
+        </div>
+      </div>
+      <div class="stamps" aria-hidden="true">
+        <div class="stamp s1" data-float="-18">
+          <div class="bar"><span></span><span></span><span></span><em>store-a.example/checkout</em></div>
+          <div class="body">
+            <div class="line" style="width:72%"></div><div class="line" style="width:48%"></div><div class="line" style="width:60%"></div>
+            <div class="ruling ok"><span class="dot"></span>HONEST · PRICE MATCHES TOTAL</div>
+          </div>
+        </div>
+        <div class="stamp s2" data-float="22">
+          <div class="bar"><span></span><span></span><span></span><em>store-b.example/checkout</em></div>
+          <div class="body">
+            <div class="line" style="width:66%"></div><div class="line" style="width:80%"></div>
+            <div class="ruling bad"><span class="dot"></span>FLAGGED · 3 TRICKS</div>
+            <div class="tag"><span>fake timer</span><span>hidden fees</span><span>pre-ticked</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- X-RAY (pinned, scrubbed) -->
+  <section class="xray" id="xray" aria-label="An audit of one checkout page">
+    <div class="wrap xray-in">
+      <div>
+        <div class="xcopy">
+          <div class="xstep first"><span class="mono">The audit · step 0 of 4</span><h2>This checkout looks normal.</h2><p>Earbuds, a sale, a countdown. Keep scrolling and run the same audit Verdict runs in under a second.</p></div>
+          <div class="xstep"><span class="mono">Trick 1 · Fake urgency</span><h2>The deadline isn’t real.</h2><p>The timer resets every time you reload the page. The only thing it measures is how fast you panic.</p></div>
+          <div class="xstep"><span class="mono">Trick 2 · Drip pricing</span><h2>AED 36 was hiding.</h2><p>Shipping and a “service fee” only appear at the last step, after you have already decided to buy.</p></div>
+          <div class="xstep"><span class="mono">Trick 3 · Sneaky default</span><h2>You never chose this.</h2><p>AED 29 of “protection” was ticked for you. Verdict unticks it and tells you why.</p></div>
+          <div class="xstep last"><span class="mono">The verdict</span><h2>Real total: AED 235.</h2><p>Three tricks on one page. That is about nine hours of part-time work, and now you can see all of it.</p></div>
+        </div>
+        <div class="xticks" aria-hidden="true"><span class="xtick"><i></i></span><span class="xtick"><i></i></span><span class="xtick"><i></i></span><span class="xtick"><i></i></span></div>
+      </div>
+      <div class="xstage" aria-hidden="true">
+        <div class="checkout" id="checkout">
+          <div class="scan" id="scan"></div>
+          <div class="co-top"><span class="co-logo">MegaMart</span><span class="co-url">megamart.example/checkout</span></div>
+          <div class="co-prod">
+            <span class="co-thumb"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#B9C6E4" stroke-width="1.7"><path d="M4 13a8 8 0 0 1 16 0"/><rect x="2" y="13" width="5" height="8" rx="2"/><rect x="17" y="13" width="5" height="8" rx="2"/></svg></span>
+            <div><div class="co-name">AuraPods Pro wireless earbuds</div><div class="co-price"><s>AED 299</s><b>AED 199</b></div></div>
+          </div>
+          <div class="co-row row-timer" id="rowTimer"><span class="hl"></span>Sale ends in <span class="timer" id="timer">04:59</span> · only 2 left</div>
+          <div class="co-row row-addon" id="rowAddon"><span class="hl"></span>
+            <span class="chk"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2"><path d="M2 6.5 5 9l5-6"/></svg><span class="chk-x"></span></span>
+            Add 2-year protection · AED 29
+          </div>
+          <div class="co-sum" id="rowFees">
+            <div class="co-line"><span>Item</span><span>AED 199.00</span></div>
+            <div class="co-line" id="lineAddon"><span>Protection</span><span>AED 29.00</span></div>
+            <div class="fee-note" id="feeNote">+ shipping and fees calculated at the next step</div>
+            <div class="fee-line"><div class="co-line" style="color:#B91C1C"><span>Shipping</span><span>AED 22.00</span></div><div class="co-line" style="color:#B91C1C"><span>Service fee</span><span>AED 14.00</span></div></div>
+            <div class="co-total" id="rowTotal"><span>Total</span><span><span class="amt">AED 228.00<span class="strike"></span></span><span class="real" id="realTotal">AED 235.00</span></span></div>
+          </div>
+          <span class="xflag" data-row="rowTimer">⚑ FAKE TIMER</span>
+          <span class="xflag" data-row="rowFees">⚑ HIDDEN FEES</span>
+          <span class="xflag" data-row="rowAddon">⚑ PRE-TICKED</span>
+          <div class="verdict-bar" id="verdictBar"><span class="badge">FLAGGED</span><div><b>3 tricks found · real total AED 235</b><small>About 9 hours of work at AED 26 an hour</small></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATEMENT -->
+  <section class="sec statement">
+    <div class="wrap">
+      <p class="mono kick">Why this matters</p>
+      <p class="split-sw" id="statement">Every one of these tricks is legal, documented and tested on millions of shoppers. <span class="hot">You can’t resist what you can’t see.</span></p>
+    </div>
+  </section>
+
+  <!-- HOW (horizontal chapters) -->
+  <section class="how" id="how">
+    <div class="how-pin">
+      <div class="how-track" id="howTrack">
+        <div class="how-intro">
+          <p class="mono kick">How it works</p>
+          <h2 class="h2">Three steps. Only one of them is yours.</h2>
+          <p class="lede">You install it once. After that it works on every shop you visit.</p>
+        </div>
+        <article class="panel">
+          <span class="num">01 · YOU</span>
+          <h3>Add it to your browser</h3>
+          <p>One click from the extension store. No account, no card details, no bank login.</p>
+          <div class="vis">
+            <div class="toolbar"><span class="url">any-shop.example/cart</span><span class="ext"></span><span class="ext"></span><span class="ext v"><i></i></span></div>
+            <span class="added">● Verdict added</span>
+          </div>
+        </article>
+        <article class="panel">
+          <span class="num">02 · VERDICT</span>
+          <h3>It reads the page</h3>
+          <p>As you shop, it checks each checkout for countdowns, buried fees, pre-ticked boxes and trial terms.</p>
+          <div class="vis">
+            <div class="page-mock"><span class="band"></span><div class="pl" style="width:70%"></div><div class="pl mark" style="width:54%"></div><div class="pl" style="width:82%"></div><div class="pl mark" style="width:40%"></div><div class="pl" style="width:64%"></div></div>
+          </div>
+        </article>
+        <article class="panel">
+          <span class="num">03 · VERDICT</span>
+          <h3>You get a plain answer</h3>
+          <p>Honest or flagged, with the reasons and the real price, before you pay.</p>
+          <div class="vis">
+            <div class="vcard"><div class="ruling bad"><span class="dot"></span>FLAGGED · 3 TRICKS</div><ul><li>Timer resets on reload</li><li>AED 36 in fees at the last step</li><li class="g">Real total AED 235</li></ul></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES (bento) -->
+  <section class="sec" id="features">
+    <div class="wrap">
+      <p class="mono kick" data-reveal>What it catches</p>
+      <h2 class="h2" data-reveal>Five checks on every checkout.</h2>
+      <div class="bento">
+        <article class="cell c1" data-reveal>
+          <h3>Trick detector</h3>
+          <p>Spots fake urgency, pre-ticked boxes and misleading buttons the moment the page loads.</p>
+          <div class="vis chips"><span class="chip">Countdown resets</span><span class="chip">Only 2 left</span><span class="chip">Pre-ticked add-on</span><span class="chip">“No thanks, I like paying more”</span><span class="chip ok">Price shown = price paid</span></div>
+        </article>
+        <article class="cell c2" data-reveal>
+          <h3>True-cost x-ray</h3>
+          <p>Every fee up front, plus the price in hours of your work.</p>
+          <div class="vis tc"><s>AED 199</s><b>AED 235</b><small>≈ 9 hours at AED 26 an hour</small></div>
+        </article>
+        <article class="cell c3" data-reveal>
+          <h3>Deal checker</h3>
+          <p>90 days of price history, so a “sale” has to prove it.</p>
+          <div class="vis">
+            <svg class="spark" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
+              <line x1="0" y1="14" x2="400" y2="14" stroke="#FF5B68" stroke-width="1.5" stroke-dasharray="5 6"/>
+              <path d="M0 70 L30 66 L60 74 L90 58 L120 62 L150 54 L180 68 L210 80 L240 92 L270 76 L300 60 L330 66 L360 72 L400 78" fill="none" stroke="#8F72F7" stroke-width="2.5" stroke-linejoin="round"/>
+              <path d="M0 70 L30 66 L60 74 L90 58 L120 62 L150 54 L180 68 L210 80 L240 92 L270 76 L300 60 L330 66 L360 72 L400 78 L400 120 L0 120Z" fill="rgba(143,114,247,.12)"/>
+              <circle cx="240" cy="92" r="5" fill="#24E3A0"/>
+              <circle cx="400" cy="78" r="5" fill="#FF5B68"/>
+            </svg>
+            <div class="spark-leg"><span><b>- - -</b> “was AED 299”, never charged</span><span><i>●</i> real low AED 205</span></div>
+          </div>
+        </article>
+        <article class="cell c4" data-reveal>
+          <h3>Trial radar</h3>
+          <p>Warns you before a free trial turns into a bill, and shows where to cancel.</p>
+          <div class="vis">
+            <div class="days"><span class="day free">1</span><span class="day free">2</span><span class="day free">3</span><span class="day free">4</span><span class="day free">5</span><span class="day free">6</span><span class="day free">7</span><span class="day hit">8</span><span class="day">9</span><span class="day">10</span></div>
+            <p class="days-cap">Day 8: <b>AED 59 a month</b>, or AED 708 a year if you forget.</p>
+          </div>
+        </article>
+        <article class="cell c5" data-reveal>
+          <h3>Learn as you go</h3>
+          <p>Each catch comes with a short explanation, so you start spotting the next one yourself.</p>
+          <div class="vis tip"><span class="av">V</span><div><b>20-SECOND TIP</b><span>A countdown that resets when you refresh is pressure, not a sale. Close the tab and come back tomorrow. The price is almost always still there.</span></div></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- NUMBERS -->
+  <section class="sec" style="padding-top:0">
+    <div class="wrap">
+      <p class="mono kick" data-reveal>From our two demo stores</p>
+      <h2 class="h2" data-reveal>What one checkout can hide.</h2>
+      <div class="nums">
+        <div class="n flag" data-reveal><div class="val"><span class="u">AED</span><span data-count="36">36</span></div><p>in shipping and fees that only appeared at the final step.</p></div>
+        <div class="n flag" data-reveal><div class="val"><span class="u">AED</span><span data-count="708">708</span></div><p>a year from one “free” beauty-box trial that renews on day 8.</p></div>
+        <div class="n" data-reveal><div class="val"><span data-count="9">9</span><span class="u" style="margin-left:6px;margin-right:0">hrs</span></div><p>of part-time work to pay the real price of one pair of earbuds.</p></div>
+      </div>
+      <p class="mono note">Illustrative figures from the Verdict demo, not survey data.</p>
+    </div>
+  </section>
+
+  <!-- COMPARE -->
+  <section class="sec" style="padding-top:0">
+    <div class="wrap">
+      <p class="mono kick" data-reveal>Why Verdict</p>
+      <h2 class="h2" data-reveal>Blockers hide. Trackers track. Verdict teaches.</h2>
+      <div class="cmp-wrap" data-reveal>
+        <table class="cmp">
+          <thead><tr><th scope="col">What it does</th><th scope="col">Ad blocker</th><th scope="col">Price tracker</th><th scope="col" class="us">Verdict</th></tr></thead>
+          <tbody>
+            <tr><td>Catches manipulation tricks</td><td><span class="mk n">No</span></td><td><span class="mk n">No</span></td><td class="us"><span class="mk y">Yes</span></td></tr>
+            <tr><td>Shows price history</td><td><span class="mk n">No</span></td><td><span class="mk y">Yes</span></td><td class="us"><span class="mk y">Yes</span></td></tr>
+            <tr><td>Flags trial traps</td><td><span class="mk n">No</span></td><td><span class="mk n">No</span></td><td class="us"><span class="mk y">Yes</span></td></tr>
+            <tr><td>Teaches you while you shop</td><td><span class="mk n">No</span></td><td><span class="mk n">No</span></td><td class="us"><span class="mk y">Yes</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="sec" id="pricing" style="padding-top:0">
+    <div class="wrap">
+      <p class="mono kick" data-reveal>Pricing</p>
+      <h2 class="h2" data-reveal>Free to protect you.</h2>
+      <div class="plans">
+        <article class="plan" data-reveal>
+          <span class="pn">Free</span>
+          <div class="pp">AED 0</div>
+          <p class="pd">Everything you need to stop getting tricked.</p>
+          <ul><li>Trick detector</li><li>True-cost x-ray</li><li>20-second tips</li></ul>
+          <a class="btn btn-ghost" href="https://claude.ai/artifact/SreKDLXgPY81yz7Q7bYefY">Start free</a>
+        </article>
+        <article class="plan hot" data-reveal>
+          <span class="pn">Pro</span>
+          <div class="pp">AED 10<small>a month</small></div>
+          <p class="pd">For people who shop online every week.</p>
+          <ul><li>Everything in Free</li><li>Deal checker with price history</li><li>Trial radar and cancel links</li><li>Privacy meter</li></ul>
+          <a class="btn btn-go magnetic" href="https://claude.ai/artifact/SreKDLXgPY81yz7Q7bYefY">Try Pro in the demo <span class="arr">→</span></a>
+        </article>
+        <article class="plan" data-reveal>
+          <span class="pn">Campus</span>
+          <div class="pp">AED 8,000<small>a year</small></div>
+          <p class="pd">Pro for every student and staff member at one university.</p>
+          <ul><li>Pro for everyone on campus</li><li>Workshops and branded tips</li><li>Anonymised insights</li></ul>
+          <p class="mono" style="margin-top:auto;color:var(--muted)">Ask us at our stall</p>
+        </article>
+      </div>
+      <p class="mono plan-note">Proposed pricing for a student concept project.</p>
+    </div>
+  </section>
+
+  <!-- CLOSE -->
+  <section class="close">
+    <div class="wrap">
+      <h2 class="split-close" id="closeTitle">Shop with your <span class="tint">eyes open.</span></h2>
+      <div class="row">
+        <p>Verdict is a concept from a student financial-literacy project. The live demo runs two fake stores so you can watch it work.</p>
+        <a class="btn btn-go magnetic" href="https://claude.ai/artifact/SreKDLXgPY81yz7Q7bYefY">Open the live demo <span class="arr">→</span></a>
+      </div>
+      <footer class="foot mono"><span>Verdict · know before you buy</span><span>All stores and figures are illustrative</span></footer>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
