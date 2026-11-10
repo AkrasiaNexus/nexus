@@ -1,0 +1,62 @@
+{
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devPath": "http://localhost:1420",
+    "distDir": "../dist"
+  },
+  "package": {
+    "productName": "Nudge",
+    "version": "0.1.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "notification": { "all": true },
+      "globalShortcut": { "all": true },
+      "window": { "all": true },
+      "shell": { "open": true },
+      "os": { "all": true }
+    },
+    "bundle": {
+      "active": true,
+      "identifier": "com.nudge.app",
+      "icon": [
+        "icons/icon.png"
+      ]
+    },
+    "windows": [
+      {
+        "label": "main",
+        "title": "Nudge",
+        "width": 900,
+        "height": 700,
+        "minWidth": 400,
+        "minHeight": 500,
+        "visible": true,
+        "decorations": true,
+        "transparent": false
+      },
+      {
+        "label": "capture",
+        "title": "Quick Capture",
+        "width": 500,
+        "height": 180,
+        "visible": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "center": true,
+        "resizable": false,
+        "skipTaskbar": true
+      }
+    ],
+    "systemTray": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true
+    },
+    "security": {
+      "csp": null
+    }
+  }
+}

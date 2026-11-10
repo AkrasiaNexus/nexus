@@ -1,0 +1,20 @@
+[package]
+name = "nudge"
+version = "0.1.0"
+description = "Brain dump with teeth"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "1", features = [] }
+
+[dependencies]
+tauri = { version = "1", features = [
+  "notification-all",
+  "global-shortcut-all",
+  "window-all",
+  "shell-open",
+  "os-all",
+  "system-tray",
+] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
