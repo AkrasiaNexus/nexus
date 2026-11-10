@@ -35,3 +35,11 @@ out/
 # OS
 .DS_Store
 Thumbs.db
+
+# graphify: keep the shared graph + report, ignore local build artifacts
+graphify-out/cache/
+graphify-out/graph.html
+graphify-out/manifest.json
+graphify-out/.graphify_analysis.json
+graphify-out/.graphify_build.json
+graphify-out/.graphify_root
