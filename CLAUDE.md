@@ -189,3 +189,11 @@ Side project explored in sessions — a browser extension that audits online che
 - Brand: ink `#0B1220` + green "honest" signal `#19E39A` + red "flagged" `#FF5A5F`; fonts Sora / Manrope / JetBrains Mono.
 - Live prototype artifact: https://claude.ai/artifact/SreKDLXgPY81yz7Q7bYefY
 - Logo: still being chosen (not a checkmark — user finds those basic).
+
+## Project context: "Lore" (sidequest app, Abu Dhabi first)
+Turns friend hangouts into quests: niche cheap spot + real bus route + games, inside a 4–5pm to 10:30pm window. Start Abu Dhabi, expand later.
+- Spots + routes live in `lore/prototype.html` (SPOTS array). User loves them — never delete spots, only add.
+- User wants niche, chill, slightly edgy spots; no tourist stuff, nothing far (no Al Wathba). No trespass/abandoned-building spots (UAE legal risk) — find legal edgy ones instead.
+- Games kept: NPC Dialogue (stranger dares), Cover Art (renamed "main character shot" — user finds that corny), Boss Fight. Bus Roulette rejected.
+- Live prototype artifact: https://claude.ai/artifact/LwNwhfV2J2aWaz7CTd35DH
+- Also parked: Nudge (`nudge/`, brain-dump tray app) and intent layer (`intent/intent.md`).

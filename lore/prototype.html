@@ -1,0 +1,602 @@
+<title>Lore Abu Dhabi</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: night-bus game console. Quest builder + quest card on the left, fog-of-war map + Lore Book on the right; one column on phones. */
+:root{
+  --bg:#EDF0F5; --surface:#FFFFFF; --surface-2:#E3E8F0; --fg:#0E1729; --muted:#556178; --line:#CBD3DF;
+  --accent:#F2A41F; --accent-ink:#1C1404; --accent-text:#8F5507; --sea:#15857B; --danger:#B4232F;
+  --fog:#1A2436; --map-bg:#D3E2E4; --map-grid:rgba(14,23,41,.09);
+  --led-bg:#0B111C; --led-fg:#FFB547;
+  --font-display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --font-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0A1220; --surface:#111B2C; --surface-2:#18233A; --fg:#E6EBF4; --muted:#8E9AB2; --line:#26324A;
+  --accent:#FFB547; --accent-ink:#1C1404; --accent-text:#FFC46B; --sea:#2EC4B6; --danger:#FF6B6B;
+  --fog:#060B15; --map-bg:#11303A; --map-grid:rgba(230,235,244,.07); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0A1220; --surface:#111B2C; --surface-2:#18233A; --fg:#E6EBF4; --muted:#8E9AB2; --line:#26324A;
+  --accent:#FFB547; --accent-ink:#1C1404; --accent-text:#FFC46B; --sea:#2EC4B6; --danger:#FF6B6B;
+  --fog:#060B15; --map-bg:#11303A; --map-grid:rgba(230,235,244,.07); color-scheme:dark}
+
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1140px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 16px}
+.brand{font-family:var(--font-display);font-weight:700;font-size:28px;letter-spacing:-.01em;display:flex;align-items:baseline;gap:10px}
+.brand small{font-family:var(--font-mono);font-weight:500;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sunline{font-family:var(--font-mono);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.sunline b{color:var(--accent-text);font-weight:600}
+
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:20px;align-items:start}
+@media (max-width:880px){.grid{grid-template-columns:minmax(0,1fr)}}
+.col{display:grid;gap:20px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:16px;min-width:0}
+.lbl{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;display:flex;justify-content:space-between;gap:8px}
+.lbl output{font-family:var(--font-mono);color:var(--fg);letter-spacing:0;text-transform:none}
+.hint{font-size:13px;color:var(--muted)}
+.ctl{display:grid;gap:8px}
+
+.people{display:flex;flex-wrap:wrap;gap:6px}
+.people button,.chips button{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;cursor:pointer;transition:background .15s,border-color .15s}
+.people button{width:42px;height:42px;font-family:var(--font-mono);font-weight:600;font-size:16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{padding:7px 12px;font-size:14px;font-weight:500}
+.people button[aria-pressed="true"],.chips button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.times{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.times label{display:grid;gap:6px}
+select{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.check{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+.actions{display:grid;grid-template-columns:1.4fr 1fr;gap:8px}
+.btn{border-radius:12px;padding:13px 16px;font-family:var(--font-display);font-weight:500;font-size:15px;cursor:pointer;border:1px solid transparent}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.boss{background:var(--fg);color:var(--bg)}
+.btn.ghost{background:transparent;border-color:var(--line)}
+.btn:active{transform:translateY(1px)}
+
+.quest{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:0}
+.quest.isboss{border-color:var(--fg)}
+.qhead{padding:18px 18px 14px;display:grid;gap:8px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tag{font-family:var(--font-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:6px;background:var(--surface-2);color:var(--muted)}
+.tag.kind{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.tag.kind.boss{background:var(--fg);color:var(--bg)}
+.tag.warn{color:var(--danger)}
+.qhead h2{font-family:var(--font-display);font-weight:700;font-size:clamp(22px,3.2vw,28px);line-height:1.15;text-wrap:balance}
+.ar{font-size:15px;color:var(--muted)}
+.why{max-width:62ch}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.stats div{padding:12px 18px;display:grid;gap:2px;min-width:0}
+.stats div+div{border-left:1px solid var(--line)}
+.stats span{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.stats b{font-family:var(--font-mono);font-weight:600;font-size:18px;font-variant-numeric:tabular-nums}
+@media (max-width:560px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stats div:nth-child(3){border-left:0}.stats div:nth-child(n+3){border-top:1px solid var(--line)}}
+.qbody{padding:16px 18px 18px;display:grid;gap:16px}
+.sec{display:grid;gap:8px}
+.sec h4{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+.tlwrap{position:relative;padding-top:2px}
+.tl{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--surface-2)}
+.tl i{display:block;height:100%}
+.tl .bus{background:repeating-linear-gradient(-45deg,var(--line) 0 4px,var(--surface-2) 4px 8px)}
+.tl .spot{background:var(--accent)}
+.tl .walk{background:var(--sea)}
+.tl .free{background:transparent}
+.sunmark{position:absolute;top:-4px;width:2px;height:22px;background:var(--fg);border-radius:1px}
+.sched{list-style:none;display:grid;gap:4px;font-size:14px}
+.sched li{display:grid;grid-template-columns:52px 1fr;gap:8px}
+.sched time{font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--muted)}
+
+.legs{list-style:none;display:grid;gap:8px}
+.legs li{display:flex;gap:10px;align-items:flex-start;min-width:0}
+.led{font-family:var(--font-mono);font-weight:600;font-size:14px;background:var(--led-bg);color:var(--led-fg);padding:3px 8px;border-radius:5px;min-width:44px;text-align:center;letter-spacing:.04em;box-shadow:inset 0 0 0 1px rgba(255,181,71,.25);flex:none}
+.led.walk{color:var(--bg);background:var(--sea);box-shadow:none}
+.legs p{font-size:14px;min-width:0}
+.legs p small{display:block;color:var(--muted);font-size:13px}
+
+.game{background:var(--surface-2);border-radius:12px;padding:14px;display:grid;gap:8px}
+.game h5{font-family:var(--font-display);font-weight:500;font-size:16px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.game h5 em{font-style:normal;font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.dares{list-style:none;display:grid;gap:6px}
+.dares li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:baseline}
+.dares b{font-family:var(--font-mono);font-size:12px;color:var(--accent-text)}
+.fine{font-size:12.5px;color:var(--muted)}
+.note{font-size:14px;padding:10px 12px;border:1px dashed var(--line);border-radius:10px}
+.note.bad{border-color:var(--danger);color:var(--danger)}
+.qactions{display:grid;grid-template-columns:1fr 1.4fr;gap:8px}
+
+.ph{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ph h3{font-family:var(--font-display);font-weight:500;font-size:17px}
+.ph span{font-family:var(--font-mono);font-size:12.5px;color:var(--muted)}
+.mapbox{position:relative;width:100%;max-width:100%;aspect-ratio:7/5;border-radius:10px;overflow:hidden;background:var(--map-bg)}
+.mapbox canvas{position:absolute;inset:0;width:100%;height:100%}
+.lore{list-style:none;display:grid;gap:10px}
+.lore li{border-top:1px solid var(--line);padding-top:10px;display:grid;gap:4px}
+.lore li:first-child{border-top:0;padding-top:0}
+.lt{font-family:var(--font-display);font-weight:500;font-size:15px}
+.lm{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.lore input{background:transparent;border:0;border-bottom:1px dashed var(--line);padding:4px 0;font-size:14px;width:100%}
+.empty{font-size:14px;color:var(--muted)}
+
+.foot{font-size:12.5px;color:var(--muted);max-width:90ch;display:grid;gap:4px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
+.pop{animation:pop .25s ease-out}
+@keyframes pop{from{opacity:.55;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">Lore <small>Abu Dhabi · v0</small></div>
+    <div class="sunline" id="sunline"></div>
+  </header>
+
+  <main class="grid">
+    <section class="col">
+      <div class="panel">
+        <div class="ctl">
+          <span class="lbl">Who's out right now</span>
+          <div class="people" id="people"></div>
+          <p class="hint" id="peopleHint"></p>
+        </div>
+        <div class="times">
+          <label class="lbl" for="start">Out from<select id="start"></select></label>
+          <label class="lbl" for="curfew">Home by<select id="curfew"></select></label>
+        </div>
+        <div class="ctl">
+          <label class="lbl" for="budget">Budget each <output id="budgetOut"></output></label>
+          <input type="range" id="budget" min="5" max="40" step="1" value="15">
+          <p class="hint">Covers the bus both ways, entry, food and game money.</p>
+        </div>
+        <div class="ctl">
+          <span class="lbl">Vibe</span>
+          <div class="chips" id="vibes"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="adults"> Everyone's 18+</label>
+        <div class="actions">
+          <button class="btn primary" id="roll">Roll a quest</button>
+          <button class="btn boss" id="boss">Boss Fight</button>
+        </div>
+      </div>
+      <article class="quest" id="quest" aria-live="polite"></article>
+    </section>
+
+    <section class="col">
+      <div class="panel">
+        <div class="ph"><h3>Your Abu Dhabi</h3><span id="explored"></span></div>
+        <div class="mapbox"><canvas id="map" aria-label="Fog of war map of Abu Dhabi spots"></canvas></div>
+        <p class="hint">Finish a quest to clear the fog around it. The square is the bus station, where every route starts.</p>
+      </div>
+      <div class="panel">
+        <div class="ph"><h3>Lore Book</h3><span id="loreCount"></span></div>
+        <ol class="lore" id="lore"></ol>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>Bus routes come from Google Maps transit data for ITC buses, pulled 10 Nov 2026, and every route starts at Abu Dhabi Bus Station. Each shows the first route returned, so some walks are long.</p>
+    <p>Fares are estimates using Hafilat's AED 2 + 5 fils per km, capped at AED 5 a trip. Spot hours and prices are from wow-abudhabi.com and digiflow.ae (both checked Sept 2026). Your map and Lore Book save in this browser only.</p>
+  </footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const GULF = 240;
+const HUB = { lat: 24.4717, lng: 54.3776 };
+const SPOTS = [
+  { id:'tc', name:'Old Tourist Club Food Walk', short:'Tourist Club', ar:'الزاهية', lat:24.4885, lng:54.3673, km:2.8, dur:22, walk:1006,
+    legs:[{ line:'N2', toward:'Al Zahiyah Bus Stn', from:'Abu Dhabi Bus Station', to:'Gold Center, Sultan Bin Zayed St' }],
+    tags:['food','chaos'], entry:0, spend:8,
+    why:"Abu Dhabi's old downtown in Al Zahiyah. Follow the free Urban Treasures audio walk on VoiceMap past long-running places like Al Ibrahimi Restaurant and Al Sultan Bakeries. Cheap food until late.",
+    extra:'About AED 8 each covers a sandwich and karak (estimate).',
+    hunt:'the oldest shop sign on the street', cover:'Line up under the brightest shop sign you can find, everyone looking a different way.' },
+  { id:'mina', name:'Mina Zayed Markets', short:'Mina', ar:'ميناء زايد', lat:24.5143, lng:54.3758, km:9.3, dur:35, walk:559,
+    legs:[{ line:'54', toward:'Zayed Port / Fish Market', from:'Abu Dhabi Bus Station', to:'Fish Market' }],
+    tags:['chaos'], entry:0, spend:0, arriveBy:18*60+30, maxStay:120,
+    why:'The fish market, the plant souk with 30+ nurseries spilling onto the pavement, and the fruit and vegetable market next door. Loud, real, and nothing like a mall.',
+    extra:'Plant stalls set their own hours and wind down in the evening. Get there by 18:30. Cheap dinner move: buy a fish at the market and hand it to one of the restaurants on site to grill or fry.',
+    hunt:'the biggest fish on a counter and the smallest cactus in the plant souk', cover:'Stand in the middle of the plant souk, buried in greenery. Ask the stall owner first.' },
+  { id:'hud', name:'Hudayriyat Island', short:'Hudayriyat', ar:'جزيرة الحديريات', lat:24.4122, lng:54.3500, km:10.7, dur:35, walk:679,
+    legs:[{ line:'73', toward:'Al Hudayriat / Mar Vista', from:'Abu Dhabi Bus Station', to:'Marsana Beach' }],
+    tags:['sunset','chill'], entry:0, spend:0,
+    why:'The beach island locals actually use. Walk the Heritage Trail to the Sunset View Bridge, or go to the far end of the Trail Park where the breeze shows up right as the light goes. One bus, about 35 minutes.',
+    hunt:'a shell, a kite and someone on a bike', cover:'Run at the camera across the sand at golden hour. Keep the best freeze-frame.' },
+  { id:'shade', name:'The Shade House', short:'Shade House', ar:'حديقة أم الإمارات', lat:24.4532, lng:54.3809, km:2.9, dur:27, walk:1730,
+    legs:[{ line:'54', toward:'Al Rawdah / Zayed Grand Mosque', from:'Abu Dhabi Bus Station', to:'Amin Saeed Al Awadhi Mosque, Sultan Bin Zayed St' }],
+    tags:['chill'], entry:10, spend:0,
+    why:'A giant lattice greenhouse inside Umm Al Emarat Park, with two upper decks looking over the city. AED 10 entry, open until midnight.',
+    hunt:'the plant with the biggest leaves, then the best view from the top deck', cover:'Top deck, lattice shadows striped across everyone.' },
+  { id:'turf', name:'Thursday Race Night', short:'Turf Club', ar:'نادي أبوظبي للفروسية', lat:24.4470, lng:54.3822, km:6.2, dur:49, walk:3008,
+    legs:[{ line:'54', toward:'Al Rawdah / Zayed Grand Mosque', from:'Abu Dhabi Bus Station', to:'ADNOC, Sultan Bin Zayed St' }],
+    tags:['chaos'], entry:10, spend:0, adult:true, days:[4],
+    why:'Horse racing under floodlights at the Abu Dhabi Turf Club in Al Mushrif. The 2026–27 season started 22 October.',
+    extra:'Thursdays only. General admission is 18+ with ID and was AED 10 last season; this season’s price may differ.',
+    hunt:'the horse with the most ridiculous name on the race card', cover:'Against the rail with the floodlights behind you.' },
+  { id:'mangroves', name:'Eastern Mangroves Promenade', short:'Mangroves', ar:'القرم الشرقي', lat:24.4440, lng:54.4300, km:9.7, dur:45, walk:1930,
+    legs:[{ line:'54', toward:'Al Rawdah / Zayed Grand Mosque', from:'Abu Dhabi Bus Station', to:'Al Murjan Tower, Sultan Bin Zayed St' }],
+    tags:['sunset','chill'], entry:0, spend:0,
+    why:'A boardwalk through the mangroves near the Dolphin area, with benches right on the still water. Strangely quiet for somewhere this close to the city. Evenings only; it is brutal at midday.',
+    hunt:'a crab, a heron and a kayak', cover:'Low angle from the path, mangroves filling the bottom of the frame.' },
+  { id:'breakwater', name:'The Breakwater Ledge', short:'Breakwater', ar:'كاسر الأمواج', lat:24.4775, lng:54.3200, km:10.4, dur:49, walk:730,
+    legs:[{ line:'54', toward:'Zayed Port / Fish Market', from:'Abu Dhabi Bus Station', to:'LLH Hospital, Sultan Bin Zayed St' },
+          { line:'67', toward:'Al Kasir / Marina Mall', from:'Al Dar Academies, Zayed The First St', to:'Marina Mall' }],
+    tags:['edge','sunset','chill'], entry:0, spend:0,
+    why:'Sit on the rock ledge with your legs over the edge, waves hitting the rocks below and the whole Corniche skyline straight ahead. Free, and quiet on weekdays.',
+    extra:'The bus drops you at Marina Mall. Walking through it does not count as going to the mall. The ledge has no fence: sit, never stand on the edge, and move back once it is too dark to see the rocks.',
+    hunt:'the tallest tower anyone can name and the biggest wave of the night', cover:'Legs over the ledge, backs to the camera, skyline in front.' },
+  { id:'reem', name:'Reem Central Park', short:'Reem', ar:'جزيرة الريم', lat:24.5037, lng:54.4094, km:9.4, dur:55, walk:1298,
+    legs:[{ line:'N2', toward:'Al Zahiyah Bus Stn', from:'Abu Dhabi Bus Station', to:'Gold Center' },
+          { line:'67', toward:'Al Reem / Shams Abu Dhabi', from:'Lifeline Hospital, Zayed The First St', to:'Reem Central Park' }],
+    tags:['chill'], entry:0, spend:0,
+    why:"The residents' park on Reem Island, with waterfront paths and the towers lit up across the channel at night.",
+    hunt:'three different dog breeds', cover:'On the waterfront edge with the towers lit up behind you.' },
+];
+const BOSSES = [
+  { id:'march', name:'The Mina March', a:'mina', b:'tc', link:'walk', linkMin:45, stayA:60,
+    why:'Hit the markets before they close, then walk the whole way to the old Tourist Club area for dinner, about 3.5 km. No bus in between.' },
+  { id:'supper', name:'Sunset to Supper', a:'hud', b:'tc', link:'hub', stayA:'sunset',
+    why:'Catch the sunset on Hudayriyat, then cross the city for cheap food in Al Zahiyah before curfew.' },
+  { id:'double', name:'Thursday Double', a:'turf', b:'tc', link:'hub', stayA:90,
+    why:'Watch a couple of races on the floodlit track, then dinner in the old downtown.' },
+];
+const DARES = [
+  'Tell a shopkeeper you smell like cheese and ask them to confirm.',
+  'Ask someone for directions to the exact spot you are standing on.',
+  'Walk into a cafeteria and order "the usual" like you have been coming for ten years.',
+  'Ask a stranger where the best karak in the city is. Then go there.',
+  'Compliment a stranger’s shoes with one oddly specific detail.',
+  'Ask someone who works nearby what this street looked like 20 years ago.',
+  'Get someone to teach you one word in their language, then use it on the next person you talk to.',
+  'Ask a shopkeeper for the most underrated thing in the shop. Buy it if it’s under AED 3.',
+  'Ask a stranger which of your friends looks most like a movie villain.',
+  'Ask someone for their best recommendation within a 10-minute walk. Whatever they say, you go.',
+  'Ask a stall owner what the strangest thing they have ever sold is.',
+  'Ask a stranger to rate your group’s fits out of 10. No arguing with the score.',
+];
+const MAIN = [
+  { id:'npc', name:'NPC Dialogue', min:1, cost:0, title:s=>`The ${s.short} NPC Incident` },
+  { id:'draft', name:'The AED 5 Draft', min:2, cost:5, title:s=>`The ${s.short} Draft` },
+  { id:'hunt', name:'Split Hunt', min:4, cost:0, title:s=>`Team War at ${s.short}` },
+];
+const VIBES = [['any','Any'],['sunset','Sunset'],['chaos','Chaos'],['chill','Chill'],['edge','Edge'],['food','Food']];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const STORE = 'lore-abudhabi.v1';
+
+const byId = id => SPOTS.find(s => s.id === id);
+const fare = km => Math.min(5, 2 + 0.05 * km);
+const aed = x => 'AED ' + x.toFixed(2);
+const hhmm = m => { m = ((Math.round(m) % 1440) + 1440) % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+const dur = m => m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m` : `${m}m`;
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const shuffle = arr => arr.map(v => [Math.random(), v]).sort((a, b) => a[0] - b[0]).map(p => p[1]);
+const gulfNow = () => new Date(Date.now() + GULF * 60000);
+
+function sunsetMinutes(d, lat = 24.45, lng = 54.38) {
+  const rad = Math.PI / 180;
+  const n = Math.floor((Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - Date.UTC(d.getUTCFullYear(), 0, 0)) / 864e5);
+  const g = 2 * Math.PI / 365 * (n - 1);
+  const eqt = 229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g) - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
+  const decl = 0.006918 - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g) - 0.006758 * Math.cos(2 * g) + 0.000907 * Math.sin(2 * g) - 0.002697 * Math.cos(3 * g) + 0.00148 * Math.sin(3 * g);
+  const ha = Math.acos(Math.cos(90.833 * rad) / (Math.cos(lat * rad) * Math.cos(decl)) - Math.tan(lat * rad) * Math.tan(decl)) / rad;
+  return Math.round(720 - 4 * (lng - ha) - eqt + GULF);
+}
+
+const today = gulfNow();
+const SUNSET = sunsetMinutes(today);
+const WEEKDAY = today.getUTCDay();
+const state = { n: 4, start: 17 * 60, curfew: 22 * 60 + 30, budget: 15, vibe: 'any', adults: false, quest: null, explored: [], lore: [] };
+
+try { const saved = JSON.parse(localStorage.getItem(STORE) || 'null'); if (saved) { state.explored = saved.explored || []; state.lore = saved.lore || []; } } catch (e) {}
+function save() { try { localStorage.setItem(STORE, JSON.stringify({ explored: state.explored, lore: state.lore })); } catch (e) {} }
+
+const allowedToday = s => (!s.days || s.days.includes(WEEKDAY)) && (!s.adult || state.adults);
+const mainsFor = n => MAIN.filter(g => n >= g.min);
+
+function planQuest(s, main) {
+  const arrive = state.start + s.dur;
+  if (s.arriveBy && arrive > s.arriveBy) return { fail: `Get there by ${hhmm(s.arriveBy)}. Start earlier.` };
+  const latest = state.curfew - s.dur;
+  const leave = s.maxStay ? Math.min(latest, arrive + s.maxStay) : latest;
+  const stay = leave - arrive;
+  if (stay < 45) return { fail: `Under 45 minutes there before you'd need to head home.` };
+  const cost = 2 * fare(s.km) + s.entry + s.spend + main.cost;
+  const segs = [['bus', s.dur], ['spot', stay], ['bus', s.dur], ['free', latest - leave]];
+  const sched = [[state.start, 'Leave Abu Dhabi Bus Station'], [arrive, `Arrive at ${s.short}`], [leave, 'Head for the bus home'], [leave + s.dur, 'Back at the bus station']];
+  return { arrive, leave, stay, cost, segs, sched, trips: 2 };
+}
+
+function planBoss(b) {
+  const A = byId(b.a), B = byId(b.b);
+  const arriveA = state.start + A.dur;
+  if (A.arriveBy && arriveA > A.arriveBy) return { fail: `${A.short} needs you there by ${hhmm(A.arriveBy)}. Start earlier.` };
+  if (b.stayA === 'sunset' && arriveA > SUNSET - 10) return { fail: `You'd miss sunset (${hhmm(SUNSET)}). Start earlier.` };
+  const leaveA = b.stayA === 'sunset' ? SUNSET + 20 : arriveA + b.stayA;
+  const link = b.link === 'walk' ? b.linkMin : A.dur + B.dur;
+  const arriveB = leaveA + link, leaveB = state.curfew - B.dur, stayB = leaveB - arriveB;
+  if (stayB < 40) return { fail: `Not enough time for both stops before ${hhmm(state.curfew)}. Start earlier or come home later.` };
+  const kms = b.link === 'walk' ? [A.km, B.km] : [A.km, A.km, B.km, B.km];
+  const cost = kms.reduce((t, k) => t + fare(k), 0) + A.entry + B.entry + A.spend + B.spend;
+  const segs = [['bus', A.dur], ['spot', leaveA - arriveA], [b.link === 'walk' ? 'walk' : 'bus', link], ['spot', stayB], ['bus', B.dur]];
+  const sched = [[state.start, 'Leave Abu Dhabi Bus Station'], [arriveA, `Stop 1: ${A.short}`], [leaveA, b.link === 'walk' ? `Walk to ${B.short} (no bus)` : `Bus back via the station to ${B.short}`],
+    [arriveB, `Stop 2: ${B.short}`], [leaveB, 'Head for the bus home'], [state.curfew, 'Home. Boss cleared.']];
+  return { arriveA, leaveA, arriveB, stayA: leaveA - arriveA, stayB, cost, segs, sched, trips: kms.length };
+}
+
+function rollQuest() {
+  const options = [];
+  for (const s of SPOTS) {
+    if (!allowedToday(s) || (state.vibe !== 'any' && !s.tags.includes(state.vibe))) continue;
+    for (const g of mainsFor(state.n)) {
+      const plan = planQuest(s, g);
+      if (!plan.fail && plan.cost <= state.budget) options.push({ s, g, plan });
+    }
+  }
+  const fresh = options.filter(o => !state.quest || state.quest.kind !== 'quest' || o.s.id !== state.quest.spot.id);
+  const pool = fresh.length ? fresh : options;
+  if (!pool.length) { state.quest = { kind: 'none' }; return render(); }
+  const o = pick(pool);
+  state.quest = { kind: 'quest', spot: o.s, main: o.g, plan: o.plan, dares: shuffle(DARES).slice(0, Math.max(2, state.n)) };
+  render();
+}
+
+function rollBoss() {
+  const eligible = BOSSES.filter(b => allowedToday(byId(b.a)) && allowedToday(byId(b.b)));
+  const planned = eligible.map(b => ({ b, plan: planBoss(b) }));
+  const ok = planned.filter(p => !p.plan.fail && p.plan.cost <= state.budget);
+  const fresh = ok.filter(p => !state.quest || state.quest.kind !== 'boss' || p.b.id !== state.quest.boss.id);
+  const chosen = (fresh.length ? pick(fresh) : ok.length ? pick(ok) : pick(planned));
+  state.quest = { kind: 'boss', boss: chosen.b, plan: chosen.plan, dares: shuffle(DARES).slice(0, Math.max(2, state.n)) };
+  render();
+}
+
+function legsHTML(s) {
+  return s.legs.map(l => `<li><span class="led">${l.line}</span><p>Toward ${l.toward}<small>Board at ${l.from}, get off at ${l.to}</small></p></li>`).join('');
+}
+
+function timelineHTML(plan) {
+  const span = state.curfew - state.start;
+  const bars = plan.segs.filter(([, m]) => m > 0).map(([k, m]) => `<i class="${k}" style="width:${(m / span * 100).toFixed(2)}%" title="${k} ${dur(m)}"></i>`).join('');
+  const sun = SUNSET > state.start && SUNSET < state.curfew ? `<span class="sunmark" style="left:${((SUNSET - state.start) / span * 100).toFixed(2)}%" title="Sunset ${hhmm(SUNSET)}"></span>` : '';
+  const rows = plan.sched.map(([t, txt]) => `<li><time>${hhmm(t)}</time><span>${txt}</span></li>`).join('');
+  return `<div class="tlwrap"><div class="tl">${bars}</div>${sun}</div><ol class="sched">${rows}</ol>
+    <p class="fine">Striped = bus, amber = at the spot${plan.segs.some(s => s[0] === 'walk') ? ', teal = walking' : ''}. The dark tick is sunset.</p>`;
+}
+
+function npcHTML(dares) {
+  const who = state.n === 1 ? ['You', 'You again'] : dares.map((_, i) => i === 0 ? 'You' : `P${i + 1}`);
+  return `<div class="game"><h5>NPC Dialogue <em>free</em></h5>
+    <p>${state.n === 1 ? 'Two dares, both yours.' : 'Everyone gets one dare. Do it before you leave the spot, or the group picks your forfeit.'}</p>
+    <ul class="dares">${dares.map((d, i) => `<li><b>${who[i]}</b><span>${d}</span></li>`).join('')}</ul>
+    <p class="fine">Don't film or post strangers, because UAE privacy law is strict. If someone's busy or not into it, move on.</p></div>`;
+}
+
+function mainHTML(g, s, q) {
+  if (g.id === 'npc') return npcHTML(q.dares);
+  if (g.id === 'draft') return `<div class="game"><h5>The AED 5 Draft <em>AED 5 each</em></h5>
+    <p>Everyone gets AED 5 and 15 minutes around ${s.short}. Buy the best thing you can. ${state.n} things go on the table, one vote each, and you can't vote for your own. The winner picks the next quest.</p></div>`;
+  return `<div class="game"><h5>Split Hunt <em>free</em></h5>
+    <p>Split into teams of ${Math.ceil(state.n / 2)} and ${Math.floor(state.n / 2)}. First team to get a photo of ${s.hunt} wins. The losing team walks to the bus stop at the back.</p></div>`;
+}
+
+function coverHTML(s) {
+  return `<div class="game"><h5>Cover Art <em>finisher</em></h5>
+    <p>Make one photo look like an album cover. Name the album before you take it. ${s.cover}</p>
+    <p class="fine">${state.n === 1 ? 'Self-timer it.' : 'Everyone shoots one, and the group picks the cover.'} It goes in the Lore Book.</p></div>`;
+}
+
+function sunNote(s, arrive) {
+  if (!s.tags.includes('sunset')) return '';
+  return arrive <= SUNSET - 10
+    ? `<p class="note">Sunset is ${hhmm(SUNSET)}. You'll have ${SUNSET - arrive} minutes to find a spot.</p>`
+    : `<p class="note">You'd arrive after sunset (${hhmm(SUNSET)}). Leave by ${hhmm(SUNSET - s.dur - 15)} to catch it, or go for the night version.</p>`;
+}
+
+function render() {
+  renderControls();
+  const el = document.getElementById('quest');
+  const q = state.quest;
+  el.classList.toggle('isboss', q && q.kind === 'boss');
+  if (!q || q.kind === 'none') {
+    el.innerHTML = `<div class="qhead"><div class="eyebrow"><span class="tag kind">No quest</span></div>
+      <h2>Nothing fits that setup</h2><p class="why">Raise the budget, push your home time later, switch the vibe, or start earlier.</p></div>`;
+    return drawMap();
+  }
+  const p = q.plan, n = state.n;
+  const statRow = (stay) => `<div class="stats">
+      <div><span>Each</span><b>${p.fail ? '–' : aed(p.cost)}</b></div>
+      <div><span>Group of ${n}</span><b>${p.fail ? '–' : aed(p.cost * n)}</b></div>
+      <div><span>Time there</span><b>${p.fail ? '–' : stay}</b></div>
+      <div><span>Bus trips</span><b>${p.fail ? '–' : p.trips}</b></div></div>`;
+
+  if (q.kind === 'quest') {
+    const s = q.spot;
+    const badges = [s.entry ? `<span class="tag">AED ${s.entry} entry</span>` : '<span class="tag">Free entry</span>',
+      s.adult ? '<span class="tag warn">18+</span>' : '', s.days ? '<span class="tag">Thursdays</span>' : ''].join('');
+    el.innerHTML = `<div class="qhead pop">
+        <div class="eyebrow"><span class="tag kind">Quest</span>${s.tags.map(t => `<span class="tag">${t}</span>`).join('')}${badges}</div>
+        <h2>${s.name}</h2><span class="ar" lang="ar" dir="rtl">${s.ar}</span><p class="why">${s.why}</p></div>
+      ${statRow(dur(p.stay))}
+      <div class="qbody">
+        <div class="sec"><h4>Tonight</h4>${timelineHTML(p)}</div>
+        <div class="sec"><h4>Getting there · ${s.dur} min, ${(s.walk / 1000).toFixed(1)} km walking</h4><ul class="legs">${legsHTML(s)}</ul></div>
+        ${sunNote(s, p.arrive)}${s.extra ? `<p class="note">${s.extra}</p>` : ''}
+        <div class="sec"><h4>The game</h4>${mainHTML(q.main, s, q)}${coverHTML(s)}</div>
+        <div class="qactions"><button class="btn ghost" id="reroll">Reroll</button><button class="btn primary" id="done">We did it</button></div>
+      </div>`;
+  } else {
+    const b = q.boss, A = byId(b.a), B = byId(b.b);
+    const badges = [A, B].some(s => s.adult) ? '<span class="tag warn">18+</span><span class="tag">Thursdays</span>' : '';
+    const body = p.fail
+      ? `<p class="note bad">Not tonight: ${p.fail}</p>`
+      : `<div class="sec"><h4>Tonight</h4>${timelineHTML(p)}</div>
+         <div class="sec"><h4>Stop 1 · ${A.name}</h4><ul class="legs">${legsHTML(A)}</ul></div>
+         <div class="sec"><h4>Then · ${b.link === 'walk' ? 'on foot' : 'back through the bus station'}</h4><ul class="legs">${b.link === 'walk'
+            ? `<li><span class="led walk">WALK</span><p>Fish Market to Al Zahiyah, about 3.5 km<small>${b.linkMin} minutes. Nobody takes a taxi.</small></p></li>` : legsHTML(B)}</ul></div>
+         ${b.stayA === 'sunset' ? sunNote(A, p.arriveA) : ''}${A.extra ? `<p class="note">${A.extra}</p>` : ''}
+         <div class="sec"><h4>Stop 1 game</h4>${npcHTML(q.dares)}</div>
+         <div class="sec"><h4>Stop 2 finisher</h4>${coverHTML(B)}</div>`;
+    el.innerHTML = `<div class="qhead pop">
+        <div class="eyebrow"><span class="tag kind boss">Boss Fight</span><span class="tag">2 stops</span>${badges}</div>
+        <h2>${b.name}</h2><span class="ar" lang="ar" dir="rtl">${A.ar} ← ${B.ar}</span><p class="why">${b.why}</p></div>
+      ${statRow(p.fail ? '' : dur(p.stayA + p.stayB))}
+      <div class="qbody">${body}
+        <div class="qactions"><button class="btn ghost" id="reroll">Another boss</button><button class="btn primary" id="done" ${p.fail ? 'disabled' : ''}>Boss cleared</button></div>
+      </div>`;
+  }
+  document.getElementById('reroll').onclick = () => q.kind === 'boss' ? rollBoss() : rollQuest();
+  document.getElementById('done').onclick = complete;
+  drawMap();
+}
+
+function complete() {
+  const q = state.quest;
+  const spots = q.kind === 'boss' ? [byId(q.boss.a), byId(q.boss.b)] : [q.spot];
+  const d = gulfNow();
+  state.lore.unshift({
+    id: Date.now().toString(36),
+    title: q.kind === 'boss' ? `${q.boss.name} Cleared` : q.main.title(q.spot),
+    meta: `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()} · ${state.n} out · ${spots.map(s => s.short).join(' → ')}`,
+    note: ''
+  });
+  spots.forEach(s => { if (!state.explored.includes(s.id)) state.explored.push(s.id); });
+  save();
+  toast(q.kind === 'boss' ? 'Boss cleared. Two areas uncovered.' : `Added to the Lore Book. ${q.spot.short} uncovered.`);
+  renderLore();
+  q.kind === 'boss' ? rollBoss() : rollQuest();
+}
+
+function renderLore() {
+  const ol = document.getElementById('lore');
+  ol.replaceChildren();
+  document.getElementById('loreCount').textContent = `${state.lore.length} ${state.lore.length === 1 ? 'entry' : 'entries'}`;
+  if (!state.lore.length) {
+    const li = document.createElement('li');
+    li.className = 'empty';
+    li.textContent = 'Empty for now. Finish a quest and it lands here with a title. Add one line about what happened, because that line is the lore.';
+    ol.append(li);
+    return;
+  }
+  for (const e of state.lore) {
+    const li = document.createElement('li');
+    const t = document.createElement('div'); t.className = 'lt'; t.textContent = e.title;
+    const m = document.createElement('div'); m.className = 'lm'; m.textContent = e.meta;
+    const inp = document.createElement('input');
+    inp.id = 'note-' + e.id; inp.placeholder = 'What happened? One line.'; inp.value = e.note; inp.maxLength = 140;
+    inp.setAttribute('aria-label', 'Lore note for ' + e.title);
+    inp.addEventListener('input', () => { e.note = inp.value; save(); });
+    li.append(t, m, inp);
+    ol.append(li);
+  }
+}
+
+function renderControls() {
+  document.getElementById('people').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.n === state.n)));
+  document.getElementById('vibes').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === state.vibe)));
+  document.getElementById('peopleHint').textContent = state.n === 1 ? 'Solo run. Dares double up.' : `You + ${state.n - 1}. ${state.n >= 4 ? 'Enough for team games.' : state.n >= 2 ? 'Team games unlock at 4.' : ''}`;
+  document.getElementById('budgetOut').textContent = 'AED ' + state.budget;
+  document.getElementById('explored').textContent = `${state.explored.length} of ${SPOTS.length} explored`;
+}
+
+const B = { w: 54.305, e: 54.505, s: 24.400, n: 24.528 };
+function drawMap() {
+  const cv = document.getElementById('map');
+  const W = cv.clientWidth, H = cv.clientHeight;
+  if (!W || !H) return;
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const css = getComputedStyle(document.documentElement);
+  const c = k => css.getPropertyValue(k).trim();
+  const P = (lat, lng) => [(lng - B.w) / (B.e - B.w) * W, (B.n - lat) / (B.n - B.s) * H];
+
+  ctx.fillStyle = c('--map-bg'); ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = c('--map-grid'); ctx.lineWidth = 1;
+  ctx.fillStyle = c('--muted'); ctx.font = `10px ${c('--font-mono')}`;
+  for (let lng = 54.32; lng < B.e; lng += 0.04) { const [x] = P(B.n, lng); ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); ctx.fillText(lng.toFixed(2) + '°E', x + 3, H - 6); }
+  for (let lat = 24.42; lat < B.n; lat += 0.04) { const [, y] = P(lat, B.w); ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); ctx.fillText(lat.toFixed(2) + '°N', 4, y - 3); }
+
+  const fog = document.createElement('canvas');
+  fog.width = cv.width; fog.height = cv.height;
+  const f = fog.getContext('2d');
+  f.setTransform(dpr, 0, 0, dpr, 0, 0);
+  f.globalAlpha = 0.93; f.fillStyle = c('--fog'); f.fillRect(0, 0, W, H); f.globalAlpha = 1;
+  f.globalCompositeOperation = 'destination-out';
+  const hole = (lat, lng, r) => { const [x, y] = P(lat, lng); const g = f.createRadialGradient(x, y, r * 0.45, x, y, r); g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)'); f.fillStyle = g; f.beginPath(); f.arc(x, y, r, 0, Math.PI * 2); f.fill(); };
+  hole(HUB.lat, HUB.lng, W * 0.07);
+  state.explored.forEach(id => { const s = byId(id); if (s) hole(s.lat, s.lng, W * 0.13); });
+  ctx.drawImage(fog, 0, 0, W, H);
+
+  const current = state.quest && state.quest.kind === 'quest' ? [state.quest.spot.id] : state.quest && state.quest.kind === 'boss' ? [state.quest.boss.a, state.quest.boss.b] : [];
+  ctx.font = `600 11px ${c('--font-body')}`;
+  for (const s of SPOTS) {
+    const [x, y] = P(s.lat, s.lng);
+    const seen = state.explored.includes(s.id);
+    if (current.includes(s.id)) { ctx.strokeStyle = c('--accent'); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 11, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.fillStyle = seen ? c('--sea') : c('--accent');
+    ctx.beginPath(); ctx.arc(x, y, seen ? 5 : 4, 0, Math.PI * 2); ctx.fill();
+    const label = seen || current.includes(s.id) ? s.short : '?';
+    const right = x < W - 80;
+    ctx.textAlign = right ? 'left' : 'right';
+    ctx.fillStyle = seen ? c('--fg') : c('--accent');
+    ctx.fillText(label, x + (right ? 9 : -9), y + 4);
+  }
+  const [hx, hy] = P(HUB.lat, HUB.lng);
+  ctx.fillStyle = c('--fg'); ctx.fillRect(hx - 4, hy - 4, 8, 8);
+  ctx.textAlign = 'left'; ctx.font = `600 10px ${c('--font-mono')}`; ctx.fillText('BUS STN', hx + 8, hy + 4);
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => { t.hidden = true; }, 2400);
+}
+
+function setup() {
+  const ppl = document.getElementById('people');
+  for (let i = 1; i <= 8; i++) {
+    const b = document.createElement('button');
+    b.dataset.n = i; b.textContent = i; b.setAttribute('aria-label', i === 1 ? 'Just me' : `${i} people`);
+    b.onclick = () => { state.n = i; rollCurrent(); };
+    ppl.append(b);
+  }
+  const vb = document.getElementById('vibes');
+  for (const [v, label] of VIBES) {
+    const b = document.createElement('button');
+    b.dataset.v = v; b.textContent = label;
+    b.onclick = () => { state.vibe = v; rollQuest(); };
+    vb.append(b);
+  }
+  const opt = (sel, from, to, val) => { for (let m = from; m <= to; m += 30) { const o = document.createElement('option'); o.value = m; o.textContent = hhmm(m); if (m === val) o.selected = true; sel.append(o); } };
+  const st = document.getElementById('start'), cf = document.getElementById('curfew');
+  opt(st, 16 * 60, 19 * 60, state.start); opt(cf, 21 * 60, 23 * 60, state.curfew);
+  st.onchange = () => { state.start = +st.value; rollCurrent(); };
+  cf.onchange = () => { state.curfew = +cf.value; rollCurrent(); };
+  const bud = document.getElementById('budget');
+  bud.oninput = () => { state.budget = +bud.value; renderControls(); };
+  bud.onchange = rollCurrent;
+  const ad = document.getElementById('adults');
+  ad.onchange = () => { state.adults = ad.checked; rollCurrent(); };
+  document.getElementById('roll').onclick = rollQuest;
+  document.getElementById('boss').onclick = rollBoss;
+  document.getElementById('sunline').innerHTML = `${DAYS[WEEKDAY]} · Sunset today <b>${hhmm(SUNSET)}</b>`;
+
+  new ResizeObserver(drawMap).observe(document.getElementById('map'));
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawMap);
+  new MutationObserver(drawMap).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  renderLore();
+  rollQuest();
+}
+const rollCurrent = () => state.quest && state.quest.kind === 'boss' ? rollBoss() : rollQuest();
+setup();
+</script>
