@@ -153,6 +153,35 @@ For complex multi-file tasks, immediately spawn concurrent named agents:
 researcher → architect → coder → tester → reviewer (pipeline with SendMessage).
 Short task cycles with verification gates. Max 6–8 agents.
 
+## 18. Karpathy guidelines — LLM coding guardrails (always ON)
+
+Derived from Andrej Karpathy's observations on common LLM coding mistakes. Biases toward caution over speed; use judgment on trivial tasks.
+
+### Traceability test
+Every changed line should trace directly to the user's request. If it doesn't, don't change it.
+
+### Orphan cleanup rule
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+- If you notice unrelated dead code, **mention it** — don't delete it.
+
+### 200→50 rule
+If you wrote 200 lines and it could be 50, rewrite it before submitting.
+
+### Task → verifiable goal transformation
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+### Multi-step plan format
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+
+Strong success criteria = loop independently. Weak criteria = stop and ask.
+
 ---
 
 ## Project context: "Verdict" (financial-literacy club product)
