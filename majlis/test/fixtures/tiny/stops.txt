@@ -1,0 +1,8 @@
+stop_id,stop_name,stop_lat,stop_lon,location_type
+A,"Bus Station, Al Wahda",24.45,54.30,0
+B,Bravo,24.45,54.32,0
+C,Charlie,24.45,54.34,0
+D,Delta,24.45,54.36,0
+E,Echo (next to Charlie),24.45,54.342,0
+F,Foxtrot,24.47,54.38,0
+P,Parent station,24.45,54.30,1

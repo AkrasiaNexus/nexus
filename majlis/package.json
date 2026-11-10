@@ -1,0 +1,19 @@
+{
+  "name": "majlis",
+  "version": "0.1.0",
+  "description": "Find the fairest place for a group to meet by public transport (RAPTOR over GTFS)",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "bin": { "majlis": "bin/majlis.js" },
+  "exports": {
+    ".": "./src/meet.js",
+    "./raptor": "./src/raptor.js",
+    "./gtfs": "./src/gtfs.js"
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "bench": "node bench/bench.js"
+  },
+  "engines": { "node": ">=22" }
+}

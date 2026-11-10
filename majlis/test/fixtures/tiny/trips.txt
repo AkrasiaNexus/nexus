@@ -1,0 +1,10 @@
+route_id,service_id,trip_id,trip_headsign
+R1,WK,r1_0800,Charlie
+R1,WK,r1_0810,Charlie
+R1,WK,r1_0820,Charlie
+R2,WK,r2_0812,Delta
+R2,WK,r2_0822,Delta
+R2,WK,r2_0832,Delta
+R3,WK,r3_0815,Foxtrot
+R3,WK,r3_0825,Foxtrot
+R1,HOL,r1_hol_0900,Charlie

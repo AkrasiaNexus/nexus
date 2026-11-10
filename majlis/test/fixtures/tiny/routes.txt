@@ -1,0 +1,4 @@
+route_id,agency_id,route_short_name,route_long_name,route_type
+R1,ITC,54,West to Charlie,3
+R2,ITC,73,Charlie to Delta,3
+R3,ITC,N2,Echo to Foxtrot,3
