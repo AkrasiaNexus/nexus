@@ -1,15 +1,24 @@
-const TIMEFRAME_PATTERNS = [
-  { regex: /(\d+)\s*min(ute)?s?/i, unit: "minutes" },
-  { regex: /(\d+)\s*h(ou)?rs?/i, unit: "hours" },
-  { regex: /(\d+)\s*d(ays?)?/i, unit: "days" },
-  { regex: /(\d+)\s*w(eeks?)?/i, unit: "weeks" },
-  { regex: /(\d+)\s*m(onths?)?/i, unit: "months" },
-  { regex: /today/i, unit: "days", fixed: 0 },
-  { regex: /tomorrow/i, unit: "days", fixed: 1 },
-  { regex: /this\s*week/i, unit: "weeks", fixed: 1 },
-  { regex: /next\s*week/i, unit: "weeks", fixed: 2 },
-  { regex: /this\s*month/i, unit: "months", fixed: 1 },
+const MINUTE = 60_000;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+const WEEK = 7 * DAY;
+const MONTH = 30 * DAY;
+
+// Units must be whole words so "3 more eggs" and "2 drones" are not timeframes.
+const TIMEFRAMES = [
+  { regex: /\b(\d+)\s*(?:mins?|minutes?)\b/i, ms: MINUTE },
+  { regex: /\b(\d+)\s*(?:h|hrs?|hours?)\b/i, ms: HOUR },
+  { regex: /\b(\d+)\s*(?:d|days?)\b/i, ms: DAY },
+  { regex: /\b(\d+)\s*(?:w|wks?|weeks?)\b/i, ms: WEEK },
+  { regex: /\b(\d+)\s*(?:mo|mos|months?)\b/i, ms: MONTH },
+  { regex: /\btoday\b/i, ms: 12 * HOUR },
+  { regex: /\btomorrow\b/i, ms: DAY },
+  { regex: /\bthis\s+week\b/i, ms: WEEK },
+  { regex: /\bnext\s+week\b/i, ms: 2 * WEEK },
+  { regex: /\bthis\s+month\b/i, ms: MONTH },
+  { regex: /\bnext\s+month\b/i, ms: 2 * MONTH },
 ];
+const DEFAULT_TIMEFRAME = WEEK;
 
 const CATEGORY_KEYWORDS = {
   skill: ["learn", "study", "practice", "course", "tutorial", "read about", "get into"],
@@ -18,72 +27,66 @@ const CATEGORY_KEYWORDS = {
   habit: ["gym", "workout", "meditate", "journal", "run", "sleep", "walk", "stretch", "diet"],
   explore: ["look into", "research", "explore", "check out", "investigate", "try"],
 };
+const DEFAULT_CATEGORY = "task";
 
-const UNIT_TO_MS = {
-  minutes: 60_000,
-  hours: 3_600_000,
-  days: 86_400_000,
-  weeks: 604_800_000,
-  months: 2_592_000_000,
-};
+const LEADING_FILLER = /^\s*(?:i\s+)?(?:wanna|want\s+to|need\s+to|have\s+to|gotta|should|will)\s+/i;
+const TRAILING_FILLER = /\s+(?:in|within|by|for|over|before|next|this)\s*$/i;
+
+const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 function extractTimeframe(text) {
-  for (const { regex, unit, fixed } of TIMEFRAME_PATTERNS) {
+  for (const { regex, ms } of TIMEFRAMES) {
     const match = text.match(regex);
     if (match) {
-      const amount = fixed !== undefined ? fixed : parseInt(match[1], 10);
-      const ms = amount * UNIT_TO_MS[unit];
-      const deadline = new Date(Date.now() + ms);
-      const cleaned = text.replace(regex, "").trim().replace(/,\s*$/, "");
-      return { deadline, timeframeMs: ms, remaining: cleaned };
+      const amount = match[1] ? parseInt(match[1], 10) : 1;
+      return { timeframeMs: amount * ms, remaining: text.replace(regex, " ") };
     }
   }
-  // default: 1 week
-  return {
-    deadline: new Date(Date.now() + UNIT_TO_MS.weeks),
-    timeframeMs: UNIT_TO_MS.weeks,
-    remaining: text,
-  };
+  return { timeframeMs: DEFAULT_TIMEFRAME, remaining: text };
 }
 
 function detectCategory(text) {
-  const lower = text.toLowerCase();
+  let best = { category: DEFAULT_CATEGORY, index: Infinity };
   for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-    if (keywords.some((kw) => lower.includes(kw))) return category;
+    for (const keyword of keywords) {
+      const index = text.search(new RegExp(`\\b${escape(keyword)}\\b`, "i"));
+      if (index !== -1 && index < best.index) best = { category, index };
+    }
   }
-  return "task";
+  return best.category;
 }
 
 function estimateEffort(timeframeMs) {
-  if (timeframeMs <= UNIT_TO_MS.hours) return "quick";
-  if (timeframeMs <= UNIT_TO_MS.days * 3) return "short";
-  if (timeframeMs <= UNIT_TO_MS.weeks * 2) return "medium";
+  if (timeframeMs <= HOUR) return "quick";
+  if (timeframeMs <= 3 * DAY) return "short";
+  if (timeframeMs <= 2 * WEEK) return "medium";
   return "long";
 }
 
-export function parseBlurt(rawText) {
-  const { deadline, timeframeMs, remaining } = extractTimeframe(rawText);
-  const category = detectCategory(rawText);
-  const effort = estimateEffort(timeframeMs);
-  const title = remaining.replace(/^\s*(i\s+)?(wanna|want\s+to|need\s+to|gotta|should)\s+/i, "").trim();
+function toTitle(text) {
+  let title = text.replace(/\s+/g, " ").trim().replace(/[,.;]+$/, "");
+  title = title.replace(LEADING_FILLER, "");
+  while (TRAILING_FILLER.test(title)) title = title.replace(TRAILING_FILLER, "");
+  return title.charAt(0).toUpperCase() + title.slice(1);
+}
 
+export function parseBlurt(rawText, now = Date.now()) {
+  const { timeframeMs, remaining } = extractTimeframe(rawText);
   return {
     raw: rawText,
-    title: title.charAt(0).toUpperCase() + title.slice(1),
-    category,
-    effort,
-    deadline: deadline.toISOString(),
+    title: toTitle(remaining),
+    category: detectCategory(rawText),
+    effort: estimateEffort(timeframeMs),
+    deadline: new Date(now + timeframeMs).toISOString(),
     timeframeMs,
-    createdAt: new Date().toISOString(),
+    createdAt: new Date(now).toISOString(),
   };
 }
 
 export function getNudgeSchedule(createdAt, deadline) {
   const start = new Date(createdAt).getTime();
-  const end = new Date(deadline).getTime();
-  const span = end - start;
-
-  return [0.25, 0.5, 0.75, 1.0].map((pct) => ({
+  const span = new Date(deadline).getTime() - start;
+  return [0.25, 0.5, 0.75, 1].map((pct) => ({
     at: new Date(start + span * pct).toISOString(),
     pct: Math.round(pct * 100),
     tone: pct < 0.5 ? "gentle" : pct < 1 ? "firm" : "urgent",
