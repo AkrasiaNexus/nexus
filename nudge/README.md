@@ -40,7 +40,7 @@ npm run tauri dev
 - [ ] Tray icon, a capture-only popup route, and a first Tauri build
 - [ ] Fire native notifications on the nudge schedule
 - [ ] Supabase sync across phone and laptops
-- [ ] Replace the regex parser with an LLM intent layer (see the `intent` project)
+- [ ] Replace the regex parser with an LLM intent layer (see the `idiolect` project)
 - [ ] Voice capture
 - [ ] Tests for the parser and the scheduling logic
 

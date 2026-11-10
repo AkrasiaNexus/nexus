@@ -196,10 +196,10 @@ Turns friend hangouts into quests: niche cheap spot + real bus route + games, in
 - User wants niche, chill, slightly edgy spots; no tourist stuff, nothing far (no Al Wathba). No trespass/abandoned-building spots (UAE legal risk) — find legal edgy ones instead.
 - Games kept: NPC Dialogue (stranger dares), Cover Art (renamed "main character shot" — user finds that corny), Boss Fight. Bus Roulette rejected.
 - Live prototype artifact: https://claude.ai/artifact/LwNwhfV2J2aWaz7CTd35DH
-- Also parked: Nudge (`nudge/`, brain-dump tray app) and intent layer (`intent/intent.md`).
+- Also parked: Nudge (`nudge/`, brain-dump tray app) and Idiolect (`idiolect/`, personal slang/intent profile for AI).
 
 ## Portfolio build mode (standing order)
-- Goal: projects that impress recruiters/college admissions. Each project folder (lore/, nudge/, intent/, verdict/, ...) is split into its own repo later — keep each self-contained with README + LICENSE (MIT, "AkrasiaNexus") + tests.
+- Goal: projects that impress recruiters/college admissions. Each project folder (lore/, nudge/, idiolect/, verdict/, ...) is split into its own repo later — keep each self-contained with README + LICENSE (MIT, "AkrasiaNexus") + tests.
 - Per project: research first (does it exist? what's the gap?) → plan → build fully → test → commit. No empty scaffolds; no todo/weather/clone apps.
 - New project picks: credibility that holds up for 1–2 years (fundamentals, real problems, verifiable results), not trend-chasing; creativity is key.
 - When asked to build "until the limit", keep going without stopping to check in.
