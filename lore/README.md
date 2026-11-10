@@ -4,6 +4,11 @@ A sidequest generator for friend hangouts in Abu Dhabi. Tell it how many people 
 
 **Live prototype:** https://claude.ai/artifact/LwNwhfV2J2aWaz7CTd35DH
 
+<p>
+  <img src="docs/phone-quest.png" alt="A quest card for Hudayriyat Island with cost per person, time there and tonight's timeline" width="260">
+  <img src="docs/phone-spots.png" alt="The All spots list on a phone" width="260">
+</p>
+
 ## Why
 
 Most hangouts end up in a mall because nobody knows where else to go, and growing up in one city makes it feel like there's nothing new. Existing "things to do" apps give you a pin on a map. They don't tell you whether a group of students can get there by bus, how long you'd actually have once you arrive, or what to do when you get there.
@@ -20,9 +25,11 @@ Most hangouts end up in a mall because nobody knows where else to go, and growin
 - **All spots** browser, so you can pick a spot directly instead of rolling.
 - **Fog-of-war map** and **Lore Book**, saved in the browser.
 
+- **Installable PWA:** add it to your home screen, and it keeps working offline once loaded.
+
 ## How it works
 
-One self-contained HTML file (`prototype.html`) with no build step and no dependencies apart from Google Fonts.
+`prototype.html` is the single source of truth: one self-contained HTML file with no dependencies apart from Google Fonts. `tools/build.js` wraps it into an installable app in `dist/`, adding a document shell, the web manifest, icons and a service worker. The service worker loads the page network-first so new spots show up, falls back to the cache offline, and caches fonts after their first load.
 
 | Piece | Approach |
 |---|---|
@@ -45,13 +52,33 @@ Every route currently starts at the bus station, and fares are estimates. Check 
 
 ## Run it
 
-Open `prototype.html` in any modern browser.
+Open `prototype.html` in any modern browser for the quick version. For the installable app:
+
+```bash
+npm run build                    # writes dist/
+npx serve dist                   # or any static server; service workers need http(s), not file://
+```
+
+Deploying: `netlify.toml` builds and publishes `dist/` as is.
+
+## Tests
+
+```bash
+npm install    # playwright
+npm test
+```
+
+- **Data integrity** for every spot: complete fields, coordinates inside the map, valid bus legs and tags, bosses that point at real spots. This also guards the daily job that adds new spots.
+- **Fare and taxi maths** against the published Abu Dhabi rules.
+- **Sunset** within 5 minutes of real Abu Dhabi times in June, November and December.
+- **Planner:** market closing times, the curfew, and the 45-minute minimum stay.
+- **PWA end to end:** builds the app, checks the manifest, installs the service worker, cuts the network, reloads, and confirms a quest still renders.
 
 ## Roadmap
 
 - [ ] Start from your own location instead of the bus station
 - [ ] Shared Lore Book across a friend group (accounts + sync)
-- [ ] Installable PWA for phones
+- [x] Installable PWA for phones
 - [ ] Photo upload for Cover Art
 - [ ] More cities after Abu Dhabi
 
