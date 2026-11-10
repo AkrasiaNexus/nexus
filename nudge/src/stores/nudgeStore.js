@@ -22,6 +22,13 @@ function notify() {
   listeners.forEach((fn) => fn([...items]));
 }
 
+// The quick-capture window writes to the same storage; pick its changes up live.
+window.addEventListener("storage", (event) => {
+  if (event.key !== STORAGE_KEY) return;
+  items = loadItems();
+  notify();
+});
+
 export const nudgeStore = {
   subscribe(fn) {
     listeners.add(fn);
@@ -86,12 +93,11 @@ export const nudgeStore = {
     return items.filter((item) => item.status === status);
   },
 
+  // Same 7 calendar-day window the week planner shows (today + 6), plus overdue.
   getWeekItems() {
-    const now = new Date();
-    const weekEnd = new Date(now.getTime() + 7 * 86_400_000);
-    return items.filter(
-      (item) =>
-        item.status === "active" && new Date(item.deadline) <= weekEnd,
-    );
+    const weekEnd = new Date();
+    weekEnd.setHours(0, 0, 0, 0);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+    return items.filter((item) => item.status === "active" && new Date(item.deadline) < weekEnd);
   },
 };

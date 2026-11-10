@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - name: Package the extension
+        run: zip -r ../verdict-extension.zip manifest.json src popup icons
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verdict-extension
+          path: verdict-extension.zip

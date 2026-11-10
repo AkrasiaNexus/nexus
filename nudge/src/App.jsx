@@ -3,12 +3,21 @@ import CaptureInput from "./components/CaptureInput";
 import WeekPlanner from "./components/WeekPlanner";
 import NudgeCard from "./components/NudgeCard";
 import Sidebar from "./components/Sidebar";
+import CaptureWindow from "./components/CaptureWindow";
 import { nudgeStore } from "./stores/nudgeStore";
 import { useStore } from "./hooks/useStore";
+import { useNudgeTicker } from "./hooks/useNudgeTicker";
+
+const isCaptureWindow = new URLSearchParams(window.location.search).get("view") === "capture";
 
 export default function App() {
+  return isCaptureWindow ? <CaptureWindow /> : <MainWindow />;
+}
+
+function MainWindow() {
   const items = useStore(nudgeStore);
   const [view, setView] = useState("week");
+  useNudgeTicker(items);
 
   const stats = useMemo(() => ({
     week: nudgeStore.getWeekItems().length,
