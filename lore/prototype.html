@@ -493,7 +493,7 @@ function render() {
       s.adult ? '<span class="tag warn">18+</span>' : '', s.days ? '<span class="tag">Thursdays</span>' : ''].join('');
     el.innerHTML = `<div class="qhead pop">
         <div class="eyebrow"><span class="tag kind">Quest</span>${s.tags.map(t => `<span class="tag">${t}</span>`).join('')}${badges}</div>
-        <h2>${s.name}</h2><span class="ar" lang="ar" dir="rtl">${s.ar}</span><p class="why">${s.why}</p></div>
+        <h2>${s.name}</h2>${s.ar ? `<span class="ar" lang="ar" dir="rtl">${s.ar}</span>` : ''}<p class="why">${s.why}</p></div>
       ${statRow(dur(p.stay))}
       <div class="qbody">
         ${p.fail ? `<p class="note bad">Doesn't fit tonight: ${p.fail}</p>` : `<div class="sec"><h4>Tonight</h4>${timelineHTML(p)}</div>`}
@@ -517,7 +517,7 @@ function render() {
          <div class="sec"><h4>Stop 2 finisher</h4>${coverHTML(B)}</div>`;
     el.innerHTML = `<div class="qhead pop">
         <div class="eyebrow"><span class="tag kind boss">Boss Fight</span><span class="tag">2 stops</span>${badges}</div>
-        <h2>${b.name}</h2><span class="ar" lang="ar" dir="rtl">${A.ar} ← ${B.ar}</span><p class="why">${b.why}</p></div>
+        <h2>${b.name}</h2>${A.ar && B.ar ? `<span class="ar" lang="ar" dir="rtl">${A.ar} ← ${B.ar}</span>` : ''}<p class="why">${b.why}</p></div>
       ${statRow(p.fail ? '' : dur(p.stayA + p.stayB))}
       <div class="qbody">${body}
         <div class="qactions"><button class="btn ghost" id="reroll">Another boss</button><button class="btn primary" id="done" ${p.fail ? 'disabled' : ''}>Boss cleared</button></div>
