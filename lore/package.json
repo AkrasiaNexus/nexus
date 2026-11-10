@@ -1,0 +1,15 @@
+{
+  "name": "lore",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sidequest generator for friend hangouts in Abu Dhabi",
+  "license": "MIT",
+  "scripts": {
+    "build": "node tools/build.js",
+    "icons": "node tools/make-icons.js",
+    "test": "node --test \"test/*.test.js\""
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}
