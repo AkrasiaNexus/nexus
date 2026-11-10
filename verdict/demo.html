@@ -1,0 +1,411 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Verdict Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: the product, running. A shop's checkout on the left, the Verdict panel on the right, one switch on top.
+   Same single-world dark system as the Verdict site; every colour set explicitly. */
+:root{
+  --bg:#09060F; --bg-2:#100A1B; --surface:#150F24; --surface-2:#1C1530; --line:#2A2241; --line-2:#3A3057;
+  --fg:#F4F0FB; --muted:#A59DBC; --faint:#6E6688;
+  --go:#24E3A0; --go-ink:#05140D; --go-soft:rgba(36,227,160,.12);
+  --flag:#FF5B68; --flag-soft:rgba(255,91,104,.13); --amber:#F5C451;
+  --paper:#F8F6FB; --paper-ink:#15111C; --paper-mute:#615A73; --paper-line:#E5E0EE;
+  --f-display:"Sora",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Manrope",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --gut:clamp(16px,4vw,48px); --r:20px;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:clip}
+h1,h2,h3{font-family:var(--f-display);margin:0;letter-spacing:-.03em;text-wrap:balance}
+p{margin:0}
+button,input{font:inherit;color:inherit}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--go);outline-offset:3px;border-radius:8px}
+.mono{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+.wrap{max-width:1240px;margin-inline:auto;padding-inline:var(--gut)}
+.grain{position:fixed;inset:0;pointer-events:none;z-index:60;opacity:.07;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+#aurora{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.top,main{position:relative;z-index:1}
+
+/* top bar */
+.top{position:sticky;top:0;z-index:30;padding-top:env(safe-area-inset-top,0px);background:rgba(9,6,15,.65);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.top-in{display:flex;align-items:center;gap:18px;min-height:66px;flex-wrap:wrap;padding-block:8px}
+.brand{font-family:var(--f-display);font-weight:800;font-size:20px;letter-spacing:-.03em;display:flex;align-items:center;gap:10px;text-decoration:none}
+.brand i{width:9px;height:9px;border-radius:50%;background:var(--faint);transition:background .3s,box-shadow .3s}
+.on .brand i{background:var(--go);box-shadow:0 0 0 4px var(--go-soft)}
+.top .tag{color:var(--faint)}
+.top-r{margin-left:auto;display:flex;align-items:center;gap:12px}
+.back{font-size:14px;font-weight:600;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--fg)}
+.switch{display:flex;align-items:center;gap:12px;padding:6px 6px 6px 16px;border-radius:99px;background:var(--surface);border:1px solid var(--line-2);cursor:pointer}
+.switch .lab{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;color:var(--muted)}
+.switch .lab b{color:var(--fg);font-weight:600}
+.knob{width:52px;height:30px;border-radius:99px;background:var(--line-2);position:relative;transition:background .25s;flex:none}
+.knob::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .25s}
+.switch[aria-pressed="true"]{border-color:var(--go)}
+.switch[aria-pressed="true"] .knob{background:var(--go)}
+.switch[aria-pressed="true"] .knob::after{transform:translateX(22px)}
+@media (max-width:620px){.top .tag,.back{display:none}}
+
+/* intro */
+.intro{padding-block:clamp(36px,6vw,64px) 28px;display:flex;flex-wrap:wrap;gap:24px 48px;align-items:end;justify-content:space-between}
+.kick{color:var(--go);display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.kick::before{content:"";width:28px;height:1px;background:currentColor}
+.intro h1{font-size:clamp(40px,5.6vw,76px);line-height:.96;font-weight:800;letter-spacing:-.045em}
+.intro h1 .tint{color:var(--go)}
+.intro p.lede{margin-top:18px;color:var(--muted);max-width:44ch;font-size:clamp(16px,1.4vw,18.5px)}
+.seg{display:inline-flex;padding:5px;border-radius:16px;background:var(--bg-2);border:1px solid var(--line);flex-wrap:wrap}
+.seg button{border:0;background:none;padding:12px 18px;border-radius:12px;cursor:pointer;color:var(--muted);text-align:left}
+.seg button b{display:block;font-family:var(--f-display);font-size:15.5px;font-weight:700;letter-spacing:-.01em}
+.seg button small{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.seg button[aria-selected="true"]{background:var(--surface-2);color:var(--fg);box-shadow:inset 0 0 0 1px var(--line-2)}
+
+/* grid */
+.grid{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:22px;align-items:start;padding-bottom:72px}
+@media (max-width:920px){.grid{grid-template-columns:1fr}}
+
+/* the shop (paper) */
+.browser{border-radius:var(--r);overflow:hidden;background:var(--paper);color:var(--paper-ink);box-shadow:0 40px 120px -40px rgba(0,0,0,.85);min-width:0}
+.b-bar{display:flex;align-items:center;gap:7px;padding:12px 16px;background:#EEEAF4;border-bottom:1px solid var(--paper-line)}
+.b-bar span{width:9px;height:9px;border-radius:50%;background:#CFC8DC}
+.b-bar em{font-style:normal;font-family:var(--f-mono);font-size:11px;color:var(--paper-mute);margin-left:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shop{padding:24px}
+.s-top{display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--paper-line)}
+.s-logo{font-family:var(--f-display);font-weight:800;letter-spacing:-.02em;font-size:17px}
+.s-step{font-family:var(--f-mono);font-size:11px;color:var(--paper-mute);letter-spacing:.06em}
+.prod{display:flex;gap:16px;align-items:center;padding:18px 0 6px}
+.thumb{width:68px;height:68px;border-radius:14px;flex:none;display:grid;place-items:center}
+.p-name{font-weight:700;font-size:16px}
+.p-sub{color:var(--paper-mute);font-size:13.5px}
+.p-price{display:flex;gap:10px;align-items:baseline;margin-top:4px}
+.p-price b{font-family:var(--f-display);font-size:24px;letter-spacing:-.02em}
+.p-price s{color:var(--paper-mute);font-size:14px}
+.p-price .off{font-family:var(--f-mono);font-size:11px;background:#FEE2E2;color:#B91C1C;padding:3px 7px;border-radius:6px}
+.row{position:relative;margin-top:12px;padding:12px 14px;border-radius:12px;border:1px solid var(--paper-line);background:#fff;font-size:14.5px;display:flex;align-items:flex-start;gap:12px;transition:box-shadow .3s,border-color .3s}
+.row.urgent{background:#FEF2F2;border-color:#FECACA;color:#B91C1C;font-weight:700;align-items:center;flex-wrap:wrap}
+.row .t{font-family:var(--f-mono);font-weight:600}
+.row input[type=checkbox]{width:18px;height:18px;margin-top:2px;flex:none}
+.row label{cursor:pointer}
+.row .fine{display:block;font-size:12px;color:var(--paper-mute);font-weight:500;margin-top:3px}
+.row .note{display:none;width:100%;font-size:12.5px;font-weight:700;color:#0A8A5E;margin-top:6px}
+.flag{position:absolute;top:-11px;right:10px;background:var(--flag);color:#fff;font-family:var(--f-mono);font-size:10.5px;font-weight:600;letter-spacing:.08em;padding:4px 10px;border-radius:99px;box-shadow:0 8px 20px -6px rgba(255,91,104,.8);border:0;cursor:pointer;opacity:0;transform:scale(.7);pointer-events:none;transition:opacity .3s,transform .3s cubic-bezier(.3,1.6,.5,1)}
+.on .flag{opacity:1;transform:none;pointer-events:auto}
+.on .row.flagged{border-color:var(--flag);box-shadow:0 0 0 4px var(--flag-soft)}
+.on .row .note{display:block}
+.sum{margin-top:16px;padding-top:14px;border-top:1px dashed var(--paper-line);font-size:14.5px}
+.line{display:flex;justify-content:space-between;color:var(--paper-mute);padding:3px 0}
+.line span:last-child{font-family:var(--f-mono);font-size:13.5px}
+.line.fee{display:none;color:#B91C1C}
+.on .line.fee{display:flex}
+.sum.row{border-top:1px solid var(--paper-line);padding:12px 14px}
+.drip{font-size:12.5px;color:#C2410C;font-style:italic;padding:3px 0}
+.on .drip{display:none}
+.total{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px;font-family:var(--f-display);font-weight:800;font-size:17px}
+.total .v{font-family:var(--f-mono);font-size:16px;font-weight:600}
+.cta{margin-top:18px;width:100%;border:0;border-radius:12px;padding:15px;color:#fff;font-family:var(--f-display);font-weight:700;font-size:16px;cursor:pointer}
+.decline{display:block;margin-top:12px;text-align:center;font-size:12.5px;color:var(--paper-mute);text-decoration:underline;background:none;border:0;width:100%;cursor:pointer}
+.decline.flagged{border-radius:8px}
+.on .decline.flagged{outline:2px solid var(--flag);outline-offset:4px}
+
+/* the Verdict panel */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:24px;overflow:hidden;position:sticky;top:84px}
+.p-head{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line);background:var(--bg-2)}
+.p-head b{font-family:var(--f-display);font-weight:800;font-size:16px;letter-spacing:-.02em}
+.p-head .st{margin-left:auto;font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;color:var(--faint)}
+.on .p-head .st{color:var(--go)}
+.p-body{padding:22px 20px 24px}
+.empty{padding:34px 8px;text-align:center}
+.empty .ring{width:58px;height:58px;border-radius:50%;margin:0 auto 18px;border:1px dashed var(--line-2);display:grid;place-items:center}
+.empty .ring i{width:10px;height:10px;border-radius:50%;background:var(--faint)}
+.empty h3{font-size:22px}
+.empty p{margin-top:8px;color:var(--muted);max-width:30ch;margin-inline:auto}
+.ruling{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;background:var(--flag-soft);border:1px solid rgba(255,91,104,.4)}
+.ruling .badge{font-family:var(--f-mono);font-size:11px;font-weight:600;letter-spacing:.1em;background:var(--flag);color:#fff;padding:6px 10px;border-radius:8px;flex:none}
+.ruling b{font-family:var(--f-display);font-size:16px;display:block}
+.ruling small{color:var(--muted);font-size:13px}
+.sec{margin-top:22px}
+.sec h4{margin:0 0 10px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:500}
+.tricks{display:grid;gap:8px}
+.trick{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;padding:12px 14px;border-radius:12px;background:var(--bg-2);border:1px solid var(--line);cursor:pointer;transition:border-color .2s}
+.trick:hover{border-color:var(--line-2)}
+.trick .d{width:8px;height:8px;border-radius:50%;background:var(--flag);margin-top:7px;flex:none}
+.trick b{display:block;font-size:14.5px}
+.trick span{color:var(--muted);font-size:13.5px}
+.box{border-radius:14px;background:var(--bg-2);border:1px solid var(--line);padding:14px 16px;font-variant-numeric:tabular-nums}
+.bl{display:flex;justify-content:space-between;padding:3px 0;font-size:14px;color:var(--muted)}
+.bl span:last-child{font-family:var(--f-mono);font-size:13.5px}
+.bl.rm span:last-child{text-decoration:line-through;color:var(--faint)}
+.bl.rm span:first-child{color:var(--go)}
+.bt{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px;padding-top:10px;border-top:1px dashed var(--line-2)}
+.bt span{font-family:var(--f-display);font-weight:700}
+.bt b{font-family:var(--f-display);font-weight:800;font-size:26px;color:var(--go);letter-spacing:-.02em}
+.bh{margin-top:6px;font-size:13px;color:var(--muted)}
+.bh b{color:var(--amber)}
+.spark{width:100%;height:84px;display:block}
+.spark-cap{margin-top:8px;font-size:13.5px;color:var(--muted)}
+.spark-cap b{color:var(--fg)}
+.days{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:5px}
+.day{aspect-ratio:1;border-radius:7px;background:var(--surface-2);border:1px solid var(--line);display:grid;place-items:center;font-family:var(--f-mono);font-size:10.5px;color:var(--faint)}
+.day.free{background:var(--go-soft);border-color:rgba(36,227,160,.3);color:var(--go)}
+.day.hit{background:var(--flag);border-color:var(--flag);color:#fff}
+.meter{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.meter i{display:block;height:100%;width:86%;background:linear-gradient(90deg,var(--amber),var(--flag))}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-size:12px;padding:4px 9px;border-radius:99px;background:var(--flag-soft);border:1px solid rgba(255,91,104,.35);color:#FFC2C7}
+.tip{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:14px;background:var(--go-soft);border:1px solid rgba(36,227,160,.3)}
+.tip .av{width:28px;height:28px;border-radius:8px;background:var(--go);color:var(--go-ink);display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:13px;flex:none}
+.tip p{font-size:14px;color:#CFF7E8}
+.stats{margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{padding:14px 16px;border-radius:14px;background:var(--bg-2);border:1px solid var(--line)}
+.stat b{display:block;font-family:var(--f-display);font-weight:800;font-size:24px;color:var(--go);letter-spacing:-.02em}
+.stat span{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.pulse{animation:pulse .9s ease-out}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,91,104,.7)}100%{box-shadow:0 0 0 14px rgba(255,91,104,0)}}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,16px);z-index:70;background:var(--fg);color:var(--bg);font-weight:700;font-size:14.5px;padding:13px 20px;border-radius:14px;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;max-width:calc(100vw - 32px);text-align:center;box-shadow:0 20px 50px -12px rgba(0,0,0,.7)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.good{background:var(--go);color:var(--go-ink)}
+.foot{border-top:1px solid var(--line);padding-block:24px calc(24px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;color:var(--faint)}
+@media (prefers-reduced-motion:reduce){.flag,.row,.toast,.knob,.knob::after{transition:none}.pulse{animation:none}}
+</style>
+
+<canvas id="aurora" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+
+<div id="app">
+<header class="top">
+  <div class="wrap top-in">
+    <a class="brand" href="https://claude.ai/artifact/UAjTBb3w72gKpWZaVGtfgF"><i></i>Verdict</a>
+    <span class="mono tag">Live demo</span>
+    <div class="top-r">
+      <a class="back" href="https://claude.ai/artifact/UAjTBb3w72gKpWZaVGtfgF">Back to the site</a>
+      <button class="switch" id="toggle" type="button" aria-pressed="false"><span class="lab">VERDICT <b id="stLabel">OFF</b></span><span class="knob" aria-hidden="true"></span></button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="intro">
+    <div>
+      <p class="mono kick">Live demo · two fake shops</p>
+      <h1>Turn Verdict <span class="tint">on.</span></h1>
+      <p class="lede">Each shop uses a different set of tricks. Pick one, flip the switch at the top, and watch what the page was hiding.</p>
+    </div>
+    <div class="seg" role="tablist" aria-label="Choose a shop">
+      <button role="tab" aria-selected="true" data-store="north" id="tabNorth"><b>Northbay</b><small>Electronics checkout</small></button>
+      <button role="tab" aria-selected="false" data-store="bloom" id="tabBloom"><b>Bloomly</b><small>Subscription sign-up</small></button>
+    </div>
+  </section>
+
+  <div class="grid">
+    <!-- SHOP -->
+    <div class="browser">
+      <div class="b-bar"><span></span><span></span><span></span><em id="url">northbay.example/checkout</em></div>
+
+      <!-- Northbay -->
+      <div class="shop" data-store="north">
+        <div class="s-top"><span class="s-logo" style="color:#C2410C">Northbay</span><span class="s-step">CHECKOUT · STEP 2 OF 3</span></div>
+        <div class="prod">
+          <span class="thumb" style="background:linear-gradient(135deg,#1E2740,#3B2A55)"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#B9C6E4" stroke-width="1.7"><path d="M4 13a8 8 0 0 1 16 0"/><rect x="2" y="13" width="5" height="8" rx="2"/><rect x="17" y="13" width="5" height="8" rx="2"/></svg></span>
+          <div><div class="p-name">Noise-cancelling wireless earbuds</div><div class="p-sub">2nd generation · midnight black</div><div class="p-price"><b>AED 199</b><s>AED 299</s><span class="off">33% OFF</span></div></div>
+        </div>
+        <div class="row urgent flagged" id="nTimer"><button class="flag" data-trick="n0" type="button">⚑ FAKE TIMER</button>Sale ends in <span class="t" id="timer">04:59</span> · only 2 left in stock<span class="note">Verdict: this timer resets every time you reload. The deadline isn’t real.</span></div>
+        <div class="row flagged" id="nAddon"><button class="flag" data-trick="n1" type="button">⚑ PRE-TICKED</button>
+          <input type="checkbox" id="protect" checked style="accent-color:#C2410C">
+          <label for="protect">Add 2-year protection · <b>AED 29</b><span class="fine">Selected for your convenience</span></label>
+          <span class="note">Verdict unticked this. You never chose it.</span>
+        </div>
+        <div class="sum row flagged" id="nFees" style="display:block"><button class="flag" data-trick="n2" type="button">⚑ HIDDEN FEES</button>
+          <div class="line"><span>Item</span><span>AED 199.00</span></div>
+          <div class="line" id="lineAddon"><span>2-year protection</span><span>AED 29.00</span></div>
+          <div class="drip">+ shipping and fees calculated at the next step</div>
+          <div class="line fee"><span>Shipping</span><span>AED 22.00</span></div>
+          <div class="line fee"><span>Service fee</span><span>AED 14.00</span></div>
+          <div class="total"><span>Total</span><span class="v" id="nTotal">AED 228.00</span></div>
+        </div>
+        <button class="cta" type="button" data-buy="north" style="background:#C2410C">Place order</button>
+      </div>
+
+      <!-- Bloomly -->
+      <div class="shop" data-store="bloom" hidden>
+        <div class="s-top"><span class="s-logo" style="color:#BE185D">Bloomly</span><span class="s-step">JOIN · STEP 1 OF 2</span></div>
+        <div class="prod">
+          <span class="thumb" style="background:linear-gradient(135deg,#3A1030,#7A2A52)"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFC1E3" stroke-width="1.6"><path d="M6 8h12l-1 11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></span>
+          <div><div class="p-name">Monthly skincare box</div><div class="p-sub">5 full-size products a month</div><div class="p-price"><b style="color:#BE185D">FREE</b><span style="font-size:13.5px;color:var(--paper-mute)">for 7 days</span></div></div>
+        </div>
+        <div class="row urgent flagged" id="bScarce" style="background:#FDF2F8;border-color:#FBCFE8;color:#BE185D"><button class="flag" data-trick="b0" type="button">⚑ FAKE SCARCITY</button>Only 7 boxes left this month · <span class="t" id="viewers">134</span> people viewing<span class="note">Verdict: the box count never changes and the viewer number is random.</span></div>
+        <div class="row flagged" id="bTrial"><button class="flag" data-trick="b1" type="button">⚑ TRIAL TRAP</button>
+          <div><b>Start my free trial</b><span class="fine">7 days free, then AED 59 a month. Renews automatically. To cancel: Account, Billing, Pause, Confirm, Confirm again.</span></div>
+          <span class="note">Verdict: your card is charged AED 59 on day 8. That is AED 708 a year if you forget.</span>
+        </div>
+        <div class="row flagged" id="bData"><button class="flag" data-trick="b2" type="button">⚑ DATA GRAB</button>
+          <input type="checkbox" id="share" checked style="accent-color:#BE185D">
+          <label for="share">Email me daily offers and <b>share my data with 14 partners</b><span class="fine">Pre-ticked. Untick to opt out.</span></label>
+          <span class="note">Verdict unticked this. Your data wasn’t theirs to share.</span>
+        </div>
+        <div class="sum">
+          <div class="line" id="lineGift"><span>Welcome gift (pre-added)</span><span>AED 9.00</span></div>
+          <div class="total"><span>Due today</span><span class="v" id="bDue">AED 9.00</span></div>
+          <div class="line"><span>Then every month</span><span>AED 59.00</span></div>
+        </div>
+        <button class="cta" type="button" data-buy="bloom" style="background:#BE185D">Start free trial</button>
+        <button class="decline flagged" id="bShame" type="button">No thanks, I don’t care about my skin</button>
+      </div>
+    </div>
+
+    <!-- VERDICT PANEL -->
+    <aside class="panel" aria-label="Verdict panel">
+      <div class="p-head"><b>Verdict</b><span class="st" id="panelSt">STANDBY</span></div>
+      <div class="p-body">
+        <div class="empty" id="offView">
+          <div class="ring"><i></i></div>
+          <h3>Verdict is off.</h3>
+          <p>Flip the switch at the top to audit this page the way the extension would.</p>
+        </div>
+
+        <div id="onView" hidden aria-live="polite">
+          <!-- Northbay -->
+          <div class="an" data-store="north">
+            <div class="ruling"><span class="badge">FLAGGED</span><div><b>3 tricks on this page</b><small>Real total AED 235, not the AED 199 on the sticker.</small></div></div>
+            <div class="sec"><h4>Tricks caught</h4>
+              <div class="tricks">
+                <button class="trick" type="button" data-row="nTimer"><span class="d"></span><div><b>Fake urgency</b><span>The countdown resets on every reload.</span></div></button>
+                <button class="trick" type="button" data-row="nAddon"><span class="d"></span><div><b>Pre-ticked add-on</b><span>AED 29 of protection added without asking.</span></div></button>
+                <button class="trick" type="button" data-row="nFees"><span class="d"></span><div><b>Drip pricing</b><span>AED 36 of fees held back until the last step.</span></div></button>
+              </div>
+            </div>
+            <div class="sec"><h4>True-cost x-ray</h4>
+              <div class="box">
+                <div class="bl"><span>Item</span><span>AED 199</span></div>
+                <div class="bl rm"><span>Protection, removed</span><span>AED 29</span></div>
+                <div class="bl"><span>Shipping, revealed</span><span>AED 22</span></div>
+                <div class="bl"><span>Service fee, revealed</span><span>AED 14</span></div>
+                <div class="bt"><span>Real total</span><b>AED 235</b></div>
+                <p class="bh">About <b>9 hours</b> of part-time work at AED 26 an hour.</p>
+              </div>
+            </div>
+            <div class="sec"><h4>Deal checker · 90 days</h4>
+              <div class="box">
+                <svg class="spark" viewBox="0 0 400 84" preserveAspectRatio="none" aria-hidden="true">
+                  <line x1="0" y1="10" x2="400" y2="10" stroke="#FF5B68" stroke-width="1.5" stroke-dasharray="5 6"/>
+                  <path d="M0 50 L30 47 L60 53 L90 41 L120 44 L150 38 L180 48 L210 56 L240 64 L270 53 L300 42 L330 46 L360 50 L400 55" fill="none" stroke="#8F72F7" stroke-width="2.5" stroke-linejoin="round"/>
+                  <path d="M0 50 L30 47 L60 53 L90 41 L120 44 L150 38 L180 48 L210 56 L240 64 L270 53 L300 42 L330 46 L360 50 L400 55 L400 84 L0 84Z" fill="rgba(143,114,247,.12)"/>
+                  <circle cx="240" cy="64" r="5" fill="#24E3A0"/><circle cx="400" cy="55" r="5" fill="#FF5B68"/>
+                </svg>
+                <p class="spark-cap"><b>“Was AED 299” was never charged.</b> The real low was AED 205, so today’s “33% off” is barely a discount.</p>
+              </div>
+            </div>
+            <div class="sec"><div class="tip"><span class="av">V</span><p>A countdown that resets when you refresh is pressure, not a sale. Close the tab and come back tomorrow.</p></div></div>
+            <div class="stats"><div class="stat"><b>AED 29</b><span>saved here</span></div><div class="stat"><b>3</b><span>tricks caught</span></div></div>
+          </div>
+
+          <!-- Bloomly -->
+          <div class="an" data-store="bloom" hidden>
+            <div class="ruling"><span class="badge">FLAGGED</span><div><b>A “free” trial worth AED 708 a year</b><small>4 tricks on one sign-up page.</small></div></div>
+            <div class="sec"><h4>Tricks caught</h4>
+              <div class="tricks">
+                <button class="trick" type="button" data-row="bScarce"><span class="d"></span><div><b>Fake scarcity</b><span>The stock count and viewer count are made up.</span></div></button>
+                <button class="trick" type="button" data-row="bTrial"><span class="d"></span><div><b>Trial trap</b><span>Renews at AED 59 a month; cancelling takes five clicks.</span></div></button>
+                <button class="trick" type="button" data-row="bData"><span class="d"></span><div><b>Data grab</b><span>Sharing with 14 partners was ticked for you.</span></div></button>
+                <button class="trick" type="button" data-row="bShame"><span class="d"></span><div><b>Guilt-trip button</b><span>The “no” option is worded to make you feel bad.</span></div></button>
+              </div>
+            </div>
+            <div class="sec"><h4>Trial radar</h4>
+              <div class="box">
+                <div class="days"><span class="day free">1</span><span class="day free">2</span><span class="day free">3</span><span class="day free">4</span><span class="day free">5</span><span class="day free">6</span><span class="day free">7</span><span class="day hit">8</span><span class="day">9</span><span class="day">10</span></div>
+                <div class="bt"><span>If you forget, year one</span><b>AED 708</b></div>
+                <p class="bh">About <b>27 hours</b> of work, for a box you signed up to try for free.</p>
+              </div>
+            </div>
+            <div class="sec"><h4>Privacy meter</h4>
+              <div class="box"><div class="meter"><i></i></div><div class="chips"><span class="chip">email</span><span class="chip">phone</span><span class="chip">location</span><span class="chip">purchase history</span><span class="chip">device ID</span></div><p class="bh" style="margin-top:10px">High risk: shared with 14 partners by default.</p></div>
+            </div>
+            <div class="sec"><div class="tip"><span class="av">V</span><p>A free trial that needs your card is designed to be forgotten. Set a reminder for day 6, or pay with a card that has a spend limit.</p></div></div>
+            <div class="stats"><div class="stat"><b>AED 708</b><span>trap avoided</span></div><div class="stat"><b>4</b><span>tricks caught</span></div></div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer class="wrap foot mono"><span>Verdict · live demo</span><span>Both shops and every figure are made up</span></footer>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+  var app=document.getElementById('app'), $=function(id){ return document.getElementById(id); };
+  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var on=false, store='north';
+  var URLS={north:'northbay.example/checkout',bloom:'bloomly.example/join'};
+
+  function aed(n){ return 'AED '+n.toFixed(2); }
+  function northTotal(){ return 199+($('protect').checked?29:0)+(on?36:0); } // fees only show once Verdict reveals them
+  function sync(){
+    // what the switch changes on each page
+    $('protect').checked=!on; $('lineAddon').hidden=on; $('nTotal').textContent=aed(northTotal());
+    $('share').checked=!on; $('lineGift').hidden=on; $('bDue').textContent=aed(on?0:9);
+  }
+  function setStore(s){
+    store=s;
+    document.querySelectorAll('.seg [role=tab]').forEach(function(t){ t.setAttribute('aria-selected', t.getAttribute('data-store')===s?'true':'false'); });
+    document.querySelectorAll('.shop, .an').forEach(function(el){ el.hidden = el.getAttribute('data-store')!==s; });
+    $('url').textContent=URLS[s];
+  }
+  function setOn(v){
+    on=v; app.classList.toggle('on',on);
+    $('toggle').setAttribute('aria-pressed',String(on)); $('stLabel').textContent=on?'ON':'OFF';
+    $('panelSt').textContent=on?'AUDITING':'STANDBY';
+    $('offView').hidden=on; $('onView').hidden=!on; sync();
+    if(on) toast(store==='north'?'3 tricks caught · real total AED 235':'Trial trap caught · AED 708 a year avoided',true);
+  }
+  function pulse(el){ if(!el) return; el.scrollIntoView({behavior:reduce?'auto':'smooth',block:'center'}); if(reduce) return; el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); }
+
+  $('toggle').addEventListener('click',function(){ setOn(!on); });
+  document.querySelectorAll('.seg [role=tab]').forEach(function(t){ t.addEventListener('click',function(){ setStore(t.getAttribute('data-store')); }); });
+  $('protect').addEventListener('change',function(){ $('lineAddon').hidden=!this.checked; $('nTotal').textContent=aed(northTotal()); });
+  document.querySelectorAll('.flag').forEach(function(f){
+    f.addEventListener('click',function(){
+      var k=f.getAttribute('data-trick'), s=k[0]==='n'?'north':'bloom', i=+k.slice(1);
+      pulse(document.querySelectorAll('.an[data-store="'+s+'"] .trick')[i]);
+    });
+  });
+  document.querySelectorAll('.trick').forEach(function(t){ t.addEventListener('click',function(){ pulse($(t.getAttribute('data-row'))); }); });
+  document.querySelectorAll('[data-buy]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var n=b.getAttribute('data-buy')==='north';
+      if(on) toast(n?'Ordered at the real price, AED 235. No surprises.':'You’ll get a reminder on day 6, before the first charge.',true);
+      else toast(n?'Ordered. The next screen adds AED 36 you didn’t see coming.':'Trial started. Your card is charged AED 59 on day 8.',false);
+    });
+  });
+  $('bShame').addEventListener('click',function(){ toast(on?'Fine to say no. Verdict flags wording built to guilt you.':'Declined. The button was worded to make you feel bad about it.',on); });
+
+  // the fake pressure, live
+  var secs=299; setInterval(function(){ secs=secs>0?secs-1:299; var m=Math.floor(secs/60),s=secs%60; $('timer').textContent='0'+m+':'+(s<10?'0':'')+s; },1000);
+  setInterval(function(){ $('viewers').textContent=118+Math.floor(Math.random()*40); },1800);
+
+  var tEl=$('toast'), tT;
+  function toast(msg,good){ tEl.textContent=msg; tEl.classList.toggle('good',!!good); tEl.classList.add('show'); clearTimeout(tT); tT=setTimeout(function(){ tEl.classList.remove('show'); },3400); }
+
+  // aurora
+  var cv=$('aurora'), ctx=cv.getContext('2d'), last=0;
+  var blobs=[{x:.15,y:.25,r:.55,c:'36,227,160',a:.13},{x:.85,y:.2,r:.6,c:'143,114,247',a:.17},{x:.55,y:.9,r:.5,c:'92,60,180',a:.15}];
+  function size(){ cv.width=Math.max(160,Math.round(innerWidth/6)); cv.height=Math.max(120,Math.round(innerHeight/6)); }
+  function draw(t){
+    if(!document.hidden && t-last>40){ last=t; var w=cv.width,h=cv.height; ctx.clearRect(0,0,w,h);
+      blobs.forEach(function(b,i){ var x=(b.x+Math.sin(t*.0006+i)*.07)*w, y=(b.y+Math.cos(t*.0005+i)*.07)*h, r=b.r*Math.max(w,h); var g=ctx.createRadialGradient(x,y,0,x,y,r); g.addColorStop(0,'rgba('+b.c+','+b.a+')'); g.addColorStop(1,'rgba('+b.c+',0)'); ctx.fillStyle=g; ctx.fillRect(0,0,w,h); }); }
+    if(!reduce) requestAnimationFrame(draw);
+  }
+  size(); addEventListener('resize',function(){ size(); if(reduce) requestAnimationFrame(draw); }); requestAnimationFrame(draw);
+
+  setStore('north'); sync();
+})();
+</script>
+
+</body></html>
