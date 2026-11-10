@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Verdict</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="top">
+    <span class="brand"><i aria-hidden="true"></i>Verdict</span>
+    <span class="host" id="host"></span>
+  </header>
+  <main id="main" aria-live="polite"></main>
+  <details class="settings">
+    <summary>Your hourly wage</summary>
+    <div class="row">
+      <label for="wage">Per hour</label>
+      <input id="wage" type="number" min="1" step="0.5" inputmode="decimal">
+      <label for="currency" class="sr">Currency</label>
+      <input id="currency" type="text" maxlength="5" placeholder="AED">
+    </div>
+    <p class="fine">Prices get converted to hours of your work. Use the shop's currency.</p>
+  </details>
+  <script src="../src/lessons.js"></script>
+  <script src="../src/verify.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

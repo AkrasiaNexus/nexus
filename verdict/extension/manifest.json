@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Verdict",
+  "version": "0.1.0",
+  "description": "Catches checkout tricks, proves fake timers, and shows what a purchase really costs you in hours of work.",
+  "permissions": ["storage"],
+  "background": { "service_worker": "src/background.js" },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Verdict",
+    "default_icon": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+  },
+  "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["src/lessons.js", "src/verify.js", "src/detectors.js", "src/content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

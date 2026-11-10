@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Northbay checkout (fixture)</title></head>
+<body>
+  <h1>Northbay</h1>
+  <p class="timer">Sale ends in <span id="clock">04:59</span></p>
+  <p class="stock">Only 2 left in stock</p>
+  <p class="viewers">14 people are viewing this right now</p>
+
+  <form>
+    <label><input type="checkbox" id="protect" checked> Add 2-year protection · AED 29</label>
+    <label for="share">Email me daily offers and share my data with 14 partners</label>
+    <input type="checkbox" id="share" checked>
+    <p class="fees">Item AED 199.00 + shipping and fees calculated at the next step</p>
+    <p class="trial">Start your free trial: 7 days free, then AED 59 a month. Renews automatically.</p>
+    <button type="submit">Place order</button>
+    <a href="#" class="decline">No thanks, I don't care about my skin</a>
+  </form>
+
+  <script>
+    // Resets on every load, like the fake timers in the Princeton crawl.
+    let s = 299;
+    const el = document.getElementById('clock');
+    setInterval(() => { s = s > 0 ? s - 1 : 299; el.textContent = '0' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }, 1000);
+  </script>
+</body>
+</html>
