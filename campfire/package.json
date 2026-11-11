@@ -1,0 +1,11 @@
+{
+  "name": "campfire",
+  "version": "0.1.0",
+  "description": "Serverless sync for a small group's shared journal: a state-based CRDT plus pasteable sync codes",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "exports": { ".": "./src/crdt.js", "./code": "./src/code.js" },
+  "scripts": { "test": "node --test \"test/*.test.js\"" },
+  "engines": { "node": ">=22" }
+}

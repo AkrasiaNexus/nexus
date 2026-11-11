@@ -197,6 +197,7 @@ Turns friend hangouts into quests: niche cheap spot + real bus route + games, in
 - Games kept: NPC Dialogue (stranger dares), Cover Art (renamed "main character shot" — user finds that corny), Boss Fight. Bus Roulette rejected.
 - Live prototype artifact: https://claude.ai/artifact/LwNwhfV2J2aWaz7CTd35DH
 - Also parked: Nudge (`nudge/`, brain-dump tray app) and Idiolect (`idiolect/`, personal slang/intent profile for AI).
+- Lore ecosystem: Majlis (`majlis/`, RAPTOR router for fairest group meeting point over GTFS) and Campfire (`campfire/`, CRDT sync behind Lore's shared Lore Book). Campfire is inlined into lore/prototype.html between `/* campfire:start */` markers by `node campfire/tools/bundle.js lore/prototype.html` — never hand-edit that block.
 
 ## Portfolio build mode (standing order)
 - Goal: projects that impress recruiters/college admissions. Each project folder (lore/, nudge/, idiolect/, verdict/, ...) is split into its own repo later — keep each self-contained with README + LICENSE (MIT, "AkrasiaNexus") + tests.

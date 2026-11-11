@@ -7,6 +7,7 @@ A sidequest generator for friend hangouts in Abu Dhabi. Tell it how many people 
 <p>
   <img src="docs/phone-quest.png" alt="A quest card for Hudayriyat Island with cost per person, time there and tonight's timeline" width="260">
   <img src="docs/phone-spots.png" alt="The All spots list on a phone" width="260">
+  <img src="docs/phone-share.png" alt="Sharing the Lore Book with a sync code" width="260">
 </p>
 
 ## Why
@@ -24,6 +25,7 @@ Most hangouts end up in a mall because nobody knows where else to go, and growin
 - **Boss Fights:** two-stop runs, for example markets before dusk followed by a 3.5 km walk to dinner.
 - **All spots** browser, so you can pick a spot directly instead of rolling.
 - **Fog-of-war map** and **Lore Book**, saved in the browser.
+- **Shared Lore Book with no server:** copy your sync code into the group chat, and paste a friend's code to merge their entries and cleared map into yours. Built on [Campfire](../campfire), a CRDT that guarantees everyone ends up with the same book.
 
 - **Installable PWA:** add it to your home screen, and it keeps working offline once loaded.
 
@@ -39,7 +41,8 @@ Most hangouts end up in a mall because nobody knows where else to go, and growin
 | Sunset | NOAA solar equations, computed for Abu Dhabi time |
 | Planning | `planQuest` / `planBoss` fit travel and stay into the time window and reject plans under 45 minutes |
 | Map | Canvas with an offscreen fog layer, cleared with radial gradients around explored spots |
-| Storage | `localStorage` (try/catch guarded) for explored spots and Lore Book notes |
+| Storage | A [Campfire](../campfire) CRDT in `localStorage` (try/catch guarded). Older v1 saves migrate automatically |
+| Sharing | Campfire sync codes: compressed, checksummed and validated before merging. Campfire is inlined by `campfire/tools/bundle.js` |
 
 ## Data sources
 
@@ -72,12 +75,14 @@ npm test
 - **Fare and taxi maths** against the published Abu Dhabi rules.
 - **Sunset** within 5 minutes of real Abu Dhabi times in June, November and December.
 - **Planner:** market closing times, the curfew, and the 45-minute minimum stay.
+- **Sharing end to end:** two separate browser profiles. One finishes a quest and shares its code, the other merges it and gets the entry and the cleared map. A damaged code changes nothing.
+- **Migration:** an old v1 save keeps its entries, notes and map.
 - **PWA end to end:** builds the app, checks the manifest, installs the service worker, cuts the network, reloads, and confirms a quest still renders.
 
 ## Roadmap
 
 - [ ] Start from your own location instead of the bus station
-- [ ] Shared Lore Book across a friend group (accounts + sync)
+- [x] Shared Lore Book across a friend group (no accounts: sync codes)
 - [x] Installable PWA for phones
 - [ ] Photo upload for Cover Art
 - [ ] More cities after Abu Dhabi
