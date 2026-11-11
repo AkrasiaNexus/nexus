@@ -98,6 +98,8 @@ Voice: pass `me.whisper_hotwords()` as faster-whisper's `hotwords` (or `initial_
 
 - **No runtime dependencies.** Pure Python 3.10+. `wordfreq` is only needed for `learn` and the learner report.
 - **One token in, one output out.** This keeps every change auditable and matches how MultiLexNorm aligns gold labels.
+- **Splice, never rebuild.** Replacements are spliced into the original string, so anything not replaced (case, spacing, punctuation, Arabic, emoji) comes back exactly as written. The tokenizer counts letters, combining marks and digits from any script as word characters, so Arabic words with vowel marks stay whole. The first version only knew ASCII and turned "مرحبا" into "م ر ح ب ا"; the cross-language conformance vectors exposed it.
+- **Conformance vectors.** `tools/export_conformance.py` writes this implementation's exact outputs, so ports in other languages (Nudge's JavaScript one) can prove they match.
 - **The profile is plain Markdown.** It's readable, diffable, works in any model's prompt, and other languages can parse it in about 30 lines.
 
 ## Tests
@@ -106,7 +108,7 @@ Voice: pass `me.whisper_hotwords()` as faster-whisper's `hotwords` (or `initial_
 python -m unittest discover -s tests
 ```
 
-18 tests: profile parsing and merging, tokenization, multi-word expansion, intent labels and personal-cue precedence, both chat export formats, the learner's typo and slang logic, ERR maths, gold-alignment validation, and a regression check that the headline result still holds.
+21 tests: profile parsing and merging, Unicode-safe tokenization (Arabic, accents, emoji), splice-in-place output, multi-word expansion, intent labels and personal-cue precedence, both chat export formats, the learner's typo and slang logic, ERR maths, gold-alignment validation, and a regression check that the headline result still holds.
 
 ## Limitations and next steps
 

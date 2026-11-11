@@ -51,6 +51,17 @@ test("a blurt becomes a planned, categorised card", async () => {
   await page.close();
 });
 
+test("slang is understood before parsing (Idiolect profile)", async () => {
+  const page = await browser.newPage();
+  await page.goto(base);
+  const input = page.getByPlaceholder(/blurt it out/);
+  await input.fill("lowk wanna learn rust jus 2 wks");
+  await input.press("Enter");
+  await page.getByRole("button", { name: /All Nudges/ }).click();
+  await assert.doesNotReject(page.getByText("Learn rust", { exact: true }).waitFor());
+  await page.close();
+});
+
 test("the This Week count matches what the week planner shows", async () => {
   const page = await browser.newPage();
   await page.goto(base);

@@ -16,7 +16,7 @@ Ideas, skills to learn and side projects get thought about once and then forgott
 ## What it does
 
 - **Capture from anywhere:** a global shortcut opens a frameless, always-on-top input. Enter saves, Esc closes.
-- **Understands loose input:** "i wanna learn rust in 2 weeks" becomes **Learn rust**, *skill*, due in 14 days. Timeframes use whole-word units, so "buy 3 more eggs" stays a title and is never read as "3 months".
+- **Understands loose input:** "i wanna learn rust in 2 weeks" becomes **Learn rust**, *skill*, due in 14 days. Slang is normalized first with your [Idiolect](../idiolect) profile, so "lowk wanna learn rust jus 2 wks" works too. Timeframes use whole-word units, so "buy 3 more eggs" stays a title and is never read as "3 months".
 - **Plans your week:** goals are grouped into overdue, each of the next 7 days, and later, each with a progress bar.
 - **Check-ins that escalate:** gentle at 25%, firm at 50% and 75%, urgent at the deadline. If your laptop slept through several, you get one nudge, the latest, not a burst.
 - **Runs in the background:** closing the window hides it to the tray so nudges keep arriving.
@@ -50,8 +50,9 @@ npm run tauri build    # installers in src-tauri/target/release/bundle
 
 ## Tests
 
-17 tests, written test-first. Each parser bug got a failing test before its fix:
+22 tests, written test-first. Each parser bug got a failing test before its fix:
 - **Parser:** timeframes (minutes to months, "tomorrow", "next week"), numbers that aren't timeframes, filler removal ("i wanna ... in"), whole-word categories ("walk the **dog**" is a habit, not a task because of "do"), and effort.
+- **Idiolect port:** the JavaScript normalizer must reproduce the Python reference exactly on 27 exported conformance vectors (including Arabic and emoji). With the profile, "lowk wanna learn rust jus 2 wks" becomes **Learn rust**; without it the title would be "Lowk wanna learn rust jus".
 - **Check-ins:** nothing due early, one due after the last check, only the latest after a long sleep, done and skipped items stay quiet.
 - **End to end in Chromium:** a blurt becomes a categorised card, a check-in that came due fires exactly one notification, the This Week count matches the planner, and the capture window shows only the input.
 
@@ -62,7 +63,7 @@ CI (`.github/workflows/ci.yml`) runs the tests, then builds the desktop app on L
 - [x] Tray icon, capture-only popup and a Tauri 2 build
 - [x] Native notifications on the check-in schedule
 - [ ] Sync across phone and laptops
-- [ ] Use [Idiolect](../idiolect) to normalize slang before parsing
+- [x] Use [Idiolect](../idiolect) to normalize slang before parsing (JavaScript port, checked against the Python reference)
 - [ ] Voice capture
 - [ ] "Snooze until tonight" and "mark done" actions on the notification itself
 
