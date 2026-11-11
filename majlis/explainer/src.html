@@ -1,0 +1,364 @@
+<title>RAPTOR, Round by Round</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: an explorable essay. The live city map stays beside the controls; the essay runs below. Stacks on phones. */
+:root{
+  --bg:#F4F5F7; --surface:#FFFFFF; --surface-2:#EBEDF1; --fg:#11151C; --muted:#5B6372; --line:#D5D9E0;
+  --accent:#C2410C; --glow:rgba(194,65,12,.18);
+  --r54:#D97706; --r73:#0D9488; --rN2:#7C3AED; --r67:#DB2777;
+  --display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1116; --surface:#161A22; --surface-2:#1E2430; --fg:#E9ECF2; --muted:#98A1B2; --line:#2A3140;
+  --accent:#FB923C; --glow:rgba(251,146,60,.22);
+  --r54:#FBBF24; --r73:#2DD4BF; --rN2:#A78BFA; --r67:#F472B6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1116; --surface:#161A22; --surface-2:#1E2430; --fg:#E9ECF2; --muted:#98A1B2; --line:#2A3140;
+  --accent:#FB923C; --glow:rgba(251,146,60,.22);
+  --r54:#FBBF24; --r73:#2DD4BF; --rN2:#A78BFA; --r67:#F472B6; color-scheme:dark}
+
+body{background:var(--bg);color:var(--fg);font:16px/1.6 var(--body)}
+.wrap{max-width:1120px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2{font-family:var(--display);letter-spacing:-.015em;text-wrap:balance}
+h1{font-size:clamp(34px,6vw,56px);line-height:1.02;font-weight:800;margin:0}
+.kicker{font:500 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.lede{font-size:clamp(17px,2vw,19px);color:var(--muted);max-width:60ch;margin:14px 0 0}
+.head{display:grid;gap:6px;margin-bottom:24px}
+
+.stage{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:880px){.stage{grid-template-columns:minmax(0,1fr)}}
+.mapcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;min-width:0}
+svg{display:block;width:100%;height:auto}
+.panel{display:grid;gap:14px;min-width:0}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:12px}
+.lbl{font:500 11.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:600 14px var(--body);border-radius:10px;padding:9px 14px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);cursor:pointer}
+button.primary{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+button:disabled{opacity:.45;cursor:default}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.time{font:500 20px var(--mono)}
+.narr{min-height:150px}
+.narr h3{margin:0 0 6px;font:700 18px var(--display)}
+.narr p{margin:0;color:var(--muted)}
+.narr b{color:var(--fg)}
+.progress{height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);transition:width .2s}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stats div{background:var(--surface-2);border-radius:10px;padding:8px 10px}
+.stats b{display:block;font:500 18px var(--mono)}
+.stats span{font-size:12px;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font:500 12.5px var(--mono);color:var(--muted)}
+.legend i{display:inline-block;width:16px;height:4px;border-radius:2px;vertical-align:middle;margin-right:6px}
+
+.essay{max-width:68ch;margin:48px auto 0;display:grid;gap:10px}
+.essay h2{font-size:26px;margin:28px 0 0}
+.essay p{margin:0}
+.essay code{font:14px var(--mono);background:var(--surface-2);padding:1px 5px;border-radius:5px}
+.bug{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--surface);display:grid;gap:6px}
+.bug b{font-family:var(--display)}
+.foot{margin-top:40px;font-size:13.5px;color:var(--muted)}
+.foot a{color:var(--fg)}
+
+/* map */
+.street{fill:none;stroke:var(--surface-2);stroke-width:14;stroke-linecap:round;stroke-linejoin:round}
+.route{fill:none;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;opacity:.9;transition:opacity .2s,stroke-width .2s}
+.route.dim{opacity:.18}
+.route.hot{stroke-width:10;opacity:1}
+.walk{stroke:var(--muted);stroke-width:2.5;stroke-dasharray:4 6;fill:none}
+.walk.hot{stroke:var(--accent);stroke-width:3.5}
+.stop circle{fill:var(--surface);stroke:var(--fg);stroke-width:2.5;cursor:pointer;transition:r .2s}
+.stop{outline:none}
+.stop:focus-visible circle{stroke:var(--accent);stroke-width:5}
+.stop.reached circle{fill:var(--fg)}
+.stop.origin circle{fill:var(--accent);stroke:var(--accent)}
+.stop.fresh circle{stroke:var(--accent);stroke-width:4}
+.stop .halo{fill:var(--glow);stroke:none;opacity:0}
+.stop.fresh .halo{opacity:1}
+.stop text{font:600 12px var(--body);fill:var(--fg);paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round;pointer-events:none}
+.stop text.t{font:500 11px var(--mono);fill:var(--muted)}
+.stop.board circle{stroke:var(--accent);stroke-width:5}
+.journey{fill:none;stroke:var(--accent);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.journey.walking{stroke-dasharray:5 6}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <span class="kicker">An explorable explanation · from the Majlis project</span>
+    <h1>RAPTOR, round by round</h1>
+    <p class="lede">How does a bus app find your fastest trip in a few milliseconds? It doesn't search a map the way Google Maps searches roads. It reads timetables in <b>rounds</b>: everything you can reach with one bus, then with two, then with three. Pick a starting stop and step through it.</p>
+  </header>
+
+  <div class="stage">
+    <div class="mapcard">
+      <svg id="map" viewBox="0 0 600 430" role="img" aria-label="A small city with four bus lines. Stops light up as the algorithm reaches them."></svg>
+      <div class="legend" aria-hidden="true">
+        <span><i style="background:var(--r54)"></i>54</span><span><i style="background:var(--r73)"></i>73</span>
+        <span><i style="background:var(--rN2)"></i>N2</span><span><i style="background:var(--r67)"></i>67</span>
+        <span><i style="background:var(--muted);height:2px"></i>walk</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="box">
+        <div class="row" style="justify-content:space-between">
+          <span class="lbl">Start</span><span class="lbl" id="originName"></span>
+        </div>
+        <label class="lbl" for="depart">Leave at <span class="time" id="departOut"></span></label>
+        <input type="range" id="depart" min="0" max="40" step="1" value="0">
+        <p style="margin:0;font-size:13.5px;color:var(--muted)">Tap any stop on the map to start there.</p>
+      </div>
+
+      <div class="box" aria-live="polite">
+        <div class="progress"><i id="bar"></i></div>
+        <div class="narr" id="narr"></div>
+        <div class="row">
+          <button id="back" type="button">Back</button>
+          <button id="next" type="button" class="primary">Next step</button>
+          <button id="play" type="button">Play</button>
+          <button id="reset" type="button">Reset</button>
+        </div>
+        <div class="stats">
+          <div><b id="sRound">0</b><span>round</span></div>
+          <div><b id="sScans">0</b><span>line scans</span></div>
+          <div><b id="sStops">1</b><span>stops reached</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <article class="essay">
+    <h2>Buses aren't a road map. They're a timetable.</h2>
+    <p>Road routing treats the city as a graph and runs Dijkstra's algorithm over it. Public transport is different: an edge only exists at the moment a bus leaves. RAPTOR, published by Microsoft Research in 2012, starts from that fact. It groups trips into <b>patterns</b>, which are buses that stop at the same places in the same order and never overtake each other. In this city each line has two patterns, one per direction.</p>
+
+    <h2>Round <i>k</i> means "with at most <i>k</i> buses"</h2>
+    <p>Round 0 is just where you're standing. Round 1 finds everything one bus can get you to. Round 2 starts from every stop that improved in round 1 and finds everything a second bus adds. The rounds stop when nothing improves. Because each round is one more bus, the answer also tells you how many transfers a trip needs.</p>
+
+    <h2>Each line is scanned once per round</h2>
+    <p>Within a pattern no bus overtakes another, so the first bus you can catch at a stop is also the first to every later stop. RAPTOR walks along the line once, hops on the earliest catchable bus (a binary search over the timetable), and switches to an earlier bus if a later stop on the line lets you catch one. That's why the step counter above stays small: it counts line scans, not individual trips.</p>
+
+    <h2>Walk after you ride, never twice in a row</h2>
+    <p>After the line scans, each round lets you walk from where a bus dropped you to a nearby stop. The rule matters, and getting it wrong is easy:</p>
+    <div class="bug">
+      <b>The bug the tests caught</b>
+      <span>The textbook version assumes walking links are transitive: if you can walk A→B and B→C, then A→C is listed too. Real walking-radius links aren't. My first implementation sometimes walked onward from a stop it had only reached on foot, chaining two walks into one "transfer". A second, independent algorithm (Connection Scan) disagreed on random cities and exposed it. The fix keeps two times per stop: when a bus can drop you there, and when you can be there at all. Walks start only from the first.</p>
+    </div>
+
+    <h2>How I know it's right</h2>
+    <p>The Majlis implementation running on this page is checked three ways: hand-worked answers on a tiny real-format (GTFS) feed; <b>900 random queries on 300 random cities</b> where RAPTOR must agree with Connection Scan at every stop; and <b>over 1,000 reconstructed journeys</b> replayed leg by leg to make sure a rider could actually take them. On a city-sized network of 2,025 stops it answers in about 2.6 ms.</p>
+
+    <h2>Why build it</h2>
+    <p>Majlis uses RAPTOR to find the <b>fairest place for friends to meet by bus</b>: it runs once from each person's home and ranks places by the longest trip anyone has to take, so nobody gets the 70-minute ride. It powers group planning in Lore, a sidequest app for friend groups in Abu Dhabi.</p>
+  </article>
+
+  <p class="foot">Based on D. Delling, T. Pajor and R. F. Werneck, <i>Round-Based Public Transit Routing</i> (ALENEX 2012). The city, lines and times on this page are made up. MIT licensed.</p>
+</div>
+
+<script>
+/* majlis:start */
+/* majlis:end */
+
+const STOPS = [
+  { id: "MI", name: "Mina", x: 300, y: 50, at: "e" }, { id: "TC", name: "Tourist Club", x: 195, y: 100, at: "w" },
+  { id: "GS", name: "Gold Souk", x: 255, y: 168, at: "n" }, { id: "BS", name: "Bus Station", x: 330, y: 228, at: "e" },
+  { id: "MU", name: "Mushrif", x: 365, y: 318, at: "s" }, { id: "MG", name: "Mangroves", x: 515, y: 330, at: "s" },
+  { id: "SH", name: "Shade House", x: 262, y: 318, at: "s" }, { id: "HU", name: "Hudayriyat", x: 105, y: 388, at: "w" },
+  { id: "BW", name: "Breakwater", x: 62, y: 160, at: "n" }, { id: "CO", name: "Corniche", x: 135, y: 214, at: "s" },
+  { id: "MY", name: "Maryah", x: 425, y: 160, at: "s" }, { id: "RE", name: "Reem", x: 520, y: 88, at: "n" },
+];
+const IDX = Object.fromEntries(STOPS.map((s, i) => [s.id, i]));
+const LINES = [
+  { name: "54", color: "--r54", stops: ["MI", "TC", "GS", "BS", "MU", "MG"], every: 10, offset: 0 },
+  { name: "73", color: "--r73", stops: ["BS", "SH", "HU"], every: 15, offset: 4 },
+  { name: "N2", color: "--rN2", stops: ["BW", "CO", "GS", "MY", "RE"], every: 10, offset: 6 },
+  { name: "67", color: "--r67", stops: ["RE", "MY", "MU"], every: 15, offset: 9 },
+];
+const WALKS = [["SH", "MU", 360], ["TC", "CO", 480]];
+const HOP = 240;
+const T0 = 8 * 3600 - 30 * 60;
+
+const trips = [];
+for (const line of LINES) {
+  for (const [dir, seq] of [["→", line.stops], ["←", [...line.stops].reverse()]]) {
+    for (let t = T0 + line.offset * 60; t < T0 + 150 * 60; t += line.every * 60) {
+      const times = seq.map((_, i) => t + i * HOP);
+      trips.push({ id: `${line.name}${dir}${t}`, route: `${line.name}${dir}`, routeName: line.name, stops: seq.map(id => IDX[id]), arr: times, dep: times });
+    }
+  }
+}
+const footpaths = STOPS.map(() => []);
+for (const [a, b, s] of WALKS) { footpaths[IDX[a]].push({ to: IDX[b], seconds: s }); footpaths[IDX[b]].push({ to: IDX[a], seconds: s }); }
+const city = Majlis.buildTimetable({ stops: STOPS, trips, footpaths });
+
+const clock = s => `${String(Math.floor(s / 3600)).padStart(2, "0")}:${String(Math.floor(s % 3600 / 60)).padStart(2, "0")}`;
+const lineOf = pi => LINES.find(l => l.name === city.patterns[pi].routeName);
+const dirName = pi => { const p = city.patterns[pi]; return `${p.routeName} toward ${STOPS[p.stops.at(-1)].name}`; };
+
+const ui = { origin: IDX.HU, depart: 8 * 3600, frames: [], at: 0, timer: null, result: null, picked: null };
+const $ = id => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs = {}, parent) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); if (parent) parent.append(n); return n; };
+
+function drawBase() {
+  const svg = $("map");
+  svg.replaceChildren();
+  const g = el("g", {}, svg);
+  for (const line of LINES) el("polyline", { class: "street", points: line.stops.map(id => `${STOPS[IDX[id]].x},${STOPS[IDX[id]].y}`).join(" ") }, g);
+  for (const [a, b] of WALKS) el("line", { class: "walk", id: `w-${a}-${b}`, x1: STOPS[IDX[a]].x, y1: STOPS[IDX[a]].y, x2: STOPS[IDX[b]].x, y2: STOPS[IDX[b]].y }, g);
+  for (const line of LINES) el("polyline", { class: "route", id: `r-${line.name}`, stroke: `var(${line.color})`, points: line.stops.map(id => `${STOPS[IDX[id]].x},${STOPS[IDX[id]].y}`).join(" ") }, g);
+  el("g", { id: "journey" }, svg);
+  STOPS.forEach((s, i) => {
+    const sg = el("g", { class: "stop", id: `s-${i}`, tabindex: 0, role: "button", "aria-label": `Start at ${s.name}` }, svg);
+    el("circle", { class: "halo", cx: s.x, cy: s.y, r: 18 }, sg);
+    el("circle", { cx: s.x, cy: s.y, r: 8 }, sg);
+    // Name and time sit together on one side of the dot, chosen per stop to dodge the lines.
+    const place = {
+      n: { x: s.x, y: s.y - 30, ty: s.y - 16, anchor: "middle" },
+      s: { x: s.x, y: s.y + 24, ty: s.y + 38, anchor: "middle" },
+      e: { x: s.x + 14, y: s.y - 2, ty: s.y + 12, anchor: "start" },
+      w: { x: s.x - 14, y: s.y - 2, ty: s.y + 12, anchor: "end" },
+    }[s.at];
+    const tx = el("text", { x: place.x, y: place.y, "text-anchor": place.anchor }, sg);
+    tx.textContent = s.name;
+    const tt = el("text", { class: "t", x: place.x, y: place.ty, "text-anchor": place.anchor, id: `t-${i}` }, sg);
+    const pick = () => { if (ui.frames.length && ui.at === ui.frames.length - 1 && i !== ui.origin) showJourney(i); else { ui.origin = i; run(); } };
+    sg.addEventListener("click", pick);
+    sg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+  });
+}
+
+// Turn the algorithm's trace into the steps you click through.
+function buildFrames(events) {
+  const frames = [{ kind: "start", k: 0, arrivals: [], scans: 0 }];
+  let scans = 0;
+  let current = null;
+  for (const e of events) {
+    if (e.type === "round") { frames.push({ kind: "round", k: e.k, patterns: e.patterns, marked: e.marked, arrivals: [], scans }); current = null; }
+    else if (e.type === "scan") { scans++; current = { kind: "scan", k: e.k, pattern: e.pattern, boards: [], arrivals: [], scans }; frames.push(current); }
+    else if (e.type === "board" && current) current.boards.push(e);
+    else if (e.type === "arrive" && e.by === "ride" && current) current.arrivals.push(e);
+    else if (e.type === "arrive" && e.by === "walk") {
+      const last = frames.at(-1);
+      if (last.kind === "walks" && last.k === e.k) last.arrivals.push(e);
+      else frames.push({ kind: "walks", k: e.k, arrivals: [e], scans });
+    } else if (e.type === "done") frames.push({ kind: "done", k: frames.at(-1).k, arrivals: [], scans });
+  }
+  return frames;
+}
+
+function run() {
+  stop();
+  const events = [];
+  ui.result = Majlis.raptor(city, [{ stop: ui.origin, time: ui.depart }], 6, e => events.push(e));
+  ui.frames = buildFrames(events);
+  ui.at = 0;
+  ui.picked = null;
+  $("originName").textContent = STOPS[ui.origin].name;
+  render();
+}
+
+function reachedUpTo(at) {
+  const times = new Map([[ui.origin, { time: ui.depart, k: 0 }]]);
+  for (let i = 0; i <= at; i++) for (const a of ui.frames[i].arrivals) times.set(a.stop, { time: a.time, k: a.k });
+  return times;
+}
+
+function render() {
+  const f = ui.frames[ui.at];
+  const reached = reachedUpTo(ui.at);
+  const fresh = new Set(f.arrivals.map(a => a.stop));
+  const boards = new Set((f.boards || []).map(b => b.stop));
+  STOPS.forEach((s, i) => {
+    const g = $(`s-${i}`);
+    g.classList.toggle("reached", reached.has(i));
+    g.classList.toggle("origin", i === ui.origin);
+    g.classList.toggle("fresh", fresh.has(i));
+    g.classList.toggle("board", boards.has(i));
+    const r = reached.get(i);
+    $(`t-${i}`).textContent = r ? `${clock(r.time)} · ${r.k === 0 ? "start" : r.k + (r.k === 1 ? " bus" : " buses")}` : "";
+  });
+  const hotLine = f.kind === "scan" ? lineOf(f.pattern).name : null;
+  for (const line of LINES) {
+    const r = $(`r-${line.name}`);
+    r.classList.toggle("hot", line.name === hotLine);
+    r.classList.toggle("dim", Boolean(hotLine) && line.name !== hotLine);
+  }
+  for (const [a, b] of WALKS) $(`w-${a}-${b}`).classList.toggle("hot", f.kind === "walks" && f.arrivals.some(x => [IDX[a], IDX[b]].includes(x.stop)));
+  $("journey").replaceChildren();
+
+  $("narr").innerHTML = narrate(f);
+  $("bar").style.width = `${(ui.at / (ui.frames.length - 1)) * 100}%`;
+  $("sRound").textContent = f.k;
+  $("sScans").textContent = f.scans;
+  $("sStops").textContent = reached.size;
+  $("back").disabled = ui.at === 0;
+  $("next").disabled = ui.at === ui.frames.length - 1;
+  $("departOut").textContent = clock(ui.depart);
+}
+
+const names = list => list.map(i => `<b>${STOPS[i].name}</b>`).join(", ");
+function narrate(f) {
+  const origin = STOPS[ui.origin].name;
+  if (f.kind === "start") return `<h3>Round 0: where you're standing</h3><p>You're at <b>${origin}</b> at <b>${clock(ui.depart)}</b>. Nothing else is reachable yet. Press <b>Next step</b>.</p>`;
+  if (f.kind === "round") return `<h3>Round ${f.k}: ${f.k === 1 ? "one bus" : `a ${["", "", "second", "third", "fourth", "fifth", "sixth"][f.k]} bus`}</h3><p>Start from the stops that improved last round (${names(f.marked)}). Only the ${f.patterns.length} line ${f.patterns.length === 1 ? "pattern" : "patterns"} serving them need scanning.</p>`;
+  if (f.kind === "scan") {
+    const boarded = f.boards.map(b => `hop on at <b>${STOPS[b.stop].name}</b> (bus leaves ${clock(b.dep)})`).join(", then ");
+    const got = f.arrivals.length ? `New best times: ${f.arrivals.map(a => `<b>${STOPS[a.stop].name}</b> ${clock(a.time)}`).join(", ")}.` : "Nothing improves: you already reach these stops sooner another way.";
+    return `<h3>Scan line ${dirName(f.pattern)}</h3><p>${boarded ? boarded[0].toUpperCase() + boarded.slice(1) + "." : "No bus is catchable here."} ${got}</p>`;
+  }
+  if (f.kind === "walks") return `<h3>Round ${f.k}: walk from where the bus dropped you</h3><p>${f.arrivals.map(a => `Walk <b>${STOPS[a.from].name} → ${STOPS[a.stop].name}</b>, arrive ${clock(a.time)}`).join(". ")}. You can't walk on again from here until another bus has carried you.</p>`;
+  const reachedAll = reachedUpTo(ui.frames.length - 1).size === STOPS.length;
+  return `<h3>Done after ${f.k} ${f.k === 1 ? "round" : "rounds"}</h3><p>No stop improved, so another bus can't help. ${reachedAll ? "Every stop is reachable." : "Some stops can't be reached at this hour."} <b>Tap any stop</b> to see the fastest journey there.</p>`;
+}
+
+function showJourney(target) {
+  const j = Majlis.journeyTo(city, ui.result, target);
+  const layer = $("journey");
+  layer.replaceChildren();
+  if (!j) return;
+  const legs = [];
+  for (const leg of j.legs) {
+    if (leg.type === "walk") {
+      el("line", { class: "journey walking", x1: STOPS[leg.from].x, y1: STOPS[leg.from].y, x2: STOPS[leg.to].x, y2: STOPS[leg.to].y }, layer);
+      legs.push(`walk to <b>${STOPS[leg.to].name}</b>`);
+      continue;
+    }
+    const p = city.patterns.find(pt => pt.trips.some(t => t.id === leg.tripId));
+    const a = p.stops.indexOf(leg.from), b = p.stops.lastIndexOf(leg.to);
+    el("polyline", { class: "journey", points: p.stops.slice(a, b + 1).map(i => `${STOPS[i].x},${STOPS[i].y}`).join(" ") }, layer);
+    legs.push(`bus <b>${leg.route}</b> ${clock(leg.dep)} ${STOPS[leg.from].name} → <b>${STOPS[leg.to].name}</b> ${clock(leg.arr)}`);
+  }
+  const mins = Math.round((ui.result.best[target] - ui.depart) / 60);
+  $("narr").innerHTML = `<h3>${STOPS[ui.origin].name} → ${STOPS[target].name}: ${mins} min</h3><p>${legs.join(", then ")}.</p>`;
+}
+
+function step(d) { ui.at = Math.max(0, Math.min(ui.frames.length - 1, ui.at + d)); render(); }
+function stop() { clearInterval(ui.timer); ui.timer = null; $("play").textContent = "Play"; }
+function play() {
+  if (ui.timer) return stop();
+  if (ui.at === ui.frames.length - 1) ui.at = 0;
+  $("play").textContent = "Pause";
+  ui.timer = setInterval(() => { if (ui.at >= ui.frames.length - 1) return stop(); step(1); }, matchMedia("(prefers-reduced-motion: reduce)").matches ? 1400 : 900);
+}
+
+$("next").onclick = () => { stop(); step(1); };
+$("back").onclick = () => { stop(); step(-1); };
+$("play").onclick = play;
+$("reset").onclick = () => { stop(); ui.at = 0; render(); };
+$("depart").oninput = e => { ui.depart = 8 * 3600 + +e.target.value * 60; run(); };
+document.addEventListener("keydown", e => {
+  if (e.target.closest("input")) return;
+  if (e.key === "ArrowRight") { stop(); step(1); }
+  if (e.key === "ArrowLeft") { stop(); step(-1); }
+});
+
+drawBase();
+run();
+</script>
