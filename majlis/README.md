@@ -50,7 +50,7 @@ That test caught two real bugs that the hand-worked tests missed:
 1. RAPTOR could **chain two walks**: a bus reached a stop, a walk then reached the same stop sooner, and the transfer step walked onward from the *walking* time.
 2. More subtly, both textbook algorithms assume walking transfers are *transitively closed* (if A→B and B→C are listed, so is A→C). Footpaths built from a walking radius aren't, so each algorithm cut a different corner. The fix was to state the rule explicitly (**walk once from your origin and once after each ride**) and to give every stop two times in both algorithms: when a bus can drop you there (walks start only from this) and when you can be there at all (boarding uses this).
 
-**Journey replay.** For 100 random cities, every reconstructed journey to every reachable stop (over 1,000 journeys) is replayed leg by leg: legs connect, you board after you arrive, never two walks in a row, every walk is a real footpath, and the replay arrives exactly when RAPTOR said.
+**Journey replay.** For 100 random cities, every reconstructed journey to every reachable stop (2,821 journeys) is replayed leg by leg: legs connect, you board after you arrive, never two walks in a row, every walk is a real footpath, and the replay arrives exactly when RAPTOR said.
 
 **Hand-worked feed.** `test/fixtures/tiny` is a 6-stop GTFS feed with answers worked out on paper: missing a bus by a minute, a walking transfer, a quoted stop name with a comma, and a UAE National Day (2 Dec) holiday service that removes a route.
 
@@ -93,7 +93,7 @@ const best = meetingPoints(city, people, { objective: "fairest", top: 3 });
 npm test
 ```
 
-20 tests: CSV and time parsing, calendars and holiday exceptions, pattern building, walking transfers, hand-worked arrivals and journeys, the round limit, 900 differential queries, 1,000+ journey replays, the fairness objectives, custom places, walk-only trips, the CLI, and the explainer driven in a real browser (skipped if Playwright is not installed).
+20 tests: CSV and time parsing, calendars and holiday exceptions, pattern building, walking transfers, hand-worked arrivals and journeys, the round limit, 900 differential queries, 2,821 journey replays, the fairness objectives, custom places, walk-only trips, the CLI, and the explainer driven in a real browser (skipped if Playwright is not installed).
 
 ## Limitations and next steps
 
