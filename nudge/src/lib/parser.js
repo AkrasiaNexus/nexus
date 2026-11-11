@@ -1,3 +1,5 @@
+import { normalize } from "./idiolect.js";
+
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
@@ -29,8 +31,8 @@ const CATEGORY_KEYWORDS = {
 };
 const DEFAULT_CATEGORY = "task";
 
-const LEADING_FILLER = /^\s*(?:i\s+)?(?:wanna|want\s+to|need\s+to|have\s+to|gotta|should|will)\s+/i;
-const TRAILING_FILLER = /\s+(?:in|within|by|for|over|before|next|this)\s*$/i;
+const LEADING_FILLER = /^\s*(?:(?:low-key|honestly|basically|just|so)\s+)*(?:i\s+)?(?:(?:wanna|want\s+to|need\s+to|have\s+to|gotta|got\s+to|should|will)\s+)?/i;
+const TRAILING_FILLER = /\s+(?:in|within|by|for|over|before|next|this|just)\s*$/i;
 
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -70,12 +72,14 @@ function toTitle(text) {
   return title.charAt(0).toUpperCase() + title.slice(1);
 }
 
-export function parseBlurt(rawText, now = Date.now()) {
-  const { timeframeMs, remaining } = extractTimeframe(rawText);
+// `profile` is an Idiolect profile (see idiolect.js); with one, slang is normalized before parsing.
+export function parseBlurt(rawText, now = Date.now(), profile = null) {
+  const text = profile ? normalize(rawText, profile).text : rawText;
+  const { timeframeMs, remaining } = extractTimeframe(text);
   return {
     raw: rawText,
     title: toTitle(remaining),
-    category: detectCategory(rawText),
+    category: detectCategory(text),
     effort: estimateEffort(timeframeMs),
     deadline: new Date(now + timeframeMs).toISOString(),
     timeframeMs,

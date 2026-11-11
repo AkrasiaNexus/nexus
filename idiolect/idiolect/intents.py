@@ -44,7 +44,7 @@ def _first(regex: re.Pattern, text: str) -> str | None:
 
 def classify(text: str, profile: Profile | None = None) -> Intent:
     profile = profile or Profile()
-    norm = normalize(text, profile).text.strip()
+    norm = normalize(text, profile).text.strip().lower()
     # Personal cues beat generic rules, in the same priority order as the labels.
     for label in LABELS:
         for phrase, cue_label in profile.cues:

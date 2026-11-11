@@ -76,6 +76,16 @@ class NormalizeTests(unittest.TestCase):
     def test_unknown_words_are_left_alone(self):
         self.assertEqual(normalize("totally normal sentence", self.p).changes, [])
 
+    def test_arabic_accents_and_emoji_survive_untouched(self):
+        text = "jus said مرحبا to the café 🙂 and مَرْحَبًا ❤️"
+        self.assertEqual(normalize(text, self.p).text, "just said مرحبا to the café 🙂 and مَرْحَبًا ❤️")
+
+    def test_only_replaced_words_change_case_spacing_and_punctuation_stay(self):
+        self.assertEqual(normalize("JUS   go, OK?", self.p).text, "just   go, OK?")
+
+    def test_arabic_words_are_single_tokens(self):
+        self.assertEqual(tokenize("قال مرحبا!"), ["قال", "مرحبا", "!"])
+
 
 class IntentTests(unittest.TestCase):
     def test_labels(self):

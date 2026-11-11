@@ -1,4 +1,8 @@
 import { parseBlurt, getNudgeSchedule } from "../lib/parser";
+import { parseProfile } from "../lib/idiolect";
+import profileText from "../lib/profile.md?raw";
+
+const PROFILE = parseProfile(profileText);
 
 const STORAGE_KEY = "nudge_items";
 
@@ -41,7 +45,7 @@ export const nudgeStore = {
   },
 
   add(rawText) {
-    const parsed = parseBlurt(rawText);
+    const parsed = parseBlurt(rawText, Date.now(), PROFILE);
     const nudge = {
       id: crypto.randomUUID(),
       ...parsed,

@@ -1,0 +1,529 @@
+{
+ "profile": "# Generic internet slang (baseline)\n\nA population-level list of common chat abbreviations and dropped apostrophes, the kind of dictionary a general-purpose normalizer ships with. Used as a baseline against personal profiles. It deliberately leaves out ambiguous forms such as \"its\", \"ill\" and \"wont\", which a generic tool can't resolve without knowing the writer.\n\n## Slang\n| I write | Standard | Meaning |\n|---|---|---|\n| u | you | you |\n| ur | your | your |\n| r | are | are |\n| ya | you | you |\n| rn | right now | right now |\n| tho | though | though |\n| idk | i don't know | i don't know |\n| tbh | to be honest | to be honest |\n| ngl | not going to lie | not going to lie |\n| yk | you know | you know |\n| cuz | because | because |\n| bc | because | because |\n| pls | please | please |\n| plz | please | please |\n| thx | thanks | thanks |\n| ty | thank you | thank you |\n| wanna | want to | want to |\n| gonna | going to | going to |\n| gotta | got to | have to |\n| kinda | kind of | kind of |\n| sorta | sort of | sort of |\n| lemme | let me | let me |\n| dunno | don't know | don't know |\n| prolly | probably | probably |\n| ppl | people | people |\n| abt | about | about |\n| smth | something | something |\n| nvm | never mind | never mind |\n| btw | by the way | by the way |\n| imo | in my opinion | in my opinion |\n| irl | in real life | in real life |\n| yea | yeah | yes |\n\n## Typos\n| I write | Correct |\n|---|---|\n| dont | don't |\n| cant | can't |\n| didnt | didn't |\n| doesnt | doesn't |\n| isnt | isn't |\n| im | i'm |\n| ive | i've |\n| thats | that's |\n| whats | what's |\n| hasnt | hasn't |\n| wasnt | wasn't |\n| wouldnt | wouldn't |\n| couldnt | couldn't |\n| shouldnt | shouldn't |\n\n# Idiolect profile (v0)\n\nPaste this whole file into any model's system prompt. The tables are also read by the `idiolect` library.\nv0 was hand-built from one session and first committed in cc9f7dc (`intent/intent.md`); the tables below hold exactly the entries v0 named.\n\n## How to read me\n- I type fast and casual: lowercase, little punctuation, frequent typos. Infer meaning; never ask me to fix spelling.\n- Messages are often one run-on thought. Pull out the actual ask, then act.\n- If I describe a frustration, I usually want it solved, not sympathized with.\n\n## Slang\n| I write | Standard | Meaning |\n|---|---|---|\n| lowk | low-key | honestly, kind of |\n| ykwim | you know what i mean | checking you got the idea |\n| jus | just | just |\n| u | you | you |\n| smt | something | something |\n| alota | a lot of | a lot of |\n| typa | type of | type of, kind of |\n| tryna | trying to | trying to |\n| wanna | want to | want to |\n| gotta | got to | have to |\n| nah | nah | rejecting your suggestion; give better options, don't defend |\n| yea | yeah | yes, go ahead |\n\n## Typos\n| I write | Correct |\n|---|---|\n| randomlly | randomly |\n| backrgound | background |\n| intsructions | instructions |\n| extention | extension |\n| dont | don't |\n| im | i'm |\n| cuz | because |\n\n## Intent cues\n| Phrase | Intent |\n|---|---|\n| can we build | request |\n| i want to build | request |\n| not just | context |\n\n## Hotwords\nJarvis, Nexus, Nudge, lowk, ykwim, forge_change",
+ "vectors": [
+  {
+   "input": "give me some cool small problem builds we can build together pick a small problem or inconvience we can solve that hasnt been done yet",
+   "normalized": "give me some cool small problem builds we can build together pick a small problem or inconvience we can solve that hasn't been done yet",
+   "changes": [
+    [
+     "hasnt",
+     "hasn't"
+    ]
+   ]
+  },
+  {
+   "input": "nah all these ideas suck and that dark pattern detector already exists pretty sure",
+   "normalized": "nah all these ideas suck and that dark pattern detector already exists pretty sure",
+   "changes": []
+  },
+  {
+   "input": "honestly for a person like me i come up with random ideas start ups skills i wanna learn things i wanna do and then just forget them after thinking about them once so lowk i wanna do like a reminder but also like a todo list basically i say whatever im thinking and i give it a time frame to learn that skill or explore it and then i actually do it cuz i wont forget it ykwim its like a buddy a button i can press like siri or a keyboard shortcut which links to every device i use like phone and my 2 laptops",
+   "normalized": "honestly for a person like me i come up with random ideas start ups skills i want to learn things i want to do and then just forget them after thinking about them once so low-key i want to do like a reminder but also like a todo list basically i say whatever i'm thinking and i give it a time frame to learn that skill or explore it and then i actually do it because i wont forget it you know what i mean its like a buddy a button i can press like siri or a keyboard shortcut which links to every device i use like phone and my 2 laptops",
+   "changes": [
+    [
+     "wanna",
+     "want to"
+    ],
+    [
+     "wanna",
+     "want to"
+    ],
+    [
+     "lowk",
+     "low-key"
+    ],
+    [
+     "wanna",
+     "want to"
+    ],
+    [
+     "im",
+     "i'm"
+    ],
+    [
+     "cuz",
+     "because"
+    ],
+    [
+     "ykwim",
+     "you know what i mean"
+    ]
+   ]
+  },
+  {
+   "input": "yea basic idea is i jus blurt out whatever and u jus like organize it for me and nudge it and it like plans my week according to my schedule so im actually productive",
+   "normalized": "yeah basic idea is i just blurt out whatever and you just like organize it for me and nudge it and it like plans my week according to my schedule so i'm actually productive",
+   "changes": [
+    [
+     "yea",
+     "yeah"
+    ],
+    [
+     "jus",
+     "just"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "jus",
+     "just"
+    ],
+    [
+     "im",
+     "i'm"
+    ]
+   ]
+  },
+  {
+   "input": "i dont want it jus a chrome extention an actual like lightweight software that runs in the backrgound and then i randomlly get a idea and i press 2 buttons ykwim not jus a extention",
+   "normalized": "i don't want it just a chrome extension an actual like lightweight software that runs in the background and then i randomly get a idea and i press 2 buttons you know what i mean not just a extension",
+   "changes": [
+    [
+     "dont",
+     "don't"
+    ],
+    [
+     "jus",
+     "just"
+    ],
+    [
+     "extention",
+     "extension"
+    ],
+    [
+     "backrgound",
+     "background"
+    ],
+    [
+     "randomlly",
+     "randomly"
+    ],
+    [
+     "ykwim",
+     "you know what i mean"
+    ],
+    [
+     "jus",
+     "just"
+    ],
+    [
+     "extention",
+     "extension"
+    ]
+   ]
+  },
+  {
+   "input": "i also have another idea every time i try building a assistant or smt related to it i hit the wall of intent like yk how u can understand my typing slang and stuff alota ai models dont do that so i wanna build like a intent typa intsructions kinda thing which i can give every model so it can comfortably understand me and also i can build personal assistants and agents and etc way smoother ykwim",
+   "normalized": "i also have another idea every time i try building a assistant or something related to it i hit the wall of intent like you know how you can understand my typing slang and stuff a lot of ai models don't do that so i want to build like a intent type of instructions kind of thing which i can give every model so it can comfortably understand me and also i can build personal assistants and agents and etc way smoother you know what i mean",
+   "changes": [
+    [
+     "smt",
+     "something"
+    ],
+    [
+     "yk",
+     "you know"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "alota",
+     "a lot of"
+    ],
+    [
+     "dont",
+     "don't"
+    ],
+    [
+     "wanna",
+     "want to"
+    ],
+    [
+     "typa",
+     "type of"
+    ],
+    [
+     "intsructions",
+     "instructions"
+    ],
+    [
+     "kinda",
+     "kind of"
+    ],
+    [
+     "ykwim",
+     "you know what i mean"
+    ]
+   ]
+  },
+  {
+   "input": "thing is i dont use chatgpt and gemini much its mostly jus u so like u get how i talk and stuff and u even get typos and stuff so yea i jus found it super annoying while building voice os fork and my own jarvis",
+   "normalized": "thing is i don't use chatgpt and gemini much its mostly just you so like you get how i talk and stuff and you even get typos and stuff so yeah i just found it super annoying while building voice os fork and my own jarvis",
+   "changes": [
+    [
+     "dont",
+     "don't"
+    ],
+    [
+     "jus",
+     "just"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "yea",
+     "yeah"
+    ],
+    [
+     "jus",
+     "just"
+    ]
+   ]
+  },
+  {
+   "input": "okay thank you ill test in the morning what about the other build",
+   "normalized": "okay thank you ill test in the morning what about the other build",
+   "changes": []
+  },
+  {
+   "input": "inside abu dhabi city uae and make it like u can choose how many people are with u rn to sidequest ykwim",
+   "normalized": "inside abu dhabi city uae and make it like you can choose how many people are with you right now to sidequest you know what i mean",
+   "changes": [
+    [
+     "u",
+     "you"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "rn",
+     "right now"
+    ],
+    [
+     "ykwim",
+     "you know what i mean"
+    ]
+   ]
+  },
+  {
+   "input": "we will start with abu dhabi then we will start expanding to like the rest of the world ykwim we start small its aigh",
+   "normalized": "we will start with abu dhabi then we will start expanding to like the rest of the world you know what i mean we start small its aigh",
+   "changes": [
+    [
+     "ykwim",
+     "you know what i mean"
+    ]
+   ]
+  },
+  {
+   "input": "bus roulette is boring ask a local thats a start how about u have to tell a local u smell like cheese or something annd i like the last 2 ideas main charactaer shot and boss fight those are good instead make it like another name main character spot is girly and corny lock in",
+   "normalized": "bus roulette is boring ask a local that's a start how about you have to tell a local you smell like cheese or something annd i like the last 2 ideas main charactaer shot and boss fight those are good instead make it like another name main character spot is girly and corny lock in",
+   "changes": [
+    [
+     "thats",
+     "that's"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "u",
+     "you"
+    ]
+   ]
+  },
+  {
+   "input": "i dont want allat basic tourist bs tho i want like cool niche spots",
+   "normalized": "i don't want allat basic tourist bs though i want like cool niche spots",
+   "changes": [
+    [
+     "dont",
+     "don't"
+    ],
+    [
+     "tho",
+     "though"
+    ]
+   ]
+  },
+  {
+   "input": "al wathba and all is way too far and plus u gotta remember time is of the essence we dont have te entire day its mostly jus afternoon to night like 4 or 5 to 10 10:30 pm",
+   "normalized": "al wathba and all is way too far and plus you got to remember time is of the essence we don't have te entire day its mostly just afternoon to night like 4 or 5 to 10 10:30 pm",
+   "changes": [
+    [
+     "u",
+     "you"
+    ],
+    [
+     "gotta",
+     "got to"
+    ],
+    [
+     "dont",
+     "don't"
+    ],
+    [
+     "jus",
+     "just"
+    ]
+   ]
+  },
+  {
+   "input": "its not like u rule it out if bus routes dont come if its like a 30 min walk after u get off the bus or like a 10 to 15 mins taxi is fine asw so dont rule out al bateen and stuff like that jus like that try try with the new parameters i jus gave u and also show me the 8 new added ones u jus added i dont wanna rooll the quest everytime",
+   "normalized": "its not like you rule it out if bus routes don't come if its like a 30 min walk after you get off the bus or like a 10 to 15 mins taxi is fine asw so don't rule out al bateen and stuff like that just like that try try with the new parameters i just gave you and also show me the 8 new added ones you just added i don't want to rooll the quest everytime",
+   "changes": [
+    [
+     "u",
+     "you"
+    ],
+    [
+     "dont",
+     "don't"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "dont",
+     "don't"
+    ],
+    [
+     "jus",
+     "just"
+    ],
+    [
+     "jus",
+     "just"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "jus",
+     "just"
+    ],
+    [
+     "dont",
+     "don't"
+    ],
+    [
+     "wanna",
+     "want to"
+    ]
+   ]
+  },
+  {
+   "input": "i want u to find like find spots everyday so it keeps adding up and it never runs out of sidequests yk",
+   "normalized": "i want you to find like find spots everyday so it keeps adding up and it never runs out of sidequests you know",
+   "changes": [
+    [
+     "u",
+     "you"
+    ],
+    [
+     "yk",
+     "you know"
+    ]
+   ]
+  },
+  {
+   "input": "okay what i want u to do next is research good coding software digital projects like building a app or anything that will look good on my college resume and i want u to create a repo for each project with a proper readme liscense and all that important shi and i want u to do as many as u can until u hit ur limit got it?",
+   "normalized": "okay what i want you to do next is research good coding software digital projects like building a app or anything that will look good on my college resume and i want you to create a repo for each project with a proper readme liscense and all that important shi and i want you to do as many as you can until you hit your limit got it?",
+   "changes": [
+    [
+     "u",
+     "you"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "ur",
+     "your"
+    ]
+   ]
+  },
+  {
+   "input": "okay its fine ill break them into seperate repos later jus build me as many projects and stuff u can today until u reach ur limit",
+   "normalized": "okay its fine ill break them into seperate repos later just build me as many projects and stuff you can today until you reach your limit",
+   "changes": [
+    [
+     "jus",
+     "just"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "ur",
+     "your"
+    ]
+   ]
+  },
+  {
+   "input": "even for projects research first then build plan and build please dont waste my tokens but use them fully for this session",
+   "normalized": "even for projects research first then build plan and build please don't waste my tokens but use them fully for this session",
+   "changes": [
+    [
+     "dont",
+     "don't"
+    ]
+   ]
+  },
+  {
+   "input": "yo remember research first then u do build whatever and find more and more projects that will impress the recruiters and build them fully u have the entire stack design taste u have everything u need u got this",
+   "normalized": "yo remember research first then you do build whatever and find more and more projects that will impress the recruiters and build them fully you have the entire stack design taste you have everything you need you got this",
+   "changes": [
+    [
+     "u",
+     "you"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "u",
+     "you"
+    ],
+    [
+     "u",
+     "you"
+    ]
+   ]
+  },
+  {
+   "input": "",
+   "normalized": "",
+   "changes": []
+  },
+  {
+   "input": "JUS SHOUTING ykwim!!",
+   "normalized": "just SHOUTING you know what i mean!!",
+   "changes": [
+    [
+     "jus",
+     "just"
+    ],
+    [
+     "ykwim",
+     "you know what i mean"
+    ]
+   ]
+  },
+  {
+   "input": "meet at 10:30, ok?",
+   "normalized": "meet at 10:30, ok?",
+   "changes": []
+  },
+  {
+   "input": "don't touch apostrophes like i'm or you're",
+   "normalized": "don't touch apostrophes like i'm or you're",
+   "changes": []
+  },
+  {
+   "input": "u, ur, rn... tho",
+   "normalized": "you, your, right now... though",
+   "changes": [
+    [
+     "u",
+     "you"
+    ],
+    [
+     "ur",
+     "your"
+    ],
+    [
+     "rn",
+     "right now"
+    ],
+    [
+     "tho",
+     "though"
+    ]
+   ]
+  },
+  {
+   "input": "lowk wanna learn rust jus 2 wks",
+   "normalized": "low-key want to learn rust just 2 wks",
+   "changes": [
+    [
+     "lowk",
+     "low-key"
+    ],
+    [
+     "wanna",
+     "want to"
+    ],
+    [
+     "jus",
+     "just"
+    ]
+   ]
+  },
+  {
+   "input": "gotta finish smt by tomorrow",
+   "normalized": "got to finish something by tomorrow",
+   "changes": [
+    [
+     "gotta",
+     "got to"
+    ],
+    [
+     "smt",
+     "something"
+    ]
+   ]
+  },
+  {
+   "input": "emoji 🙂 and arabic مرحبا stay",
+   "normalized": "emoji 🙂 and arabic مرحبا stay",
+   "changes": []
+  }
+ ]
+}
