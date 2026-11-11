@@ -204,3 +204,4 @@ Turns friend hangouts into quests: niche cheap spot + real bus route + games, in
 - Per project: research first (does it exist? what's the gap?) → plan → build fully → test → commit. No empty scaffolds; no todo/weather/clone apps.
 - New project picks: credibility that holds up for 1–2 years (fundamentals, real problems, verifiable results), not trend-chasing; creativity is key.
 - When asked to build "until the limit", keep going without stopping to check in.
+- Live pages (private until the user shares them): Lore https://claude.ai/artifact/LwNwhfV2J2aWaz7CTd35DH · RAPTOR explainer https://claude.ai/artifact/XAXpwyvNBP4PGY9mejhmwR · Portfolio https://claude.ai/artifact/F3d2TopkdsyACginYVcQ1E (source `portfolio/index.html`; keep its numbers in sync with real test counts).
