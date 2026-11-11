@@ -360,20 +360,20 @@ function withEntry(state, id, entry, clock) {
 }
 
 function addEntry(state, replica, id, data) {
-  if (state.entries[id]) return state;
+  if (Object.hasOwn(state.entries, id)) return state;
   const entry = { data: { ...data, author: replica }, note: stamp(state, replica, ""), gone: stamp(state, replica, false) };
   return withEntry(state, id, entry, state.clock + 1);
 }
 
 function setNote(state, replica, id, text) {
+  if (!Object.hasOwn(state.entries, id)) return state;
   const entry = state.entries[id];
-  if (!entry) return state;
   return withEntry(state, id, { ...entry, note: stamp(state, replica, text) }, state.clock + 1);
 }
 
 function removeEntry(state, replica, id) {
+  if (!Object.hasOwn(state.entries, id)) return state;
   const entry = state.entries[id];
-  if (!entry) return state;
   return withEntry(state, id, { ...entry, gone: stamp(state, replica, true) }, state.clock + 1);
 }
 
@@ -385,11 +385,12 @@ function explore(state, placeId) {
 function merge(a, b) {
   const entries = { ...a.entries };
   for (const [id, theirs] of Object.entries(b.entries)) {
-    const mine = entries[id];
-    if (!mine) {
+    // hasOwn, not entries[id]: an id like "constructor" would otherwise find Object's own.
+    if (!Object.hasOwn(entries, id)) {
       entries[id] = theirs;
       continue;
     }
+    const mine = entries[id];
     // Data never changes after creation; pick deterministically if two replicas disagree.
     const data = JSON.stringify(mine.data) <= JSON.stringify(theirs.data) ? mine.data : theirs.data;
     entries[id] = { data, note: laterOf(mine.note, theirs.note), gone: laterOf(mine.gone, theirs.gone) };
@@ -420,7 +421,8 @@ function visibleEntries(state) {
 
 
 const PREFIX = "CF1";
-const LIMITS = { entries: 500, explored: 500, text: 280, note: 1000, inflatedBytes: 512 * 1024 };
+// clock: 2^40 Lamport ticks is ~35,000 years of one edit per second, far from Number.MAX_SAFE_INTEGER.
+const LIMITS = { entries: 500, explored: 500, text: 280, note: 1000, inflatedBytes: 512 * 1024, codeChars: 1_000_000, clock: 2 ** 40 };
 const ID = /^[A-Za-z0-9-]{1,48}$/;
 const REPLICA = /^[a-z0-9]{1,16}$/;
 
@@ -473,7 +475,9 @@ async function encode(state) {
 }
 
 async function decode(code) {
-  const parts = String(code).trim().split(".");
+  const text = String(code).trim();
+  if (text.length > LIMITS.codeChars) throw new Error("Sync code is too long to be a journal");
+  const parts = text.split(".");
   if (parts.length !== 3 || parts[0] !== PREFIX) throw new Error("That isn't a Campfire sync code");
   let packed;
   try {
@@ -495,13 +499,18 @@ async function decode(code) {
 const isStamp = (s, check) =>
   s && typeof s === "object" && Number.isSafeInteger(s.t) && s.t >= 0 && REPLICA.test(s.r) && check(s.v);
 
+// A write is stamped clock+1 and the clock follows it, so no honest stamp is newer than its state's clock.
+function checkTime(stamp, clock, what) {
+  if (stamp.t > clock) fail(`${what} stamped from the future`);
+}
+
 function fail(why) {
   throw new Error(`Sync code rejected: ${why}`);
 }
 
 function validate(state) {
   if (!state || typeof state !== "object" || state.v !== VERSION) fail("unknown version");
-  if (!Number.isSafeInteger(state.clock) || state.clock < 0) fail("bad clock");
+  if (!Number.isSafeInteger(state.clock) || state.clock < 0 || state.clock > LIMITS.clock) fail("bad clock");
   if (!Array.isArray(state.explored) || state.explored.length > LIMITS.explored) fail("bad explored list");
   if (!state.explored.every((p) => typeof p === "string" && ID.test(p))) fail("bad place id");
   if (!state.entries || typeof state.entries !== "object" || Array.isArray(state.entries)) fail("bad entries");
@@ -521,6 +530,8 @@ function validate(state) {
     if (!Number.isSafeInteger(d.created) || d.created < 0) fail("bad created time");
     if (!isStamp(e.note, (v) => typeof v === "string" && v.length <= LIMITS.note)) fail("bad note");
     if (!isStamp(e.gone, (v) => typeof v === "boolean")) fail("bad delete flag");
+    checkTime(e.note, state.clock, "note");
+    checkTime(e.gone, state.clock, "delete flag");
     entries[id] = {
       data: { title: d.title, meta: d.meta, author: d.author, created: d.created },
       note: { v: e.note.v, t: e.note.t, r: e.note.r },
@@ -531,7 +542,21 @@ function validate(state) {
   return { v: VERSION, clock: state.clock, entries, explored: [...state.explored] };
 }
 
-return { emptyState, newReplicaId, addEntry, setNote, removeEntry, explore, merge, visibleEntries, encode, decode, validate };
+/**
+ * Merge an incoming (already decoded) journal into yours, refusing anything an
+ * honest friend's phone could never produce:
+ *  - changing the title, meta or author of an entry you already have (data is write-once)
+ *  - a result that breaks the limits, which would make your own saved journal unreadable
+ */
+function safeMerge(local, incoming) {
+  const rewritten = Object.keys(incoming.entries).filter(
+    (id) => Object.hasOwn(local.entries, id) && JSON.stringify(local.entries[id].data) !== JSON.stringify(incoming.entries[id].data),
+  );
+  if (rewritten.length) fail(`it tries to rewrite ${rewritten.length} ${rewritten.length === 1 ? "entry" : "entries"} you already have`);
+  return validate(merge(local, incoming));
+}
+
+return { emptyState, newReplicaId, addEntry, setNote, removeEntry, explore, merge, visibleEntries, encode, decode, validate, safeMerge };
 })();
 /* campfire:end */
 
@@ -588,10 +613,16 @@ function loadBook() {
     });
     (v1.explored || []).forEach(id => { book = Campfire.explore(book, id); });
   } catch (e) {
+    // Never overwrite a saved Lore Book we can't read: start empty in memory and stop saving.
     book = Campfire.emptyState();
+    saveBlocked = true;
   }
 }
-function save() { try { localStorage.setItem(STORE, JSON.stringify({ replica, book })); } catch (e) {} }
+let saveBlocked = false;
+function save() {
+  if (saveBlocked) return;
+  try { localStorage.setItem(STORE, JSON.stringify({ replica, book })); } catch (e) {}
+}
 loadBook();
 refreshViews();
 
@@ -840,7 +871,7 @@ async function mergeCode() {
   const input = document.getElementById('theirCode');
   const before = { entries: Object.keys(book.entries).length, places: book.explored.length };
   try {
-    book = Campfire.merge(book, await Campfire.decode(input.value));
+    book = Campfire.safeMerge(book, await Campfire.decode(input.value));
   } catch (e) {
     setSyncStatus(e.message);
     return;
@@ -980,6 +1011,7 @@ function setup() {
   document.getElementById('copyCode').onclick = copyCode;
   document.getElementById('mergeCode').onclick = mergeCode;
   renderLore();
+  if (saveBlocked) setSyncStatus('Your saved Lore Book couldn’t be read, so it has been left untouched. Changes on this page won’t be saved.');
   rollQuest();
 }
 const rollCurrent = () => state.quest && state.quest.kind === 'boss' ? rollBoss() : rollQuest();

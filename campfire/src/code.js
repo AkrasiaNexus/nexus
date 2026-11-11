@@ -4,10 +4,11 @@
 //
 // A pasted code is untrusted input, so decode() checks the checksum, caps the
 // inflated size (zip bombs), and validates every field before anything merges.
-import { VERSION } from "./crdt.js";
+import { VERSION, merge } from "./crdt.js";
 
 const PREFIX = "CF1";
-export const LIMITS = { entries: 500, explored: 500, text: 280, note: 1000, inflatedBytes: 512 * 1024 };
+// clock: 2^40 Lamport ticks is ~35,000 years of one edit per second, far from Number.MAX_SAFE_INTEGER.
+export const LIMITS = { entries: 500, explored: 500, text: 280, note: 1000, inflatedBytes: 512 * 1024, codeChars: 1_000_000, clock: 2 ** 40 };
 const ID = /^[A-Za-z0-9-]{1,48}$/;
 const REPLICA = /^[a-z0-9]{1,16}$/;
 
@@ -60,7 +61,9 @@ export async function encode(state) {
 }
 
 export async function decode(code) {
-  const parts = String(code).trim().split(".");
+  const text = String(code).trim();
+  if (text.length > LIMITS.codeChars) throw new Error("Sync code is too long to be a journal");
+  const parts = text.split(".");
   if (parts.length !== 3 || parts[0] !== PREFIX) throw new Error("That isn't a Campfire sync code");
   let packed;
   try {
@@ -82,13 +85,18 @@ export async function decode(code) {
 const isStamp = (s, check) =>
   s && typeof s === "object" && Number.isSafeInteger(s.t) && s.t >= 0 && REPLICA.test(s.r) && check(s.v);
 
+// A write is stamped clock+1 and the clock follows it, so no honest stamp is newer than its state's clock.
+function checkTime(stamp, clock, what) {
+  if (stamp.t > clock) fail(`${what} stamped from the future`);
+}
+
 function fail(why) {
   throw new Error(`Sync code rejected: ${why}`);
 }
 
 export function validate(state) {
   if (!state || typeof state !== "object" || state.v !== VERSION) fail("unknown version");
-  if (!Number.isSafeInteger(state.clock) || state.clock < 0) fail("bad clock");
+  if (!Number.isSafeInteger(state.clock) || state.clock < 0 || state.clock > LIMITS.clock) fail("bad clock");
   if (!Array.isArray(state.explored) || state.explored.length > LIMITS.explored) fail("bad explored list");
   if (!state.explored.every((p) => typeof p === "string" && ID.test(p))) fail("bad place id");
   if (!state.entries || typeof state.entries !== "object" || Array.isArray(state.entries)) fail("bad entries");
@@ -108,6 +116,8 @@ export function validate(state) {
     if (!Number.isSafeInteger(d.created) || d.created < 0) fail("bad created time");
     if (!isStamp(e.note, (v) => typeof v === "string" && v.length <= LIMITS.note)) fail("bad note");
     if (!isStamp(e.gone, (v) => typeof v === "boolean")) fail("bad delete flag");
+    checkTime(e.note, state.clock, "note");
+    checkTime(e.gone, state.clock, "delete flag");
     entries[id] = {
       data: { title: d.title, meta: d.meta, author: d.author, created: d.created },
       note: { v: e.note.v, t: e.note.t, r: e.note.r },
@@ -116,4 +126,18 @@ export function validate(state) {
   }
   // Rebuilt from checked fields only, so nothing unexpected rides along.
   return { v: VERSION, clock: state.clock, entries, explored: [...state.explored] };
+}
+
+/**
+ * Merge an incoming (already decoded) journal into yours, refusing anything an
+ * honest friend's phone could never produce:
+ *  - changing the title, meta or author of an entry you already have (data is write-once)
+ *  - a result that breaks the limits, which would make your own saved journal unreadable
+ */
+export function safeMerge(local, incoming) {
+  const rewritten = Object.keys(incoming.entries).filter(
+    (id) => Object.hasOwn(local.entries, id) && JSON.stringify(local.entries[id].data) !== JSON.stringify(incoming.entries[id].data),
+  );
+  if (rewritten.length) fail(`it tries to rewrite ${rewritten.length} ${rewritten.length === 1 ? "entry" : "entries"} you already have`);
+  return validate(merge(local, incoming));
 }

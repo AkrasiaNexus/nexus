@@ -16,7 +16,7 @@ export function bundle() {
     .join("\n")
     .replace(/^import .*$/gm, "")
     .replace(/^export (?=(async )?function|const|let)/gm, "");
-  const api = ["emptyState", "newReplicaId", "addEntry", "setNote", "removeEntry", "explore", "merge", "visibleEntries", "encode", "decode", "validate"];
+  const api = ["emptyState", "newReplicaId", "addEntry", "setNote", "removeEntry", "explore", "merge", "visibleEntries", "encode", "decode", "validate", "safeMerge"];
   return `${START}\n// Generated from campfire/src by campfire/tools/bundle.js. Edit the source, not this block.\nconst Campfire = (() => {\n${body}\nreturn { ${api.join(", ")} };\n})();\n${END}`;
 }
 

@@ -96,6 +96,15 @@ test("a delete hides the entry everywhere after syncing", () => {
   assert.deepEqual(visibleEntries(merge(deleted, base)), []);
 });
 
+test("ids that look like built-in object names merge normally", () => {
+  for (const id of ["constructor", "toString", "valueOf", "hasOwnProperty"]) {
+    const a = addEntry(emptyState(), "ali", id, { title: "x", meta: "y", created: 1 });
+    const b = setNote(a, "sara", id, "still works");
+    assert.equal(visibleEntries(merge(emptyState(), b))[0].note, "still works", id);
+    assert.equal(visibleEntries(merge(a, b))[0].note, "still works", id);
+  }
+});
+
 test("writes are immutable updates", () => {
   const before = emptyState();
   const after = addEntry(before, "ali", "e1", { title: "x", meta: "y", created: 1 });
