@@ -48,6 +48,17 @@ test('highlights tricks on a live page and proves the timer is fake after a relo
   await page.close();
 });
 
+test('a page full of fake claims cannot flood extension storage', async () => {
+  const page = await context.newPage();
+  await page.goto(`${base}/flood.html`);
+  await page.waitForFunction(() => document.querySelectorAll('[data-verdict]').length >= 200, null, { timeout: 10000 });
+  await page.waitForTimeout(3000);
+  const [worker] = context.serviceWorkers().length ? context.serviceWorkers() : [await context.waitForEvent('serviceworker')];
+  const keys = await worker.evaluate(async () => Object.keys(await chrome.storage.local.get(null)).filter(k => k.includes('/flood.html')));
+  assert.equal(keys.length, 20, 'only the first 20 claims are remembered');
+  await page.close();
+});
+
 test('leaves the honest shop alone', async () => {
   const page = await context.newPage();
   await page.goto(`${base}/clean.html`);

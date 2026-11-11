@@ -1,6 +1,9 @@
 (function () {
   const V = globalThis.Verdict;
   const STYLE_ID = 'verdict-style';
+  // A hostile page can render thousands of fake claims; only the first few get remembered.
+  const MAX_TRACKED = 20;
+  const PRUNE_TO = 2000;
   let findings = [];
 
   function injectStyle() {
@@ -21,6 +24,24 @@
     return { ...rest, ticked: input ? input.checked : undefined };
   }
 
+  async function safeGet(keys) {
+    try { return await chrome.storage.local.get(keys); } catch (e) { return {}; }
+  }
+
+  // If storage is full, forget the oldest records and try once more; highlighting never depends on it.
+  async function safeSet(updates) {
+    try {
+      await chrome.storage.local.set(updates);
+    } catch (e) {
+      try {
+        const all = await chrome.storage.local.get(null);
+        const oldest = Object.entries(all).sort((a, b) => (a[1].firstSeen || 0) - (b[1].firstSeen || 0));
+        await chrome.storage.local.remove(oldest.slice(0, Math.max(0, oldest.length - PRUNE_TO)).map(([k]) => k));
+        await chrome.storage.local.set(updates);
+      } catch (e2) { /* still full: skip verification this time */ }
+    }
+  }
+
   async function scan() {
     const found = V.detectAll(document);
     const counters = {};
@@ -28,8 +49,8 @@
       counters[f.type] = (counters[f.type] || 0) + 1;
       return { f, key: storageKey(f, counters[f.type]) };
     });
-    const verifiable = keyed.filter(({ f }) => f.type === 'timer' || (f.type === 'scarcity' && f.count !== null));
-    const stored = verifiable.length ? await chrome.storage.local.get(verifiable.map(k => k.key)) : {};
+    const verifiable = keyed.filter(({ f }) => f.type === 'timer' || (f.type === 'scarcity' && f.count !== null)).slice(0, MAX_TRACKED);
+    const stored = verifiable.length ? await safeGet(verifiable.map(k => k.key)) : {};
     const updates = {};
     const now = Date.now();
     for (const { f, key } of verifiable) {
@@ -37,7 +58,7 @@
       f.verified = result.status;
       updates[key] = result.record;
     }
-    if (verifiable.length) await chrome.storage.local.set(updates);
+    if (verifiable.length) await safeSet(updates);
 
     injectStyle();
     document.querySelectorAll('[data-verdict]').forEach(el => { el.removeAttribute('data-verdict'); el.removeAttribute('data-verdict-verified'); });

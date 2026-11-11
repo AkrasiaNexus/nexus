@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { addEntry, emptyState, explore, merge, setNote, visibleEntries } from "../src/crdt.js";
-import { LIMITS, crc32, decode, encode, validate } from "../src/code.js";
+import { LIMITS, crc32, decode, encode, safeMerge, validate } from "../src/code.js";
 
 function journal(n) {
   let s = emptyState();
@@ -62,6 +62,44 @@ test("hostile or malformed states are rejected field by field", () => {
   assert.throws(bad({ entries: { x: { ...entry, note: { v: 42, t: 1, r: "ali" } } } }), /bad note/);
   assert.throws(bad({ entries: { x: { ...entry, gone: { v: "yes", t: 1, r: "ali" } } } }), /bad delete flag/);
   assert.throws(bad({ entries: { x: { ...entry, data: { ...entry.data, author: "<script>" } } } }), /bad author/);
+});
+
+test("clocks and timestamps can't be pushed to the integer limit", () => {
+  const good = journal(1);
+  const entry = good.entries["ali-0"];
+  assert.throws(() => validate({ ...good, clock: Number.MAX_SAFE_INTEGER }), /bad clock/);
+  assert.throws(() => validate({ ...good, clock: LIMITS.clock + 1 }), /bad clock/);
+  assert.throws(
+    () => validate({ ...good, entries: { "ali-0": { ...entry, gone: { v: true, t: good.clock + 1, r: "zzz" } } } }),
+    /from the future/,
+    "a stamp newer than the code's own clock is forged",
+  );
+});
+
+test("oversized pastes are refused before decoding", async () => {
+  await assert.rejects(decode("CF1." + "A".repeat(LIMITS.codeChars) + ".00000000"), /too long/);
+});
+
+test("safeMerge refuses codes that rewrite entries you already have", () => {
+  const mine = journal(2);
+  const forged = structuredClone(mine);
+  forged.entries["ali-0"].data.title = "Ali owes me 500 AED";
+  assert.throws(() => safeMerge(mine, forged), /rewrite 1 entry you already have/);
+});
+
+test("safeMerge refuses merges that would push the journal past its limits", () => {
+  const mine = journal(10);
+  let junk = emptyState();
+  for (let i = 0; i < LIMITS.entries - 5; i++) junk = addEntry(junk, "zz", `zz-${i}`, { title: "junk", meta: "junk", created: i });
+  assert.throws(() => safeMerge(mine, junk), /too many entries/);
+});
+
+test("safeMerge returns a merged, valid journal for honest codes", () => {
+  const ali = journal(3);
+  const sara = addEntry(emptyState(), "sara", "sara-0", { title: "Team War at Reem", meta: "Nov 11", created: 9 });
+  const merged = safeMerge(ali, sara);
+  assert.deepEqual(merged, merge(ali, sara));
+  assert.deepEqual(validate(merged), merged);
 });
 
 test("validation drops unknown fields instead of carrying them along", () => {

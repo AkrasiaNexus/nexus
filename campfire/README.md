@@ -38,19 +38,24 @@ CF1.<base64url(deflate(json))>.<crc32>
 *(Measured with notes of similar wording, which compress well. Varied real notes will produce longer codes.)*
 
 A pasted code is **untrusted input**, so `decode()`:
+- refuses pastes over 1 million characters before decoding anything
 - verifies the CRC-32 checksum, so truncated or edited codes are refused with a clear message
 - stops inflating at 512 KB (zip-bomb guard)
 - validates every field: id and replica formats, string lengths, types, integer clocks, and entry and place counts
 - rebuilds the state from checked fields only, so unknown fields and `__proto__` keys never get through
+- caps the Lamport clock at 2^40 and rejects any timestamp newer than its own state's clock, so a forged code can't lock a note or delete an entry for good
+
+Apps should merge with `safeMerge(local, incoming)`, not `merge()`. It refuses codes that rewrite an entry you already have (entry data is write-once) and validates the merged result, so one hostile code can't push your journal past the limits and make your own save unreadable. An independent security review found that hole; the tests now cover it.
 
 ## How it's verified
 
-`npm test` runs 13 tests:
+`npm test` runs 19 tests:
 - **Merge laws on 400 random cases each:** commutativity, associativity and idempotence, on states produced by random histories of adds, note edits, deletes, explores and partial syncs across 3 replicas.
 - **Convergence on 400 random cases:** 2 to 5 replicas with random histories gossip in a random order, and every replica ends up deep-equal.
 - **No loss:** after syncing, every entry and place any replica ever had is still there.
 - **Semantics:** a later edit wins, ties resolve the same from either side, a delete hides the entry everywhere, and writes never mutate.
 - **Codes:** round trip, two-phone swap, 100 entries under 8,000 characters, damaged and truncated codes, a zip bomb, hostile fields, and unknown fields being dropped.
+- **Attacks found in a security review:** forged clocks near the integer limit, timestamps newer than their own clock, oversized pastes, entry ids like `constructor`, codes that rewrite your existing entries, and merges that would exceed the limits.
 
 Lore adds an end-to-end test: two separate browser profiles, one finishes a quest and shares its code, the other pastes it and gets the entry and the cleared map.
 
@@ -58,12 +63,12 @@ Lore adds an end-to-end test: two separate browser profiles, one finishes a ques
 
 ```js
 import { emptyState, newReplicaId, addEntry, setNote, explore, merge, visibleEntries } from "campfire";
-import { encode, decode } from "campfire/code";
+import { encode, decode, safeMerge } from "campfire/code";
 
 const me = newReplicaId();
 let book = addEntry(emptyState(), me, `${me}-1`, { title: "The Mina Draft", meta: "Nov 11 · 4 out", created: Date.now() });
 const code = await encode(book);                     // paste this in the chat
-book = merge(book, await decode(friendsCode));        // and merge theirs
+book = safeMerge(book, await decode(friendsCode));    // and merge theirs (throws on hostile codes)
 ```
 
 For single-file apps, `node tools/bundle.js path/to/app.html` inlines Campfire between `/* campfire:start */` and `/* campfire:end */` markers, so the library stays the one source of truth. That's how Lore includes it.

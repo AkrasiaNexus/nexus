@@ -118,6 +118,42 @@ test('two phones share a Lore Book by swapping a code', async () => {
   await phoneB.close();
 });
 
+test('a code that would overflow the Lore Book is refused and changes nothing', async () => {
+  const context = await browser.newContext();
+  const p = await context.newPage();
+  await p.goto(base);
+  await p.waitForSelector('#done');
+  await p.click('#done');
+  const hostile = await p.evaluate(async () => {
+    let junk = Campfire.emptyState();
+    for (let i = 0; i < 500; i++) junk = Campfire.addEntry(junk, 'zz', `zz-${i}`, { title: 'junk', meta: 'junk', created: i });
+    return Campfire.encode(junk);
+  });
+  const before = await p.evaluate(() => localStorage.getItem('lore-abudhabi.v2'));
+  await p.click('#share summary');
+  await p.fill('#theirCode', hostile);
+  await p.click('#mergeCode');
+  await p.waitForFunction(() => /too many entries/.test(document.getElementById('syncStatus').textContent));
+  assert.equal(await p.textContent('#loreCount'), '1 entry');
+  await p.reload();
+  await p.waitForSelector('#lore .lt');
+  assert.equal(await p.evaluate(() => localStorage.getItem('lore-abudhabi.v2')), before, 'saved book untouched');
+  await context.close();
+});
+
+test('a saved Lore Book that cannot be read is never overwritten', async () => {
+  const context = await browser.newContext();
+  const corrupt = JSON.stringify({ replica: 'ali', book: { v: 1, clock: -5, entries: {}, explored: [] } });
+  await context.addInitScript(raw => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('lore-abudhabi.v2', raw); sessionStorage.setItem('seeded', '1'); } }, corrupt);
+  const p = await context.newPage();
+  await p.goto(base);
+  await p.waitForSelector('#done');
+  assert.match(await p.textContent('#syncStatus'), /left untouched/);
+  await p.click('#done');
+  assert.equal(await p.evaluate(() => localStorage.getItem('lore-abudhabi.v2')), corrupt);
+  await context.close();
+});
+
 test('an old v1 Lore Book is migrated, notes and map included', async () => {
   const context = await browser.newContext();
   await context.addInitScript(() => {

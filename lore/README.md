@@ -76,6 +76,7 @@ npm test
 - **Sunset** within 5 minutes of real Abu Dhabi times in June, November and December.
 - **Planner:** market closing times, the curfew, and the 45-minute minimum stay.
 - **Sharing end to end:** two separate browser profiles. One finishes a quest and shares its code, the other merges it and gets the entry and the cleared map. A damaged code changes nothing.
+- **Hostile codes:** a code that would overflow the Lore Book is refused and changes nothing, and a saved book that can't be read is never overwritten.
 - **Migration:** an old v1 save keeps its entries, notes and map.
 - **PWA end to end:** builds the app, checks the manifest, installs the service worker, cuts the network, reloads, and confirms a quest still renders.
 

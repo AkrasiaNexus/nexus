@@ -40,20 +40,20 @@ function withEntry(state, id, entry, clock) {
 }
 
 export function addEntry(state, replica, id, data) {
-  if (state.entries[id]) return state;
+  if (Object.hasOwn(state.entries, id)) return state;
   const entry = { data: { ...data, author: replica }, note: stamp(state, replica, ""), gone: stamp(state, replica, false) };
   return withEntry(state, id, entry, state.clock + 1);
 }
 
 export function setNote(state, replica, id, text) {
+  if (!Object.hasOwn(state.entries, id)) return state;
   const entry = state.entries[id];
-  if (!entry) return state;
   return withEntry(state, id, { ...entry, note: stamp(state, replica, text) }, state.clock + 1);
 }
 
 export function removeEntry(state, replica, id) {
+  if (!Object.hasOwn(state.entries, id)) return state;
   const entry = state.entries[id];
-  if (!entry) return state;
   return withEntry(state, id, { ...entry, gone: stamp(state, replica, true) }, state.clock + 1);
 }
 
@@ -65,11 +65,12 @@ export function explore(state, placeId) {
 export function merge(a, b) {
   const entries = { ...a.entries };
   for (const [id, theirs] of Object.entries(b.entries)) {
-    const mine = entries[id];
-    if (!mine) {
+    // hasOwn, not entries[id]: an id like "constructor" would otherwise find Object's own.
+    if (!Object.hasOwn(entries, id)) {
       entries[id] = theirs;
       continue;
     }
+    const mine = entries[id];
     // Data never changes after creation; pick deterministically if two replicas disagree.
     const data = JSON.stringify(mine.data) <= JSON.stringify(theirs.data) ? mine.data : theirs.data;
     entries[id] = { data, note: laterOf(mine.note, theirs.note), gone: laterOf(mine.gone, theirs.gone) };

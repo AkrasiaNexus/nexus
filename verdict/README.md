@@ -49,10 +49,10 @@ npm install      # playwright
 npm test
 ```
 
-16 tests across three layers:
+17 tests across three layers:
 - **Unit:** timer reset, rounding drift, stock freeze, price and period parsing
 - **Browser:** detectors on a shop with seven tricks and on an honest shop full of near-misses (store hours, "Remember me", a plain "No thanks") that must produce **zero** flags. Also popup rendering and an HTML-injection check
-- **End to end:** loads the real unpacked extension into Chromium, visits a live page, reloads it, and confirms the timer is proven fake
+- **End to end:** loads the real unpacked extension into Chromium, visits a live page, reloads it, and confirms the timer is proven fake. A hostile page with 200 fake stock claims can't flood storage (only the first 20 claims per page are remembered, and old records are pruned if storage ever fills)
 
 ## Also in this folder
 
