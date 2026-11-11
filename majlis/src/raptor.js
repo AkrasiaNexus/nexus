@@ -16,9 +16,10 @@ const INF = Infinity;
  * @param timetable from buildTimetable
  * @param sources   [{ stop, time }] stops reachable from the origin and when
  * @param maxRounds maximum number of vehicles in one journey
+ * @param trace     optional callback that receives each step (used by the explainer)
  * @returns { best, rounds, labels, rideLabels } best[stop] = earliest arrival (seconds)
  */
-export function raptor(timetable, sources, maxRounds = 8) {
+export function raptor(timetable, sources, maxRounds = 8, trace = null) {
   const n = timetable.stops.length;
   const best = new Array(n).fill(INF);
   const bestRide = new Array(n).fill(INF);
@@ -52,10 +53,12 @@ export function raptor(timetable, sources, maxRounds = 8) {
       }
     }
 
+    if (trace) trace({ type: "round", k, marked: [...marked], patterns: [...queue.keys()] });
     const nextMarked = new Set();
     const dropOffs = [];
     for (const [pi, start] of queue) {
       const pattern = timetable.patterns[pi];
+      if (trace) trace({ type: "scan", k, pattern: pi, start });
       let trip = null;
       let boardPos = -1;
       for (let i = start; i < pattern.stops.length; i++) {
@@ -72,6 +75,7 @@ export function raptor(timetable, sources, maxRounds = 8) {
               cur[stop] = arr;
               lab[stop] = label;
               nextMarked.add(stop);
+              if (trace) trace({ type: "arrive", k, stop, time: arr, by: "ride", pattern: pi });
             }
           }
         }
@@ -80,6 +84,7 @@ export function raptor(timetable, sources, maxRounds = 8) {
           if (t && t !== trip) {
             trip = t;
             boardPos = i;
+            if (trace) trace({ type: "board", k, pattern: pi, stop, trip: t.id, dep: t.dep[i] });
           }
         }
       }
@@ -94,11 +99,13 @@ export function raptor(timetable, sources, maxRounds = 8) {
           cur[to] = arr;
           lab[to] = { type: "walk", from: stop, seconds };
           nextMarked.add(to);
+          if (trace) trace({ type: "arrive", k, stop: to, time: arr, by: "walk", from: stop });
         }
       }
     }
     marked = nextMarked;
   }
+  if (trace) trace({ type: "done" });
   return { best, rounds, labels, rideLabels };
 }
 

@@ -17,6 +17,14 @@ $ majlis --gtfs test/fixtures/tiny --date 20261111 --time 08:05 \
    Eve: 0 min, walk the whole way
 ```
 
+## See it work: RAPTOR, round by round
+
+An explorable explanation that runs Majlis's real routing code on a small city. Pick a stop, step through the rounds, and watch each bus line get scanned once, stops light up by how many buses they need, and walks happen only after rides. Then tap any stop to see the journey.
+
+**Live:** https://claude.ai/artifact/XAXpwyvNBP4PGY9mejhmwR · source: [`explainer/`](explainer) (`node explainer/build.js` inlines `src/` so the page and the tests share one implementation)
+
+<img src="docs/explainer.png" alt="The explainer mid-run: line 54 highlighted, stops labelled with arrival times and bus counts" width="720">
+
 ## Why "fairest" and not "fastest"
 
 The obvious approach is to minimise the group's *total* travel time, and it's quietly unfair. With two friends in the west and one in the east, the total is smallest when everyone meets in the west, so the third friend rides five stops alone. Majlis minimises the **longest** trip (a minimax objective) and uses the total only to break ties. The test suite pins this down: on the same city, `fastest` picks Stop 1 and makes Omar ride 25 minutes, while `fairest` picks Stop 3 and nobody rides more than 15.
@@ -85,7 +93,7 @@ const best = meetingPoints(city, people, { objective: "fairest", top: 3 });
 npm test
 ```
 
-19 tests: CSV and time parsing, calendars and holiday exceptions, pattern building, walking transfers, hand-worked arrivals and journeys, the round limit, 900 differential queries, 1,000+ journey replays, the fairness objectives, custom places, walk-only trips, and the CLI.
+20 tests: CSV and time parsing, calendars and holiday exceptions, pattern building, walking transfers, hand-worked arrivals and journeys, the round limit, 900 differential queries, 1,000+ journey replays, the fairness objectives, custom places, walk-only trips, the CLI, and the explainer driven in a real browser (skipped if Playwright is not installed).
 
 ## Limitations and next steps
 
