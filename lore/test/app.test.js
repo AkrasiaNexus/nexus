@@ -87,6 +87,53 @@ test('the planner respects closing times and the curfew', async () => {
   assert.match(r.tooShort.fail, /Under 45 minutes/);
 });
 
+test('two phones share a Lore Book by swapping a code', async () => {
+  const phoneA = await browser.newContext();
+  const a = await phoneA.newPage();
+  await a.goto(base);
+  await a.waitForSelector('#done');
+  await a.click('#done');
+  await a.click('#share summary');
+  await a.waitForFunction(() => document.getElementById('myCode').value.startsWith('CF1.'));
+  const code = await a.inputValue('#myCode');
+
+  const phoneB = await browser.newContext();
+  const b = await phoneB.newPage();
+  await b.goto(base);
+  await b.waitForSelector('#quest h2');
+  await b.click('#share summary');
+  await b.fill('#theirCode', code);
+  await b.click('#mergeCode');
+  await b.waitForFunction(() => /^Merged/.test(document.getElementById('syncStatus').textContent));
+  assert.equal(await b.textContent('#loreCount'), '1 entry');
+  assert.match(await b.textContent('#explored'), /^1 of \d+ explored$/);
+  assert.match(await b.textContent('#syncStatus'), /1 new entry, 1 new place/);
+  assert.equal(await b.textContent('#lore .lt'), await a.textContent('#lore .lt'));
+
+  await b.fill('#theirCode', 'CF1.not-a-real-code.00000000');
+  await b.click('#mergeCode');
+  await b.waitForFunction(() => /damaged/.test(document.getElementById('syncStatus').textContent));
+  assert.equal(await b.textContent('#loreCount'), '1 entry', 'a bad code changes nothing');
+  await phoneA.close();
+  await phoneB.close();
+});
+
+test('an old v1 Lore Book is migrated, notes and map included', async () => {
+  const context = await browser.newContext();
+  await context.addInitScript(() => {
+    if (!localStorage.getItem('lore-abudhabi.v2')) {
+      localStorage.setItem('lore-abudhabi.v1', JSON.stringify({ explored: ['mina'], lore: [{ id: 'x', title: 'The Mina Draft', meta: 'Nov 10 · 4 out · Mina', note: 'Omar bought a cactus' }] }));
+    }
+  });
+  const p = await context.newPage();
+  await p.goto(base);
+  await p.waitForSelector('#lore .lt');
+  assert.equal(await p.textContent('#lore .lt'), 'The Mina Draft');
+  assert.equal(await p.inputValue('#lore input'), 'Omar bought a cactus');
+  assert.match(await p.textContent('#explored'), /^1 of/);
+  await context.close();
+});
+
 test('installs as a PWA and still works offline', async () => {
   const context = await browser.newContext();
   const p = await context.newPage();

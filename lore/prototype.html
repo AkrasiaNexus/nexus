@@ -125,6 +125,10 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .lm{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
 .lore input{background:transparent;border:0;border-bottom:1px dashed var(--line);padding:4px 0;font-size:14px;width:100%}
 .empty{font-size:14px;color:var(--muted)}
+.share{border-top:1px solid var(--line);padding-top:12px;display:grid;gap:8px}
+.share[open]{gap:10px}
+.share summary{cursor:pointer;font-weight:600;font-size:14px}
+.share textarea{box-sizing:border-box;width:100%;min-width:0;font:12px/1.4 var(--font-mono);background:var(--surface-2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px;resize:vertical;overflow-wrap:anywhere}
 .spotgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
 .spotcard{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:8px;align-content:start;min-width:0}
 .spotcard h4{font-family:var(--font-display);font-weight:500;font-size:15px;line-height:1.25;text-wrap:balance}
@@ -188,6 +192,16 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <div class="panel">
         <div class="ph"><h3>Lore Book</h3><span id="loreCount"></span></div>
         <ol class="lore" id="lore"></ol>
+        <details class="share" id="share">
+          <summary>Share with your group</summary>
+          <p class="hint">No accounts, no server. Paste your code into the group chat, and paste a friend's code here to merge their Lore into yours. Everyone ends up with the same book and the same map.</p>
+          <textarea id="myCode" rows="3" readonly aria-label="Your sync code"></textarea>
+          <button class="btn ghost small" id="copyCode" type="button">Copy my code</button>
+          <label class="lbl" for="theirCode">A friend's code</label>
+          <textarea id="theirCode" rows="3" placeholder="CF1.…"></textarea>
+          <button class="btn primary small" id="mergeCode" type="button">Merge into my Lore Book</button>
+          <p class="fine" id="syncStatus" role="status"></p>
+        </details>
       </div>
     </section>
   </main>
@@ -298,7 +312,228 @@ const MAIN = [
 const VIBES = [['any','Any'],['sunset','Sunset'],['chaos','Chaos'],['chill','Chill'],['edge','Edge'],['food','Food']];
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-const STORE = 'lore-abudhabi.v1';
+const STORE = 'lore-abudhabi.v2';
+const STORE_V1 = 'lore-abudhabi.v1';
+
+/* campfire:start */
+// Generated from campfire/src by campfire/tools/bundle.js. Edit the source, not this block.
+const Campfire = (() => {
+// A state-based CRDT for a small group's shared journal.
+//
+// Every replica (phone) holds the whole state. merge() is a join: commutative,
+// associative and idempotent, so friends can swap state in any order, any
+// number of times, and everyone ends up with the same journal.
+//
+//   entries  map id -> { data, note, gone }
+//            data  immutable once written (title, meta, author, created)
+//            note  last-writer-wins register
+//            gone  last-writer-wins register (true = deleted)
+//   explored grow-only set of place ids
+//   clock    Lamport clock: a write is stamped clock+1; merge takes the max
+//
+// Last-writer-wins compares (time, replica, value) so ties never depend on
+// which side of merge() a state is on.
+
+const VERSION = 1;
+
+function emptyState() {
+  return { v: VERSION, clock: 0, entries: {}, explored: [] };
+}
+
+function newReplicaId() {
+  const bytes = crypto.getRandomValues(new Uint8Array(5));
+  return Array.from(bytes, (b) => b.toString(36).padStart(2, "0")).join("").slice(0, 8);
+}
+
+function stamp(state, replica, value) {
+  return { v: value, t: state.clock + 1, r: replica };
+}
+
+function laterOf(x, y) {
+  if (x.t !== y.t) return x.t > y.t ? x : y;
+  if (x.r !== y.r) return x.r > y.r ? x : y;
+  return JSON.stringify(x.v) >= JSON.stringify(y.v) ? x : y;
+}
+
+function withEntry(state, id, entry, clock) {
+  return { ...state, clock, entries: { ...state.entries, [id]: entry } };
+}
+
+function addEntry(state, replica, id, data) {
+  if (state.entries[id]) return state;
+  const entry = { data: { ...data, author: replica }, note: stamp(state, replica, ""), gone: stamp(state, replica, false) };
+  return withEntry(state, id, entry, state.clock + 1);
+}
+
+function setNote(state, replica, id, text) {
+  const entry = state.entries[id];
+  if (!entry) return state;
+  return withEntry(state, id, { ...entry, note: stamp(state, replica, text) }, state.clock + 1);
+}
+
+function removeEntry(state, replica, id) {
+  const entry = state.entries[id];
+  if (!entry) return state;
+  return withEntry(state, id, { ...entry, gone: stamp(state, replica, true) }, state.clock + 1);
+}
+
+function explore(state, placeId) {
+  if (state.explored.includes(placeId)) return state;
+  return { ...state, explored: [...state.explored, placeId].sort() };
+}
+
+function merge(a, b) {
+  const entries = { ...a.entries };
+  for (const [id, theirs] of Object.entries(b.entries)) {
+    const mine = entries[id];
+    if (!mine) {
+      entries[id] = theirs;
+      continue;
+    }
+    // Data never changes after creation; pick deterministically if two replicas disagree.
+    const data = JSON.stringify(mine.data) <= JSON.stringify(theirs.data) ? mine.data : theirs.data;
+    entries[id] = { data, note: laterOf(mine.note, theirs.note), gone: laterOf(mine.gone, theirs.gone) };
+  }
+  const sorted = Object.fromEntries(Object.keys(entries).sort().map((id) => [id, entries[id]]));
+  return {
+    v: VERSION,
+    clock: Math.max(a.clock, b.clock),
+    entries: sorted,
+    explored: [...new Set([...a.explored, ...b.explored])].sort(),
+  };
+}
+
+/** What the app shows: live entries, newest first. */
+function visibleEntries(state) {
+  return Object.entries(state.entries)
+    .filter(([, e]) => !e.gone.v)
+    .map(([id, e]) => ({ id, ...e.data, note: e.note.v }))
+    .sort((x, y) => (y.created ?? 0) - (x.created ?? 0) || (x.id < y.id ? -1 : 1));
+}
+
+// Sync codes: the whole state as text you can paste into any chat.
+//
+//   CF1.<base64url(deflate(json))>.<crc32 hex>
+//
+// A pasted code is untrusted input, so decode() checks the checksum, caps the
+// inflated size (zip bombs), and validates every field before anything merges.
+
+
+const PREFIX = "CF1";
+const LIMITS = { entries: 500, explored: 500, text: 280, note: 1000, inflatedBytes: 512 * 1024 };
+const ID = /^[A-Za-z0-9-]{1,48}$/;
+const REPLICA = /^[a-z0-9]{1,16}$/;
+
+const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
+  let c = n;
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  return c >>> 0;
+});
+
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (const b of bytes) c = CRC_TABLE[(c ^ b) & 0xff] ^ (c >>> 8);
+  return ((c ^ 0xffffffff) >>> 0).toString(16).padStart(8, "0");
+}
+
+function toBase64Url(bytes) {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function fromBase64Url(text) {
+  const b64 = text.replace(/-/g, "+").replace(/_/g, "/");
+  return Uint8Array.from(atob(b64 + "=".repeat((4 - (b64.length % 4)) % 4)), (c) => c.charCodeAt(0));
+}
+
+async function pipe(bytes, stream, limit = Infinity) {
+  const reader = new Blob([bytes]).stream().pipeThrough(stream).getReader();
+  const chunks = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.length;
+    if (size > limit) {
+      await reader.cancel();
+      throw new Error("Sync code expands to more data than a journal should hold");
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(size);
+  let offset = 0;
+  for (const c of chunks) { out.set(c, offset); offset += c.length; }
+  return out;
+}
+
+async function encode(state) {
+  const json = new TextEncoder().encode(JSON.stringify(state));
+  const packed = await pipe(json, new CompressionStream("deflate-raw"));
+  return `${PREFIX}.${toBase64Url(packed)}.${crc32(json)}`;
+}
+
+async function decode(code) {
+  const parts = String(code).trim().split(".");
+  if (parts.length !== 3 || parts[0] !== PREFIX) throw new Error("That isn't a Campfire sync code");
+  let packed;
+  try {
+    packed = fromBase64Url(parts[1]);
+  } catch {
+    throw new Error("Sync code is damaged (bad characters)");
+  }
+  let json;
+  try {
+    json = await pipe(packed, new DecompressionStream("deflate-raw"), LIMITS.inflatedBytes);
+  } catch (err) {
+    if (err.message.startsWith("Sync code expands")) throw err;
+    throw new Error("Sync code is damaged or cut off");
+  }
+  if (crc32(json) !== parts[2]) throw new Error("Sync code is damaged or cut off (checksum mismatch)");
+  return validate(JSON.parse(new TextDecoder().decode(json)));
+}
+
+const isStamp = (s, check) =>
+  s && typeof s === "object" && Number.isSafeInteger(s.t) && s.t >= 0 && REPLICA.test(s.r) && check(s.v);
+
+function fail(why) {
+  throw new Error(`Sync code rejected: ${why}`);
+}
+
+function validate(state) {
+  if (!state || typeof state !== "object" || state.v !== VERSION) fail("unknown version");
+  if (!Number.isSafeInteger(state.clock) || state.clock < 0) fail("bad clock");
+  if (!Array.isArray(state.explored) || state.explored.length > LIMITS.explored) fail("bad explored list");
+  if (!state.explored.every((p) => typeof p === "string" && ID.test(p))) fail("bad place id");
+  if (!state.entries || typeof state.entries !== "object" || Array.isArray(state.entries)) fail("bad entries");
+  const ids = Object.keys(state.entries);
+  if (ids.length > LIMITS.entries) fail("too many entries");
+
+  const entries = {};
+  for (const id of ids) {
+    if (!ID.test(id)) fail(`bad entry id "${id.slice(0, 20)}"`);
+    const e = state.entries[id];
+    const d = e?.data;
+    if (!d || typeof d !== "object") fail("entry without data");
+    for (const key of ["title", "meta"]) {
+      if (typeof d[key] !== "string" || d[key].length > LIMITS.text) fail(`bad ${key}`);
+    }
+    if (!REPLICA.test(d.author)) fail("bad author");
+    if (!Number.isSafeInteger(d.created) || d.created < 0) fail("bad created time");
+    if (!isStamp(e.note, (v) => typeof v === "string" && v.length <= LIMITS.note)) fail("bad note");
+    if (!isStamp(e.gone, (v) => typeof v === "boolean")) fail("bad delete flag");
+    entries[id] = {
+      data: { title: d.title, meta: d.meta, author: d.author, created: d.created },
+      note: { v: e.note.v, t: e.note.t, r: e.note.r },
+      gone: { v: e.gone.v, t: e.gone.t, r: e.gone.r },
+    };
+  }
+  // Rebuilt from checked fields only, so nothing unexpected rides along.
+  return { v: VERSION, clock: state.clock, entries, explored: [...state.explored] };
+}
+
+return { emptyState, newReplicaId, addEntry, setNote, removeEntry, explore, merge, visibleEntries, encode, decode, validate };
+})();
+/* campfire:end */
 
 const byId = id => SPOTS.find(s => s.id === id);
 const fare = km => Math.min(5, 2 + 0.05 * km);
@@ -325,8 +560,40 @@ const SUNSET = sunsetMinutes(today);
 const WEEKDAY = today.getUTCDay();
 const state = { n: 4, start: 17 * 60, curfew: 22 * 60 + 30, budget: 15, vibe: 'any', adults: false, quest: null, explored: [], lore: [] };
 
-try { const saved = JSON.parse(localStorage.getItem(STORE) || 'null'); if (saved) { state.explored = saved.explored || []; state.lore = saved.lore || []; } } catch (e) {}
-function save() { try { localStorage.setItem(STORE, JSON.stringify({ explored: state.explored, lore: state.lore })); } catch (e) {} }
+// The Lore Book and map live in a Campfire CRDT so friends can merge them without a server.
+// state.lore and state.explored are views of it for the rendering code.
+let replica = Campfire.newReplicaId();
+let book = Campfire.emptyState();
+
+function refreshViews() {
+  state.explored = book.explored.slice();
+  state.lore = Campfire.visibleEntries(book);
+}
+
+function loadBook() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE) || 'null');
+    if (saved) {
+      if (/^[a-z0-9]{1,16}$/.test(saved.replica)) replica = saved.replica;
+      book = Campfire.validate(saved.book);
+      return;
+    }
+    const v1 = JSON.parse(localStorage.getItem(STORE_V1) || 'null');
+    if (!v1) return;
+    const now = Date.now();
+    (v1.lore || []).forEach((e, i) => {
+      const id = `${replica}-v1-${i}`;
+      book = Campfire.addEntry(book, replica, id, { title: String(e.title).slice(0, 280), meta: String(e.meta).slice(0, 280), created: now - i });
+      if (e.note) book = Campfire.setNote(book, replica, id, String(e.note).slice(0, 1000));
+    });
+    (v1.explored || []).forEach(id => { book = Campfire.explore(book, id); });
+  } catch (e) {
+    book = Campfire.emptyState();
+  }
+}
+function save() { try { localStorage.setItem(STORE, JSON.stringify({ replica, book })); } catch (e) {} }
+loadBook();
+refreshViews();
 
 const allowedToday = s => (!s.days || s.days.includes(WEEKDAY)) && (!s.adult || state.adults);
 const mainsFor = n => MAIN.filter(g => n >= g.min);
@@ -532,17 +799,61 @@ function complete() {
   const q = state.quest;
   const spots = q.kind === 'boss' ? [byId(q.boss.a), byId(q.boss.b)] : [q.spot];
   const d = gulfNow();
-  state.lore.unshift({
-    id: Date.now().toString(36),
+  book = Campfire.addEntry(book, replica, `${replica}-${Date.now().toString(36)}`, {
     title: q.kind === 'boss' ? `${q.boss.name} Cleared` : q.main.title(q.spot),
     meta: `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()} · ${state.n} out · ${spots.map(s => s.short).join(' → ')}`,
-    note: ''
+    created: Date.now()
   });
-  spots.forEach(s => { if (!state.explored.includes(s.id)) state.explored.push(s.id); });
+  spots.forEach(s => { book = Campfire.explore(book, s.id); });
+  refreshViews();
   save();
   toast(q.kind === 'boss' ? 'Boss cleared. Two areas uncovered.' : `Added to the Lore Book. ${q.spot.short} uncovered.`);
   renderLore();
   q.kind === 'boss' ? rollBoss() : rollQuest();
+}
+
+const setSyncStatus = msg => { document.getElementById('syncStatus').textContent = msg; };
+
+async function refreshCode() {
+  const box = document.getElementById('myCode');
+  try {
+    box.value = await Campfire.encode(book);
+  } catch (e) {
+    box.value = '';
+    setSyncStatus('This browser can’t make sync codes (it needs CompressionStream).');
+  }
+}
+
+async function copyCode() {
+  const box = document.getElementById('myCode');
+  try {
+    await navigator.clipboard.writeText(box.value);
+    setSyncStatus('Copied. Paste it into your group chat.');
+  } catch (e) {
+    box.focus();
+    box.select();
+    setSyncStatus('Selected. Copy it with your keyboard or a long-press.');
+  }
+}
+
+async function mergeCode() {
+  const input = document.getElementById('theirCode');
+  const before = { entries: Object.keys(book.entries).length, places: book.explored.length };
+  try {
+    book = Campfire.merge(book, await Campfire.decode(input.value));
+  } catch (e) {
+    setSyncStatus(e.message);
+    return;
+  }
+  refreshViews();
+  save();
+  renderLore();
+  render();
+  input.value = '';
+  await refreshCode();
+  const entries = Object.keys(book.entries).length - before.entries;
+  const places = book.explored.length - before.places;
+  setSyncStatus(`Merged: ${entries} new ${entries === 1 ? 'entry' : 'entries'}, ${places} new ${places === 1 ? 'place' : 'places'}. Send your code back so they get yours too.`);
 }
 
 function renderLore() {
@@ -563,7 +874,7 @@ function renderLore() {
     const inp = document.createElement('input');
     inp.id = 'note-' + e.id; inp.placeholder = 'What happened? One line.'; inp.value = e.note; inp.maxLength = 140;
     inp.setAttribute('aria-label', 'Lore note for ' + e.title);
-    inp.addEventListener('input', () => { e.note = inp.value; save(); });
+    inp.addEventListener('input', () => { book = Campfire.setNote(book, replica, e.id, inp.value); refreshViews(); save(); });
     li.append(t, m, inp);
     ol.append(li);
   }
@@ -664,6 +975,10 @@ function setup() {
   new ResizeObserver(drawMap).observe(document.getElementById('map'));
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawMap);
   new MutationObserver(drawMap).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  const share = document.getElementById('share');
+  share.addEventListener('toggle', () => { if (share.open) refreshCode(); });
+  document.getElementById('copyCode').onclick = copyCode;
+  document.getElementById('mergeCode').onclick = mergeCode;
   renderLore();
   rollQuest();
 }
