@@ -5,23 +5,37 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { dailySeries, impactFor, scanScope, startOf } from "@/lib/queries";
 import { GUIDE, round } from "@/lib/waste";
-import { Bars, Header, Ring, Stat } from "@/components/ui";
+import { WEEKDAYS, heatmapGrid } from "@/lib/charts";
+import { Bars, Header, Heatmap, Ring, Stat } from "@/components/ui";
 
 const PERIODS = { week: "This Week", month: "This Month", year: "This Year" } as const;
 type Period = keyof typeof PERIODS;
 
-export default async function Stats({ searchParams }: { searchParams: { p?: string } }) {
+const BOARDS = ["Students", "Classes", "Schools"] as const;
+
+export default async function Stats({ searchParams }: { searchParams: { p?: string; b?: string } }) {
   const user = await requireUser();
   const period: Period = searchParams.p && searchParams.p in PERIODS ? (searchParams.p as Period) : "week";
+  const board = BOARDS.find((b) => b === searchParams.b) ?? "Students";
   const scope = scanScope(user);
-  const [data, last7, leaders] = await Promise.all([
+  const fourWeeksAgo = new Date(Date.now() - 28 * 86_400_000);
+  const [data, last7, last4w, leaders, schools] = await Promise.all([
     impactFor(scope, startOf(period)),
     impactFor(scope, startOf("week")),
+    impactFor(scope, fourWeeksAgo),
     db.user.findMany({
       where: { role: "STUDENT", active: true, ...(user.schoolId && { schoolId: user.schoolId }) },
-      orderBy: { points: "desc" }, take: 5, select: { id: true, name: true, points: true, avatar: true },
+      orderBy: { points: "desc" }, select: { id: true, name: true, points: true, avatar: true, grade: true, schoolId: true },
     }),
+    db.school.findMany({ include: { users: { where: { role: "STUDENT", active: true }, select: { points: true } } } }),
   ]);
+  const sum = (xs: { points: number }[]) => xs.reduce((t, x) => t + x.points, 0);
+  const rows = board === "Students"
+    ? leaders.slice(0, 5).map((l) => ({ key: l.id, label: `${l.avatar} ${l.name}`, points: l.points, me: l.id === user.id }))
+    : board === "Classes"
+      ? Array.from(new Set(leaders.map((l) => l.grade ?? "—"))).map((g) => ({ key: g, label: `Class ${g}`, points: sum(leaders.filter((l) => (l.grade ?? "—") === g)), me: g === user.grade }))
+        .sort((a, b) => b.points - a.points).slice(0, 5)
+      : schools.map((s) => ({ key: s.id, label: s.name, points: sum(s.users), me: s.id === user.schoolId })).sort((a, b) => b.points - a.points);
 
   const byType = Object.entries(
     data.scans.reduce<Record<string, number>>((acc, s) => ({ ...acc, [s.wasteType]: (acc[s.wasteType] ?? 0) + s.weightKg }), {}),
@@ -41,7 +55,7 @@ export default async function Stats({ searchParams }: { searchParams: { p?: stri
       <div className="flex flex-col gap-4 px-5">
         <nav className="flex gap-2">
           {Object.entries(PERIODS).map(([k, v]) => (
-            <Link key={k} href={`/stats?p=${k}`} className={`chip ${k === period ? "chip-on" : ""}`}>{v}</Link>
+            <Link key={k} href={`/stats?p=${k}&b=${board}`} className={`chip ${k === period ? "chip-on" : ""}`}>{v}</Link>
           ))}
         </nav>
 
@@ -91,15 +105,25 @@ export default async function Stats({ searchParams }: { searchParams: { p?: stri
         </section>
 
         <section className="card p-4">
-          <h2 className="mb-2 text-sm font-medium">Leaderboard{user.school ? ` · ${user.school.name}` : ""}</h2>
+          <h2 className="mb-1 text-sm font-medium">Waste heat map · last 4 weeks (kg)</h2>
+          <p className="mb-2 text-[11px] text-mute">Darker = more waste sorted. Spot the days your bins fill up.</p>
+          <Heatmap grid={heatmapGrid(last4w.scans)} rowLabels={["3 wks ago", "2 wks ago", "Last wk", "This wk"]} colLabels={WEEKDAYS} />
+        </section>
+
+        <section className="card p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-medium">Green points leaderboard</h2>
+            <nav className="flex gap-1">{BOARDS.map((b) => <Link key={b} href={`/stats?p=${period}&b=${b}`} className={`chip ${b === board ? "chip-on" : ""}`}>{b}</Link>)}</nav>
+          </div>
           <ol className="space-y-2">
-            {leaders.map((l, i) => (
-              <li key={l.id} className={`flex items-center gap-3 text-sm ${l.id === user.id ? "text-leaf" : ""}`}>
-                <span className="w-5 text-mute">{i + 1}</span><span>{l.avatar}</span><span className="flex-1">{l.name}</span><span>{l.points} pts</span>
+            {rows.map((r, i) => (
+              <li key={r.key} className={`flex items-center gap-3 text-sm ${r.me ? "text-leaf" : ""}`}>
+                <span className="w-5 text-mute">{i + 1}</span><span className="flex-1">{r.label}</span><span>{r.points} pts</span>
               </li>
             ))}
           </ol>
         </section>
+        <Link href="/impact" className="btn-ghost text-sm">See SDG 12 & community impact →</Link>
       </div>
     </>
   );

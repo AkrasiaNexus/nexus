@@ -7,6 +7,7 @@ import { Logo } from "@/components/Logo";
 
 const DEMO = [
   ["Student", "ayaan@eco.demo"], ["Parent", "sara@eco.demo"], ["Employee", "rohan@eco.demo"],
+  ["Teacher", "daniel@eco.demo"], ["Health Monitor", "nurse@eco.demo"],
   ["School Admin", "priya@eco.demo"], ["Community", "community@eco.demo"], ["Super Admin", "admin@eco.demo"],
 ];
 
@@ -25,8 +26,8 @@ export default function Login() {
         <p className="text-mute">Welcome back!</p>
       </div>
       <form action={action} className="flex flex-col gap-3">
-        <label className="sr-only" htmlFor="email">Email</label>
-        <input id="email" name="email" type="email" required autoComplete="email" placeholder="Email" className="input" />
+        <label className="sr-only" htmlFor="email">Email or ID</label>
+        <input id="email" name="email" required autoComplete="username" placeholder="Email / Student ID / Staff ID" className="input" />
         <label className="sr-only" htmlFor="password">Password</label>
         <input id="password" name="password" type="password" required autoComplete="current-password" placeholder="Password" className="input" />
         {state?.error && <p role="alert" className="text-sm text-red-400">{state.error}</p>}

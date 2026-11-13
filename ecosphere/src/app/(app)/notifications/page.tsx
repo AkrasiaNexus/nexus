@@ -3,8 +3,8 @@ import { requireUser } from "@/lib/auth";
 import { visibleNotifications } from "@/lib/queries";
 import { Header, timeAgo } from "@/components/ui";
 
-const TABS = { ALL: "All", ANNOUNCEMENT: "Announcements", CHALLENGE: "Challenges", PICKUP: "Pickups", EVENT: "Events" } as const;
-const ICON = { ANNOUNCEMENT: "📣", CHALLENGE: "🎯", PICKUP: "🚛", EVENT: "📅" };
+const TABS = { ALL: "All", ANNOUNCEMENT: "Announcements", CHALLENGE: "Challenges", TASK: "Tasks", HEALTH: "Health & safety", PICKUP: "Pickups", EVENT: "Events" } as const;
+const ICON = { ANNOUNCEMENT: "📣", CHALLENGE: "🎯", PICKUP: "🚛", EVENT: "📅", TASK: "📝", HEALTH: "🩺" };
 
 export default async function Notifications({ searchParams }: { searchParams: { t?: string } }) {
   const user = await requireUser();

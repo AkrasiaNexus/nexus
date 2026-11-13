@@ -53,3 +53,17 @@ describe("impact", () => {
     expect(impact([])).toEqual({ kg: 0, co2: 0, water: 0, trees: 0, recyclingRate: 0 });
   });
 });
+
+import { heatmapGrid } from "@/lib/charts";
+
+describe("heatmapGrid", () => {
+  it("buckets by week and weekday", () => {
+    const now = new Date(2026, 10, 13, 12); // Friday
+    const grid = heatmapGrid([
+      { weightKg: 1, createdAt: new Date(2026, 10, 13, 9) }, // this Fri
+      { weightKg: 2, createdAt: new Date(2026, 10, 9, 9) }, // this Mon
+      { weightKg: 5, createdAt: new Date(2026, 9, 1) }, // too old
+    ], 2, now);
+    expect(grid).toEqual([[0, 0, 0, 0, 0, 0, 0], [2, 0, 0, 0, 1, 0, 0]]);
+  });
+});

@@ -59,8 +59,10 @@ export function Bars({ data }: { data: { label: string; value: number }[] }) {
   return (
     <div className="flex h-32 items-end gap-2">
       {data.map((d) => (
-        <div key={d.label} className="flex flex-1 flex-col items-center gap-1" title={`${d.label}: ${d.value} kg`}>
-          <div className="w-full rounded-t-md bg-gradient-to-t from-leafDark to-leaf" style={{ height: `${(d.value / max) * 100}%`, minHeight: 2 }} />
+        <div key={d.label} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={`${d.label}: ${d.value} kg`}>
+          <div className="flex w-full flex-1 items-end">
+            <div className="w-full rounded-t-md bg-gradient-to-t from-leafDark to-leaf" style={{ height: `${(d.value / max) * 100}%`, minHeight: 2 }} />
+          </div>
           <span className="text-[10px] text-mute">{d.label}</span>
         </div>
       ))}
@@ -74,3 +76,22 @@ export const timeAgo = (d: Date) => {
   if (s < 86400) return `${Math.round(s / 3600)}h ago`;
   return `${Math.round(s / 86400)}d ago`;
 };
+
+export function Heatmap({ grid, rowLabels, colLabels }: { grid: number[][]; rowLabels: string[]; colLabels: string[] }) {
+  const max = Math.max(0.1, ...grid.flat());
+  return (
+    <table className="w-full border-separate border-spacing-1 text-[10px] text-mute">
+      <thead><tr><th />{colLabels.map((c) => <th key={c} className="font-normal">{c}</th>)}</tr></thead>
+      <tbody>
+        {grid.map((row, i) => (
+          <tr key={rowLabels[i]}>
+            <th className="pr-1 text-left font-normal">{rowLabels[i]}</th>
+            {row.map((v, j) => (
+              <td key={j} title={`${v} kg`} className="h-7 rounded" style={{ background: v ? `rgba(143,220,127,${0.15 + 0.85 * (v / max)})` : "#0b1a0f" }} />
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}

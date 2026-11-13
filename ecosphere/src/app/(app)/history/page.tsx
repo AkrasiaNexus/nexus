@@ -6,7 +6,7 @@ import { Header, timeAgo } from "@/components/ui";
 
 const TABS = ["All", "Scans", "Rewards"] as const;
 
-export default async function History({ searchParams }: { searchParams: { t?: string } }) {
+export default async function History({ searchParams }: { searchParams: { t?: string; msg?: string } }) {
   const user = await requireUser();
   const tab = TABS.find((t) => t === searchParams.t) ?? "All";
   const [scans, purchases] = await Promise.all([
@@ -15,13 +15,14 @@ export default async function History({ searchParams }: { searchParams: { t?: st
   ]);
   const rows = [
     ...scans.map((s) => ({ id: s.id, at: s.createdAt, icon: GUIDE[s.wasteType].emoji, title: `Scanned: ${s.label}`, sub: `${GUIDE[s.wasteType].name} · ${s.weightKg} kg`, pts: `+${s.points} pts`, good: true })),
-    ...purchases.map((p) => ({ id: p.id, at: p.createdAt, icon: p.listing.emoji, title: `Redeemed: ${p.listing.title}`, sub: p.listing.category, pts: `-${p.points} pts`, good: false })),
+    ...purchases.map((p) => ({ id: p.id, at: p.createdAt, icon: p.listing.emoji, title: `${p.listing.ownerId ? "Claimed" : "Redeemed"}: ${p.listing.title}`, sub: p.listing.category, pts: `-${p.points} pts`, good: false })),
   ].sort((a, b) => b.at.getTime() - a.at.getTime());
 
   return (
     <>
       <Header title="Activity History" back="/profile" />
       <div className="flex flex-col gap-3 px-5">
+        {searchParams.msg && <p role="status" className="card p-3 text-center text-sm text-leaf">{searchParams.msg.slice(0, 100)}</p>}
         <nav className="flex gap-2">
           {TABS.map((t) => <Link key={t} href={`/history?t=${t}`} className={`chip ${t === tab ? "chip-on" : ""}`}>{t}</Link>)}
         </nav>

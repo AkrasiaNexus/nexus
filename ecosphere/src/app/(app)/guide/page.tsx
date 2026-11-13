@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { WasteType } from "@prisma/client";
 import { GUIDE, WASTE_TYPES } from "@/lib/waste";
 import { Header } from "@/components/ui";
+import { mapsLink } from "@/lib/partners";
 
 const REUSE: Record<WasteType, string[]> = {
   PLASTIC: ["Turn bottles into self-watering planters", "Use tubs for storing stationery"],
@@ -32,6 +33,8 @@ export default function Guide({ searchParams }: { searchParams: { type?: string 
             <div>
               <h2 className="text-xl font-semibold">{g.name}</h2>
               <p className="text-sm" style={{ color: g.binColor }}>Goes in: {g.bin}</p>
+              <a href={mapsLink(type === "ORGANIC" ? "composting site" : type === "EWASTE" ? "e-waste recycling" : type === "TEXTILE" ? "clothing donation bank" : "recycling centre")}
+                target="_blank" rel="noopener noreferrer" className="text-xs text-leaf underline-offset-2 hover:underline">📍 Where to drop it off nearby ↗</a>
             </div>
             <div>
               <h3 className="text-sm font-medium text-leaf">How to recycle</h3>
@@ -54,6 +57,7 @@ export default function Guide({ searchParams }: { searchParams: { type?: string 
             <p className="text-sm text-mute">{g.fact}</p>
           </div>
         </section>
+        <Link href="/partners" className="btn-ghost">Local recyclers, NGOs & partners</Link>
         <Link href="/scan" className="btn">Scan an item</Link>
       </div>
     </>

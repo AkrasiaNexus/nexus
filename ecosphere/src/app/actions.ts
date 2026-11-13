@@ -7,8 +7,9 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { audit, requireUser } from "@/lib/auth";
 import { SESSION_COOKIE, cookieOptions, signSession } from "@/lib/session";
-import { loginSchema, scanSchema, signupSchema, MAX_LOGIN_FAILS, MAX_SCANS_PER_HOUR } from "@/lib/validation";
+import { CLASS_ROLES, SCHOOL_ROLES, loginSchema, memberIdFor, scanSchema, signupSchema, MAX_LOGIN_FAILS, MAX_SCANS_PER_HOUR } from "@/lib/validation";
 import { GUIDE } from "@/lib/waste";
+import { notifySchool } from "@/lib/notify";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -21,17 +22,17 @@ async function startSession(userId: string, role: string) {
 
 export async function login(_: FormState, fd: FormData): Promise<FormState> {
   const parsed = loginSchema.safeParse(formObject(fd));
-  if (!parsed.success) return { error: "Enter a valid email and password." };
+  if (!parsed.success) return { error: "Enter your email or ID and password." };
   const { email, password } = parsed.data;
 
   const since = new Date(Date.now() - 15 * 60_000);
   const fails = await db.auditLog.count({ where: { action: "LOGIN_FAIL", detail: email, createdAt: { gte: since } } });
   if (fails >= MAX_LOGIN_FAILS) return { error: "Too many attempts. Try again in 15 minutes." };
 
-  const user = await db.user.findUnique({ where: { email } });
+  const user = await db.user.findFirst({ where: { OR: [{ email }, { memberId: email }] } });
   if (!user || !user.active || !(await bcrypt.compare(password, user.passwordHash))) {
     await audit(null, "LOGIN_FAIL", email);
-    return { error: "Wrong email or password." };
+    return { error: "Wrong email/ID or password." };
   }
   await audit(user.id, "LOGIN");
   await startSession(user.id, user.role);
@@ -45,6 +46,8 @@ export async function signup(_: FormState, fd: FormData): Promise<FormState> {
 
   if (d.role === "SCHOOL_ADMIN" && (!process.env.ADMIN_SIGNUP_CODE || d.adminCode !== process.env.ADMIN_SIGNUP_CODE))
     return { error: "A valid admin code is required for School Administrators." };
+  if (["TEACHER", "HEALTH_MONITOR"].includes(d.role) && (!process.env.STAFF_SIGNUP_CODE || d.adminCode !== process.env.STAFF_SIGNUP_CODE))
+    return { error: "A valid staff code from your school is required." };
   if (await db.user.findUnique({ where: { email: d.email } })) return { error: "That email is already registered." };
   if (d.schoolId && !(await db.school.findUnique({ where: { id: d.schoolId } }))) return { error: "Unknown school." };
 
@@ -55,18 +58,18 @@ export async function signup(_: FormState, fd: FormData): Promise<FormState> {
 
   const user = await db.user.create({
     data: {
-      name: d.name, email: d.email, role: d.role,
+      name: d.name, email: d.email, role: d.role, memberId: memberIdFor(d.role),
       passwordHash: await bcrypt.hash(d.password, 10),
-      schoolId: ["STUDENT", "SCHOOL_ADMIN"].includes(d.role) ? d.schoolId : null,
-      grade: d.role === "STUDENT" ? d.grade : null,
+      schoolId: SCHOOL_ROLES.includes(d.role) ? d.schoolId : null,
+      grade: CLASS_ROLES.includes(d.role) ? d.grade : null,
       department: d.role === "EMPLOYEE" ? d.department : null,
       community: d.role === "COMMUNITY" ? d.community : null,
-      avatar: { STUDENT: "🧑‍🎓", PARENT: "👪", EMPLOYEE: "🧑‍💼", SCHOOL_ADMIN: "🏫", COMMUNITY: "🌍" }[d.role],
+      avatar: { STUDENT: "🧑‍🎓", PARENT: "👪", EMPLOYEE: "🧑‍💼", TEACHER: "🧑‍🏫", HEALTH_MONITOR: "🩺", SCHOOL_ADMIN: "🏫", COMMUNITY: "🌍" }[d.role],
     },
   });
   if (child) await db.user.update({ where: { id: child.id }, data: { parentId: user.id } });
   await db.notification.create({
-    data: { userId: user.id, kind: "ANNOUNCEMENT", title: "Welcome to EcoSphere AI!", body: "Scan your first item to earn 10 points." },
+    data: { userId: user.id, kind: "ANNOUNCEMENT", title: "Welcome to EcoSphere AI!", body: `Your EcoSphere ID is ${user.memberId}. Scan your first item to earn 10 points.` },
   });
   await audit(user.id, "SIGNUP", d.role);
   await startSession(user.id, user.role);
@@ -97,7 +100,8 @@ export async function saveScan(input: unknown): Promise<FormState & { points?: n
 export async function redeem(listingId: string): Promise<FormState> {
   const user = await requireUser();
   const listing = await db.listing.findUnique({ where: { id: String(listingId) } });
-  if (!listing || listing.stock < 1) return { error: "Out of stock." };
+  if (!listing || !listing.active || listing.stock < 1) return { error: "No longer available." };
+  if (listing.ownerId === user.id) return { error: "That's your own listing." };
   try {
     await db.$transaction(async (tx) => {
       // Conditional updates guard against double-spend under concurrent requests.
@@ -106,13 +110,19 @@ export async function redeem(listingId: string): Promise<FormState> {
       const taken = await tx.listing.updateMany({ where: { id: listing.id, stock: { gt: 0 } }, data: { stock: { decrement: 1 } } });
       if (!taken.count) throw new Error("Out of stock.");
       await tx.purchase.create({ data: { userId: user.id, listingId: listing.id, points: listing.pricePoints } });
+      if (listing.ownerId) {
+        // Peer listing: seller earns the points, owner is told who claimed it.
+        if (listing.pricePoints) await tx.user.update({ where: { id: listing.ownerId }, data: { points: { increment: listing.pricePoints } } });
+        if (listing.stock === 1) await tx.listing.update({ where: { id: listing.id }, data: { active: false } });
+        await tx.notification.create({ data: { userId: listing.ownerId, kind: "ANNOUNCEMENT", title: `${user.name} claimed "${listing.title}"`, body: `Arrange hand-over with ${user.name} (ID ${user.memberId}).` } });
+      }
     });
   } catch (e) {
     return { error: (e as Error).message };
   }
   await audit(user.id, "REDEEM", listing.title);
   revalidatePath("/", "layout");
-  return { ok: `Redeemed ${listing.title}!` };
+  return { ok: listing.ownerId ? "Claimed! The owner has been notified." : `Redeemed ${listing.title}!` };
 }
 
 export async function joinChallenge(challengeId: string) {
@@ -154,8 +164,7 @@ export async function broadcast(_: FormState, fd: FormData): Promise<FormState> 
   if (admin.role === "SUPER_ADMIN") {
     await db.notification.create({ data: { title, body, kind: kind as "EVENT" } });
   } else {
-    const members = await db.user.findMany({ where: { schoolId: admin.schoolId }, select: { id: true } });
-    await db.notification.createMany({ data: members.map((m) => ({ userId: m.id, title, body, kind: kind as "EVENT" })) });
+    await notifySchool(admin.schoolId!, { title, body, kind: kind as "EVENT" });
   }
   await audit(admin.id, "BROADCAST", title);
   revalidatePath("/notifications");

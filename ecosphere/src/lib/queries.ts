@@ -4,10 +4,12 @@ import { db } from "./db";
 import { impact } from "./waste";
 
 // Which scans a user may see, by role.
-export function scanScope(user: Pick<User, "id" | "role" | "schoolId">): Prisma.ScanWhereInput {
+export function scanScope(user: Pick<User, "id" | "role" | "schoolId" | "grade">): Prisma.ScanWhereInput {
   switch (user.role) {
     case "PARENT": return { user: { parentId: user.id } };
     case "SCHOOL_ADMIN": return { user: { schoolId: user.schoolId ?? "__none__" } };
+    case "TEACHER":
+    case "HEALTH_MONITOR": return { user: { schoolId: user.schoolId ?? "__none__", grade: user.grade ?? "__none__", role: "STUDENT" } };
     case "SUPER_ADMIN": return {};
     default: return { userId: user.id };
   }
@@ -44,4 +46,10 @@ export function dailySeries(scans: { weightKg: number; createdAt: Date }[], days
 
 export function visibleNotifications(userId: string, take = 30) {
   return db.notification.findMany({ where: { OR: [{ userId }, { userId: null }] }, orderBy: { createdAt: "desc" }, take });
+}
+
+// Same visibility as scanScope, expressed over users (for food logs, exports, etc.).
+export function peopleScope(user: Pick<User, "id" | "role" | "schoolId" | "grade">): Prisma.UserWhereInput {
+  const s = scanScope(user);
+  return s.userId ? { id: user.id } : ((s.user as Prisma.UserWhereInput) ?? {});
 }

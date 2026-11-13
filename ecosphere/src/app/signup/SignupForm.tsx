@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
-import { Briefcase, ChevronLeft, GraduationCap, School, Users, UsersRound } from "lucide-react";
+import { Briefcase, ChevronLeft, GraduationCap, HeartPulse, Presentation, School, Users, UsersRound } from "lucide-react";
 import { signup } from "../actions";
 
 const ROLES = [
   { id: "STUDENT", name: "Student", hint: "Track your progress and earn rewards", icon: GraduationCap },
   { id: "PARENT", name: "Parent", hint: "Monitor your child's impact", icon: Users },
   { id: "EMPLOYEE", name: "Employee", hint: "Contribute at work", icon: Briefcase },
+  { id: "TEACHER", name: "Teacher / Staff", hint: "Manage your class, assign tasks", icon: Presentation },
+  { id: "HEALTH_MONITOR", name: "Health Monitor", hint: "Classroom health, safety & attendance", icon: HeartPulse },
   { id: "SCHOOL_ADMIN", name: "School Administrator", hint: "Manage your school", icon: School },
   { id: "COMMUNITY", name: "Community Member", hint: "Join the green community", icon: UsersRound },
 ] as const;
@@ -23,7 +25,9 @@ export function SignupForm({ schools }: { schools: { id: string; name: string }[
   const [role, setRole] = useState<string>("STUDENT");
   const [step, setStep] = useState(1);
   const [state, action] = useFormState(signup, undefined);
-  const needsSchool = role === "STUDENT" || role === "SCHOOL_ADMIN";
+  const needsSchool = ["STUDENT", "TEACHER", "HEALTH_MONITOR", "SCHOOL_ADMIN"].includes(role);
+  const needsClass = ["STUDENT", "TEACHER", "HEALTH_MONITOR"].includes(role);
+  const isStaff = role === "TEACHER" || role === "HEALTH_MONITOR";
 
   if (step === 1)
     return (
@@ -61,7 +65,8 @@ export function SignupForm({ schools }: { schools: { id: string; name: string }[
             {schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         )}
-        {role === "STUDENT" && <input name="grade" placeholder="Class / Grade (e.g. Class 10)" className="input" aria-label="Grade" />}
+        {needsClass && <input name="grade" required placeholder={role === "STUDENT" ? "Your class (e.g. Class 10)" : "Class you look after (e.g. Class 10)"} className="input" aria-label="Class" />}
+        {isStaff && <input name="adminCode" required placeholder="Staff code from your school" className="input" aria-label="Staff code" />}
         {role === "PARENT" && <input name="childEmail" type="email" placeholder="Your child's EcoSphere email (optional)" className="input" aria-label="Child email" />}
         {role === "EMPLOYEE" && <input name="department" placeholder="Department (e.g. Facilities)" className="input" aria-label="Department" />}
         {role === "COMMUNITY" && <input name="community" placeholder="Community name" className="input" aria-label="Community" />}
