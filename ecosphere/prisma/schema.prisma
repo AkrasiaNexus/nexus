@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  STUDENT
+  PARENT
+  EMPLOYEE
+  SCHOOL_ADMIN
+  COMMUNITY
+  SUPER_ADMIN
+}
+
+enum WasteType {
+  PLASTIC
+  PAPER
+  GLASS
+  METAL
+  ORGANIC
+  EWASTE
+  TEXTILE
+  OTHER
+}
+
+enum NoticeKind {
+  ANNOUNCEMENT
+  CHALLENGE
+  PICKUP
+  EVENT
+}
+
+model School {
+  id    String @id @default(cuid())
+  name  String @unique
+  city  String
+  users User[]
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  role          Role
+  points        Int            @default(0)
+  avatar        String         @default("🌱")
+  grade         String?
+  department    String?
+  community     String?
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  schoolId      String?
+  school        School?        @relation(fields: [schoolId], references: [id])
+  parentId      String?
+  parent        User?          @relation("ParentChild", fields: [parentId], references: [id])
+  children      User[]         @relation("ParentChild")
+  scans         Scan[]
+  purchases     Purchase[]
+  notifications Notification[]
+  joins         ChallengeJoin[]
+  audits        AuditLog[]
+}
+
+model Scan {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label      String
+  wasteType  WasteType
+  confidence Float
+  weightKg   Float
+  points     Int
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Listing {
+  id          String     @id @default(cuid())
+  title       String
+  description String
+  category    String
+  emoji       String
+  pricePoints Int
+  stock       Int
+  purchases   Purchase[]
+}
+
+model Purchase {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  points    Int
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String     @id @default(cuid())
+  userId    String?
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      NoticeKind
+  title     String
+  body      String
+  createdAt DateTime   @default(now())
+}
+
+model Challenge {
+  id           String          @id @default(cuid())
+  title        String
+  description  String
+  wasteType    WasteType
+  targetKg     Float
+  rewardPoints Int
+  endsAt       DateTime
+  joins        ChallengeJoin[]
+}
+
+model ChallengeJoin {
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  completed   Boolean   @default(false)
+  joinedAt    DateTime  @default(now())
+
+  @@id([userId, challengeId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String
+  detail    String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([action, detail, createdAt])
+}
