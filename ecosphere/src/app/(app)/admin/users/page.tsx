@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { BroadcastForm } from "@/components/BroadcastForm";
+import { ResetButton } from "@/components/ResetButton";
 import { Header } from "@/components/ui";
 import { toggleUserActive } from "../../../actions";
 
@@ -25,9 +26,12 @@ export default async function ManageUsers({ searchParams }: { searchParams: { q?
                 <p className="truncate text-[11px] text-mute">{u.email} · {u.role.replace("_", " ").toLowerCase()}{u.school ? ` · ${u.school.name}` : ""}</p>
               </div>
               {u.id !== admin.id && u.role !== "SUPER_ADMIN" && (
-                <form action={toggleUserActive.bind(null, u.id)}>
-                  <button className={`chip ${u.active ? "" : "chip-on"}`}>{u.active ? "Disable" : "Enable"}</button>
-                </form>
+                <div className="flex flex-col items-end gap-1">
+                  <form action={toggleUserActive.bind(null, u.id)}>
+                    <button className={`chip ${u.active ? "" : "chip-on"}`}>{u.active ? "Disable" : "Enable"}</button>
+                  </form>
+                  <ResetButton userId={u.id} />
+                </div>
               )}
             </li>
           ))}

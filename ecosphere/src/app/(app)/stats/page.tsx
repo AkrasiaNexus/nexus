@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { Sparkles, TreePine } from "lucide-react";
+import { Droplet, Recycle, Sparkles, TreePine } from "lucide-react";
 import type { WasteType } from "@prisma/client";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { dailySeries, impactFor, scanScope, startOf } from "@/lib/queries";
+import { impactFor, scanScope, startOf } from "@/lib/queries";
 import { GUIDE, round } from "@/lib/waste";
-import { WEEKDAYS, heatmapGrid } from "@/lib/charts";
-import { Bars, Header, Heatmap, Ring, Stat } from "@/components/ui";
+import { WEEKDAYS, heatmapGrid, periodRange, seriesFor } from "@/lib/charts";
+import { Header, Heatmap, LineChart, Ring } from "@/components/ui";
 
 const PERIODS = { week: "This Week", month: "This Month", year: "This Year" } as const;
 type Period = keyof typeof PERIODS;
@@ -19,9 +19,9 @@ export default async function Stats({ searchParams }: { searchParams: { p?: stri
   const board = BOARDS.find((b) => b === searchParams.b) ?? "Students";
   const scope = scanScope(user);
   const fourWeeksAgo = new Date(Date.now() - 28 * 86_400_000);
-  const [data, last7, last4w, leaders, schools] = await Promise.all([
-    impactFor(scope, startOf(period)),
-    impactFor(scope, startOf("week")),
+  const { start, end } = periodRange(period);
+  const [data, last4w, leaders, schools] = await Promise.all([
+    impactFor(scope, start, end),
     impactFor(scope, fourWeeksAgo),
     db.user.findMany({
       where: { role: "STUDENT", active: true, ...(user.schoolId && { schoolId: user.schoolId }) },
@@ -53,30 +53,32 @@ export default async function Stats({ searchParams }: { searchParams: { p?: stri
     <>
       <Header title="Statistics" back={null} />
       <div className="flex flex-col gap-4 px-5">
-        <nav className="flex gap-2">
+        <nav className="flex gap-1 rounded-2xl border border-white/[.06] bg-card p-1">
           {Object.entries(PERIODS).map(([k, v]) => (
-            <Link key={k} href={`/stats?p=${k}&b=${board}`} className={`chip ${k === period ? "chip-on" : ""}`}>{v}</Link>
+            <Link key={k} href={`/stats?p=${k}&b=${board}`} className={`flex-1 rounded-xl py-2 text-center text-xs ${k === period ? "bg-leaf/90 font-semibold text-ink" : "text-white/75"}`}>{v}</Link>
           ))}
         </nav>
 
-        <section className="card p-5"><Ring percent={data.recyclingRate} label="Recycling Rate" /></section>
+        <div className="py-2"><Ring percent={data.recyclingRate} label="Recycling Rate" size={190} /></div>
 
-        <section className="card p-4">
-          <h2 className="mb-3 text-sm font-medium">Last 7 days (kg)</h2>
-          <Bars data={dailySeries(last7.scans)} />
-        </section>
+        <LineChart data={seriesFor(period, start, data.scans)} />
 
         <div className="grid grid-cols-2 gap-3">
-          <Stat value={`${data.kg} kg`} label="Waste Reduced" />
-          <Stat value={`${data.water} L`} label="Water Saved" />
+          <div className="card flex items-center justify-center gap-3 p-4">
+            <Recycle className="text-leaf" size={30} />
+            <div><p className="text-lg font-semibold">{data.kg} kg</p><p className="text-[11px] text-white/60">Waste Reduced</p></div>
+          </div>
+          <div className="card flex items-center justify-center gap-3 p-4">
+            <Droplet className="text-leaf" size={26} />
+            <div><p className="text-lg font-semibold">{data.water} L</p><p className="text-[11px] text-white/60">Water Saved</p></div>
+          </div>
         </div>
 
         <section className="card p-4">
           <h2 className="mb-3 text-sm font-medium">Environmental Impact</h2>
-          <div className="flex justify-around text-center">
-            <div><p className="text-lg font-semibold">{data.co2} kg</p><p className="text-xs text-mute">CO₂ avoided</p></div>
-            <div><p className="flex items-center gap-1 text-lg font-semibold"><TreePine size={18} className="text-leaf" />{data.trees}</p><p className="text-xs text-mute">Tree-years of CO₂</p></div>
-            <div><p className="text-lg font-semibold">{data.scans.length}</p><p className="text-xs text-mute">Items sorted</p></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2 rounded-xl bg-white/[.03] p-3"><span className="text-sm font-semibold text-leaf">CO₂</span><div><p className="font-semibold">{data.co2} kg</p><p className="text-[11px] text-white/60">Avoided</p></div></div>
+            <div className="flex items-center gap-2 rounded-xl bg-white/[.03] p-3"><TreePine size={22} className="text-leaf" /><div><p className="font-semibold">{data.trees} Trees</p><p className="text-[11px] text-white/60">Saved (CO₂-years)</p></div></div>
           </div>
         </section>
 

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
-import { Briefcase, ChevronLeft, GraduationCap, HeartPulse, Presentation, School, Users, UsersRound } from "lucide-react";
+import { Briefcase, ChevronLeft, Crown, GraduationCap, HeartPulse, Presentation, School, Users, UsersRound } from "lucide-react";
 import { signup } from "../actions";
 
 const ROLES = [
@@ -14,6 +15,7 @@ const ROLES = [
   { id: "HEALTH_MONITOR", name: "Health Monitor", hint: "Classroom health, safety & attendance", icon: HeartPulse },
   { id: "SCHOOL_ADMIN", name: "School Administrator", hint: "Manage your school", icon: School },
   { id: "COMMUNITY", name: "Community Member", hint: "Join the green community", icon: UsersRound },
+  { id: "SUPER_ADMIN", name: "Super Administrator", hint: "Full platform access", icon: Crown },
 ] as const;
 
 function Submit() {
@@ -25,6 +27,7 @@ export function SignupForm({ schools }: { schools: { id: string; name: string }[
   const [role, setRole] = useState<string>("STUDENT");
   const [step, setStep] = useState(1);
   const [state, action] = useFormState(signup, undefined);
+  const router = useRouter();
   const needsSchool = ["STUDENT", "TEACHER", "HEALTH_MONITOR", "SCHOOL_ADMIN"].includes(role);
   const needsClass = ["STUDENT", "TEACHER", "HEALTH_MONITOR"].includes(role);
   const isStaff = role === "TEACHER" || role === "HEALTH_MONITOR";
@@ -34,18 +37,18 @@ export function SignupForm({ schools }: { schools: { id: string; name: string }[
       <div className="flex min-h-screen flex-col gap-4 px-6 py-8">
         <Link href="/" aria-label="Back" className="-ml-2 w-fit rounded-full p-2 hover:bg-card"><ChevronLeft /></Link>
         <h1 className="text-2xl font-semibold">Select Your Role</h1>
-        <p className="-mt-2 text-mute">Choose how you&apos;ll use EcoSphere</p>
+        <p className="-mt-2 text-white/70">Choose how you&apos;ll use EcoSphere</p>
         <div role="radiogroup" className="flex flex-col gap-3">
           {ROLES.map(({ id, name, hint, icon: Icon }) => (
             <button key={id} type="button" role="radio" aria-checked={role === id} onClick={() => setRole(id)}
-              className={`card flex items-center gap-4 p-4 text-left transition ${role === id ? "border-leaf ring-1 ring-leaf" : ""}`}>
-              <Icon className="text-leaf" />
-              <span><span className="block font-medium">{name}</span><span className="text-xs text-mute">{hint}</span></span>
+              className={`card flex items-center gap-4 p-4 text-left transition ${role === id ? "!border-leaf ring-1 ring-leaf" : ""}`}>
+              <Icon size={30} className={id === "SUPER_ADMIN" ? "text-gold" : "text-leaf"} />
+              <span><span className="block font-medium">{name}</span><span className="text-xs text-white/60">{hint}</span></span>
             </button>
           ))}
         </div>
-        <button className="btn mt-2" onClick={() => setStep(2)}>Continue</button>
-        <p className="text-center text-xs text-mute">Super Administrator accounts are created by the platform team.</p>
+        {role === "SUPER_ADMIN" && <p role="status" className="text-center text-xs text-gold">For security, Super Administrator accounts are issued by the EcoSphere team. Log in with the credentials you were given.</p>}
+        <button className="btn mt-2 py-3.5" onClick={() => (role === "SUPER_ADMIN" ? router.push("/login") : setStep(2))}>Continue</button>
       </div>
     );
 

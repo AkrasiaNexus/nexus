@@ -6,15 +6,15 @@
 html { background: #040b06; }
 
 body {
-  background: radial-gradient(ellipse at top, #0f2a16 0%, #040b06 60%) fixed;
-  color: #e8f3ea;
+  background: radial-gradient(120% 60% at 50% -10%, #12301a 0%, #050806 55%) fixed, #050806;
+  color: #eef5ef;
 }
 
 @layer components {
-  .card { @apply rounded-2xl border border-line bg-card/80 backdrop-blur; }
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-full bg-leaf px-5 py-3 font-semibold text-ink transition hover:brightness-110 active:scale-[.98] disabled:opacity-50; }
+  .card { @apply rounded-2xl border border-white/[.06] bg-gradient-to-b from-[#141e17] to-[#0e1611] shadow-lg shadow-black/40; }
+    .btn { @apply inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#9be292] to-[#6fc267] px-5 py-3 font-semibold text-ink shadow-lg shadow-leaf/20 transition hover:brightness-110 active:scale-[.98] disabled:opacity-50; }
   .btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-full border border-line px-5 py-3 font-semibold text-white transition hover:bg-card; }
   .input { @apply w-full rounded-xl border border-line bg-panel px-4 py-3 text-sm text-white placeholder:text-mute focus:border-leaf focus:outline-none; }
-  .chip { @apply rounded-full border border-line px-3 py-1 text-xs text-mute transition; }
+  .chip { @apply rounded-full border border-white/[.06] bg-card px-3.5 py-1.5 text-xs text-white/80 transition; }
   .chip-on { @apply border-leaf bg-leaf text-ink font-semibold; }
 }

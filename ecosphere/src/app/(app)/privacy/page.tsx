@@ -27,7 +27,7 @@ export default async function Privacy() {
         {user.role !== "SUPER_ADMIN" && (
           <ActionForm action={deleteAccount} submit="Permanently delete my account" className="border-red-900">
             <h2 className="text-sm font-medium text-red-300">Delete account</h2>
-            <p className="text-xs text-mute">This removes your profile, scans, food logs and points. It can&apos;t be undone.</p>
+            <p className="text-xs text-mute">This removes your profile, scans and points. It can&apos;t be undone.</p>
             <input name="password" type="password" required placeholder="Confirm with your password" aria-label="Password" className="input" />
           </ActionForm>
         )}

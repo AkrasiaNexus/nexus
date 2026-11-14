@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { toCsv } from "@/lib/csv";
 import { peopleScope, scanScope } from "@/lib/queries";
 
-const TYPES = ["scans", "food", "health", "users"] as const;
+const TYPES = ["scans", "health", "users"] as const;
 
 export async function GET(req: Request) {
   const user = await currentUser();
@@ -15,8 +15,6 @@ export async function GET(req: Request) {
   const rows: Record<string, unknown>[] =
     type === "scans" ? (await db.scan.findMany({ where: scope, include: { user: true }, orderBy: { createdAt: "desc" } }))
       .map((s) => ({ date: s.createdAt, memberId: s.user.memberId, class: s.user.grade, item: s.label, type: s.wasteType, kg: s.weightKg, aiConfidence: s.confidence.toFixed(2), points: s.points }))
-    : type === "food" ? (await db.foodLog.findMany({ where: { user: people }, include: { user: true }, orderBy: { createdAt: "desc" } }))
-      .map((f) => ({ date: f.createdAt, memberId: f.user.memberId, item: f.item, category: f.category, kg: f.kg, reason: f.reason, disposal: f.disposal }))
     : type === "health" ? (await db.healthReport.findMany({ where: user.role === "SUPER_ADMIN" ? {} : { schoolId: user.schoolId ?? "", ...(user.role === "TEACHER" && { className: user.grade ?? "" }) }, orderBy: { createdAt: "desc" } }))
       .map((h) => ({ date: h.createdAt, class: h.className, air: h.airQuality, tempC: h.temperatureC, hygiene: h.hygiene, cleaning: h.cleaning, bins: h.wasteLevel, present: h.present, total: h.total, incident: h.incident }))
     : (await db.user.findMany({ where: people, include: { school: true } }))

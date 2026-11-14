@@ -41,7 +41,6 @@ describe("rewards", () => {
   });
 });
 
-import { foodSummary } from "@/lib/food";
 import { healthAlerts, healthStatus } from "@/lib/health";
 import { sdgIndicators } from "@/lib/sdg";
 import { toCsv } from "@/lib/csv";
@@ -64,15 +63,9 @@ describe("health alerts", () => {
   });
 });
 
-describe("food", () => {
-  it("computes diverted share", () => {
-    expect(foodSummary([{ kg: 1, disposal: "COMPOST" }, { kg: 1, disposal: "BIN" }])).toMatchObject({ totalKg: 2, divertedKg: 1, divertedPct: 50 });
-  });
-});
-
 describe("sdg", () => {
   it("caps progress at 100 and averages", () => {
-    const r = sdgIndicators({ recyclingRate: 100, foodDivertedPct: 100, activeUsers: 10, totalUsers: 10, reuseTrades: 999, ewasteKg: 999, eventsHeld: 99 });
+    const r = sdgIndicators({ recyclingRate: 100, activeUsers: 10, totalUsers: 10, reuseTrades: 999, ewasteKg: 999, eventsHeld: 99 });
     expect(r.overall).toBe(100);
   });
 });

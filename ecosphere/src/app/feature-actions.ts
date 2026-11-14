@@ -9,27 +9,11 @@ import { audit, requireUser } from "@/lib/auth";
 import { notifySchool } from "@/lib/notify";
 import { healthAlerts } from "@/lib/health";
 import { SESSION_COOKIE } from "@/lib/session";
-import { eventSchema, foodSchema, healthSchema, listingSchema, taskSchema } from "@/lib/validation";
+import { eventSchema, healthSchema, listingSchema, taskSchema } from "@/lib/validation";
 import type { FormState } from "./actions";
 
 const formObject = (fd: FormData) =>
   Object.fromEntries(Array.from(fd.entries()).filter(([, v]) => typeof v === "string" && v !== ""));
-
-const FOOD_LOG_POINTS = 5;
-
-export async function logFood(_: FormState, fd: FormData): Promise<FormState> {
-  const user = await requireUser();
-  const parsed = foodSchema.safeParse(formObject(fd));
-  if (!parsed.success) return { error: "Please fill in every field." };
-  // Points only for keeping food out of the bin, so logging waste itself is never "rewarded".
-  const points = parsed.data.disposal === "BIN" ? 0 : FOOD_LOG_POINTS;
-  await db.$transaction([
-    db.foodLog.create({ data: { ...parsed.data, userId: user.id } }),
-    db.user.update({ where: { id: user.id }, data: { points: { increment: points } } }),
-  ]);
-  revalidatePath("/food");
-  return { ok: points ? `Logged. +${points} pts for diverting it from landfill!` : "Logged. Try composting next time for points." };
-}
 
 export async function createListing(_: FormState, fd: FormData): Promise<FormState> {
   const user = await requireUser();
@@ -41,7 +25,7 @@ export async function createListing(_: FormState, fd: FormData): Promise<FormSta
   });
   await audit(user.id, "LISTING_CREATED", d.title);
   revalidatePath("/marketplace");
-  redirect("/marketplace?c=Community");
+  redirect("/marketplace");
 }
 
 export async function closeListing(listingId: string) {

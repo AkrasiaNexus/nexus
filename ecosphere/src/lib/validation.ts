@@ -42,14 +42,6 @@ export const MAX_LOGIN_FAILS = 5;
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 
-export const foodSchema = z.object({
-  item: text(60),
-  category: z.enum(["FRUIT_VEG", "GRAINS", "BAKERY", "DAIRY", "MEAT", "COOKED", "OTHER"]),
-  kg: z.coerce.number().positive().max(100),
-  reason: z.enum(["LEFTOVER", "PLATE_WASTE", "EXPIRED", "SPOILED", "OVERCOOKED"]),
-  disposal: z.enum(["COMPOST", "DONATE", "ANIMAL_FEED", "BIN"]),
-});
-
 export const listingSchema = z.object({
   kind: z.enum(["SELL", "DONATE", "EXCHANGE"]),
   title: text(60),

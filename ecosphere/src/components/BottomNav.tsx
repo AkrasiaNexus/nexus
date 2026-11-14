@@ -2,31 +2,28 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Home, ScanLine, ShoppingBag, User } from "lucide-react";
+import { Home, ScanSearch, ShoppingBasket, User } from "lucide-react";
 
+// Same 4 tabs as the mockup.
 const TABS = [
   { href: "/home", label: "Home", icon: Home },
-  { href: "/stats", label: "Stats", icon: BarChart3 },
-  { href: "/scan", label: "Scan", icon: ScanLine },
-  { href: "/marketplace", label: "Market", icon: ShoppingBag },
+  { href: "/stats", label: "Stats", icon: ScanSearch },
+  { href: "/marketplace", label: "Marketplace", icon: ShoppingBasket },
   { href: "/profile", label: "Profile", icon: User },
 ];
 
 export function BottomNav() {
   const path = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md border-t border-line bg-ink/95 backdrop-blur">
-      <ul className="flex justify-around py-2">
+    <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md rounded-t-3xl border-t border-white/[.06] bg-[#0b110d]/95 backdrop-blur">
+      <ul className="flex justify-around pb-3 pt-2.5">
         {TABS.map(({ href, label, icon: Icon }) => {
           const on = path.startsWith(href);
-          const scan = href === "/scan";
           return (
             <li key={href}>
               <Link href={href} aria-current={on ? "page" : undefined}
-                className={`flex flex-col items-center gap-0.5 px-3 text-[11px] ${on ? "text-leaf" : "text-mute"}`}>
-                <span className={scan ? "-mt-6 rounded-full bg-leaf p-3 text-ink shadow-lg shadow-leaf/30" : ""}>
-                  <Icon size={scan ? 24 : 20} />
-                </span>
+                className={`flex flex-col items-center gap-1 px-3 text-[11px] ${on ? "font-semibold text-leaf" : "text-white/60"}`}>
+                <Icon size={22} strokeWidth={on ? 2.4 : 1.8} />
                 {label}
               </Link>
             </li>

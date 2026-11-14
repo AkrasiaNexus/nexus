@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { WasteType } from "@prisma/client";
 import { GUIDE, WASTE_TYPES } from "@/lib/waste";
-import { Header } from "@/components/ui";
+import { Lightbulb } from "lucide-react";
+import { Header, IconCircle } from "@/components/ui";
 import { mapsLink } from "@/lib/partners";
 
 const REUSE: Record<WasteType, string[]> = {
@@ -22,43 +23,43 @@ export default function Guide({ searchParams }: { searchParams: { type?: string 
     <>
       <Header title="Recycling Guide" />
       <div className="flex flex-col gap-4 px-5">
-        <nav className="flex gap-2 overflow-x-auto pb-1" aria-label="Waste types">
+        <nav className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1" aria-label="Waste types">
           {WASTE_TYPES.map((t) => (
-            <Link key={t} href={`/guide?type=${t}`} className={`chip shrink-0 ${t === type ? "chip-on" : ""}`}>{GUIDE[t].name}</Link>
+            <Link key={t} href={`/guide?type=${t}`} className={`chip shrink-0 px-4 ${t === type ? "chip-on" : ""}`}>{GUIDE[t].name.replace(" & Card", "").replace("Food & ", "")}</Link>
           ))}
         </nav>
         <section className="card overflow-hidden">
-          <div className="grid h-40 place-items-center bg-gradient-to-b from-panel to-card text-7xl">{g.emoji}</div>
-          <div className="space-y-3 p-4">
-            <div>
-              <h2 className="text-xl font-semibold">{g.name}</h2>
-              <p className="text-sm" style={{ color: g.binColor }}>Goes in: {g.bin}</p>
-              <a href={mapsLink(type === "ORGANIC" ? "composting site" : type === "EWASTE" ? "e-waste recycling" : type === "TEXTILE" ? "clothing donation bank" : "recycling centre")}
-                target="_blank" rel="noopener noreferrer" className="text-xs text-leaf underline-offset-2 hover:underline">📍 Where to drop it off nearby ↗</a>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-leaf">How to recycle</h3>
-              <ol className="list-decimal space-y-1 pl-5 text-sm text-mute">{g.steps.map((s) => <li key={s}>{s}</li>)}</ol>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-red-300">Avoid</h3>
-              <ul className="list-disc space-y-1 pl-5 text-sm text-mute">{g.avoid.map((s) => <li key={s}>{s}</li>)}</ul>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-leaf">Reuse & repurpose first</h3>
-              <ul className="list-disc space-y-1 pl-5 text-sm text-mute">{REUSE[type].map((s) => <li key={s}>{s}</li>)}</ul>
-            </div>
+          <div className="grid h-48 place-items-center bg-[radial-gradient(circle_at_60%_40%,#24342a,#0b120d_70%)] text-8xl"><span className="drop-shadow-[0_10px_14px_rgba(0,0,0,.7)]">{g.emoji}</span></div>
+          <div className="space-y-1 p-5">
+            <h2 className="text-2xl font-semibold">{g.name}</h2>
+            <p className="text-white/75">{g.summary}</p>
           </div>
         </section>
-        <section className="card flex gap-3 p-4">
-          <span className="text-2xl">💡</span>
+        <section className="card flex items-center gap-4 p-4">
+          <IconCircle size={52}><Lightbulb size={26} /></IconCircle>
           <div>
-            <p className="font-medium text-leaf">Did you know?</p>
-            <p className="text-sm text-mute">{g.fact}</p>
+            <p className="font-semibold text-leaf">Did you know?</p>
+            <p className="text-sm text-white/70">{g.fact}</p>
           </div>
+        </section>
+        <section className="card space-y-3 p-4">
+          <p className="text-sm" style={{ color: g.binColor }}>Goes in: {g.bin}</p>
+          <div>
+            <h3 className="text-sm font-medium text-leaf">How to recycle</h3>
+            <ol className="list-decimal space-y-1 pl-5 text-sm text-white/65">{g.steps.map((x) => <li key={x}>{x}</li>)}</ol>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-red-300">Avoid</h3>
+            <ul className="list-disc space-y-1 pl-5 text-sm text-white/65">{g.avoid.map((x) => <li key={x}>{x}</li>)}</ul>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-leaf">Reuse & repurpose first</h3>
+            <ul className="list-disc space-y-1 pl-5 text-sm text-white/65">{REUSE[type].map((x) => <li key={x}>{x}</li>)}</ul>
+          </div>
+          <a href={mapsLink(type === "ORGANIC" ? "composting site" : type === "EWASTE" ? "e-waste recycling" : type === "TEXTILE" ? "clothing donation bank" : "recycling centre")}
+            target="_blank" rel="noopener noreferrer" className="inline-block text-sm text-leaf">📍 Where to drop it off nearby ↗</a>
         </section>
         <Link href="/partners" className="btn-ghost">Local recyclers, NGOs & partners</Link>
-        <Link href="/scan" className="btn">Scan an item</Link>
       </div>
     </>
   );

@@ -70,13 +70,13 @@ model User {
   notifications Notification[]
   joins         ChallengeJoin[]
   audits        AuditLog[]
-  foodLogs      FoodLog[]
   listings      Listing[]
   tasksCreated  Task[]
   taskDones     TaskDone[]
   healthReports HealthReport[]
   rsvps         EventRsvp[]
   events        Event[]
+  badges        UserBadge[]
 }
 
 model Scan {
@@ -146,6 +146,7 @@ model ChallengeJoin {
   challengeId String
   challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   completed   Boolean   @default(false)
+  completedAt DateTime?
   joinedAt    DateTime  @default(now())
 
   @@id([userId, challengeId])
@@ -160,20 +161,6 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   @@index([action, detail, createdAt])
-}
-
-model FoodLog {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  item      String
-  category  String // FRUIT_VEG | GRAINS | DAIRY | MEAT | COOKED | BAKERY | OTHER
-  kg        Float
-  reason    String // LEFTOVER | EXPIRED | SPOILED | PLATE_WASTE | OVERCOOKED
-  disposal  String // COMPOST | DONATE | ANIMAL_FEED | BIN
-  createdAt DateTime @default(now())
-
-  @@index([userId, createdAt])
 }
 
 model Task {
@@ -240,4 +227,18 @@ model EventRsvp {
   user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([eventId, userId])
+}
+
+model UserBadge {
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId  String
+  earnedAt DateTime @default(now())
+
+  @@id([userId, badgeId])
+}
+
+model Setting {
+  key   String @id
+  value String
 }

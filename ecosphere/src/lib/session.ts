@@ -1,7 +1,8 @@
 import { SignJWT, jwtVerify } from "jose";
 
 export const SESSION_COOKIE = "eco_session";
-const MAX_AGE = 60 * 60 * 24 * 7;
+const REMEMBER_AGE = 60 * 60 * 24 * 30;
+const SESSION_AGE = 60 * 60 * 24;
 
 function key() {
   const secret = process.env.SESSION_SECRET;
@@ -11,8 +12,8 @@ function key() {
 
 export type Session = { userId: string; role: string };
 
-export async function signSession(s: Session) {
-  return new SignJWT(s).setProtectedHeader({ alg: "HS256" }).setIssuedAt().setExpirationTime(`${MAX_AGE}s`).sign(key());
+export async function signSession(s: Session, remember = false) {
+  return new SignJWT(s).setProtectedHeader({ alg: "HS256" }).setIssuedAt().setExpirationTime(`${remember ? REMEMBER_AGE : SESSION_AGE}s`).sign(key());
 }
 
 export async function verifySession(token?: string): Promise<Session | null> {
@@ -25,10 +26,11 @@ export async function verifySession(token?: string): Promise<Session | null> {
   }
 }
 
-export const cookieOptions = {
+// "Remember me" keeps the cookie 30 days; otherwise it's a browser-session cookie.
+export const cookieOptions = (remember = false) => ({
   httpOnly: true,
   sameSite: "lax" as const,
   secure: process.env.NODE_ENV === "production",
   path: "/",
-  maxAge: MAX_AGE,
-};
+  ...(remember && { maxAge: REMEMBER_AGE }),
+});

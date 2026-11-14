@@ -5,11 +5,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#040b06",
-        panel: "#0b1a0f",
-        card: "#102116",
-        line: "#1d3523",
-        leaf: "#8fdc7f",
+        ink: "#050806",
+        panel: "#0b120d",
+        card: "#111a14",
+        line: "#1f2b23",
+        leaf: "#86d67e",
+        gold: "#f5b83d",
         leafDark: "#4caf50",
         mute: "#8aa391",
       },

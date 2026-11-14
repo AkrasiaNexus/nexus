@@ -1,6 +1,7 @@
 import { PrismaClient, type WasteType } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { GUIDE } from "../src/lib/waste";
+import { earnedBadges } from "../src/lib/rewards";
 
 const db = new PrismaClient();
 const DEMO_PASSWORD = "eco12345";
@@ -33,7 +34,7 @@ async function main() {
     db.user.create({ data: { memberId: "STU-100001", name: "Ayaan Sharma", email: "ayaan@eco.demo", passwordHash: hash, role: "STUDENT", grade: "Class 10", schoolId: sunrise.id, avatar: "🧑‍🎓" } }),
     db.user.create({ data: { memberId: mid("STU"), name: "Zara Ahmed", email: "zara@eco.demo", passwordHash: hash, role: "STUDENT", grade: "Grade 7", schoolId: sunrise.id, parentId: sara.id, avatar: "👩‍🎓" } }),
     db.user.create({ data: { memberId: "EMP-100003", name: "Rohan Mehta", email: "rohan@eco.demo", passwordHash: hash, role: "EMPLOYEE", department: "Facilities", avatar: "🧑‍💼" } }),
-    db.user.create({ data: { memberId: mid("ADM"), name: "Priya Nair", email: "priya@eco.demo", passwordHash: hash, role: "SCHOOL_ADMIN", schoolId: sunrise.id, avatar: "🏫" } }),
+    db.user.create({ data: { memberId: mid("ADM"), name: "Ms. Priya Nair", email: "priya@eco.demo", passwordHash: hash, role: "SCHOOL_ADMIN", schoolId: sunrise.id, avatar: "🏫" } }),
     db.user.create({ data: { memberId: mid("COM"), name: "Dubai Green Community", email: "community@eco.demo", passwordHash: hash, role: "COMMUNITY", community: "Dubai Green Community", avatar: "🌍" } }),
     db.user.create({ data: { memberId: mid("SUP"), name: "Admin Master", email: "admin@eco.demo", passwordHash: adminHash, role: "SUPER_ADMIN", avatar: "👑" } }),
     db.user.create({ data: { memberId: "STF-100008", name: "Daniel Brooks", email: "daniel@eco.demo", passwordHash: hash, role: "TEACHER", grade: "Class 10", schoolId: sunrise.id, avatar: "🧑‍🏫" } }),
@@ -82,21 +83,18 @@ async function main() {
 
   const inDays = (d: number) => new Date(Date.now() + d * 86_400_000);
   const challenges = await Promise.all([
-    db.challenge.create({ data: { title: "Reduce Food Waste", description: "Log and compost 2 kg of food scraps instead of binning them.", wasteType: "ORGANIC", targetKg: 2, rewardPoints: 100, endsAt: inDays(14) } }),
+    db.challenge.create({ data: { title: "Reduce Food Waste", description: "Scan and compost 2 kg of food scraps instead of binning them.", wasteType: "ORGANIC", targetKg: 2, rewardPoints: 100, endsAt: inDays(14) } }),
     db.challenge.create({ data: { title: "Plastic-Free Week", description: "Recycle 1 kg of plastic and switch to a reusable bottle.", wasteType: "PLASTIC", targetKg: 1, rewardPoints: 80, endsAt: inDays(7) } }),
     db.challenge.create({ data: { title: "E-waste Drive", description: "Bring old gadgets to the school e-waste box.", wasteType: "EWASTE", targetKg: 1, rewardPoints: 150, endsAt: inDays(21) } }),
   ]);
-  await db.challengeJoin.create({ data: { userId: ayaan.id, challengeId: challenges[0].id } });
-
-  // Food waste logs
-  const FOODS: [string, string][] = [["rice", "GRAINS"], ["bread", "BAKERY"], ["banana peels", "FRUIT_VEG"], ["milk", "DAIRY"], ["lunch leftovers", "COOKED"], ["apples", "FRUIT_VEG"], ["chicken curry", "COOKED"]];
-  const foodUsers = [ayaan, zara, community, ...extras.slice(0, 8)];
-  await db.foodLog.createMany({
-    data: foodUsers.flatMap((u) => Array.from({ length: 4 + Math.floor(rand() * 6) }, () => {
-      const [item, category] = pick(FOODS);
-      return { userId: u.id, item, category, kg: Math.round((0.1 + rand() * 0.8) * 100) / 100, reason: pick(["LEFTOVER", "PLATE_WASTE", "EXPIRED", "SPOILED", "OVERCOOKED"]), disposal: pick(["COMPOST", "COMPOST", "DONATE", "BIN"]), createdAt: ago(rand() * 25) };
-    })),
-  });
+  await db.challengeJoin.create({ data: { userId: ayaan.id, challengeId: challenges[0].id, completed: true, completedAt: ago(1), joinedAt: ago(10) } });
+  await db.challengeJoin.create({ data: { userId: ayaan.id, challengeId: challenges[1].id } });
+  await db.user.update({ where: { id: ayaan.id }, data: { points: { increment: challenges[0].rewardPoints } } });
+  // A past purchase, like the mockup's "Purchased: Eco Tote Bag".
+  const tote = await db.listing.findFirstOrThrow({ where: { title: "Eco Tote Bag" } });
+  await db.purchase.create({ data: { userId: ayaan.id, listingId: tote.id, points: tote.pricePoints, createdAt: ago(2) } });
+  await db.listing.update({ where: { id: tote.id }, data: { stock: { decrement: 1 } } });
+  await db.user.update({ where: { id: ayaan.id }, data: { points: { decrement: tote.pricePoints } } });
 
   // Health & safety reports: one recent alert for Class 10, older ones all clear.
   const classes = Array.from(new Set(extras.map((e) => e.grade!).concat("Class 10", "Grade 7")));
@@ -110,7 +108,6 @@ async function main() {
 
   // Teacher tasks
   const task1 = await db.task.create({ data: { title: "Bring 3 clean plastic bottles", description: "We're building a bottle greenhouse for the school garden.", className: "Class 10", schoolId: sunrise.id, points: 20, dueAt: new Date(Date.now() + 3 * DAY), creatorId: teacher.id } });
-  await db.task.create({ data: { title: "Food waste diary", description: "Log every bit of food waste at home for 5 days in the Food Waste tab.", className: "Class 10", schoolId: sunrise.id, points: 30, dueAt: new Date(Date.now() + 6 * DAY), creatorId: teacher.id } });
   const class10 = extras.filter((e) => e.grade === "Class 10");
   await db.taskDone.createMany({ data: class10.slice(0, 3).map((s, i) => ({ taskId: task1.id, userId: s.id, approved: i === 0 })) });
 
@@ -145,6 +142,11 @@ async function main() {
       { userId: ayaan.id, kind: "TASK", title: "New task: Bring 3 clean plastic bottles", body: "Due in 3 days · +20 pts", createdAt: ago(0.5) },
     ],
   });
+  // Backdate badges the demo users already qualify for, so history shows realistic dates.
+  for (const u of await db.user.findMany({ include: { scans: { select: { wasteType: true } }, purchases: true, joins: { where: { completed: true } } } })) {
+    const badges = earnedBadges({ scans: u.scans.length, points: u.points, types: new Set(u.scans.map((s) => s.wasteType)).size, purchases: u.purchases.length, challenges: u.joins.length });
+    await db.userBadge.createMany({ data: badges.map((b, i) => ({ userId: u.id, badgeId: b.id, earnedAt: ago(25 - i * 3 - rand() * 2) })) });
+  }
   console.log(`Seeded. Demo password for all accounts: ${DEMO_PASSWORD}`);
 }
 

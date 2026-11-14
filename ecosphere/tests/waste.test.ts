@@ -67,3 +67,22 @@ describe("heatmapGrid", () => {
     expect(grid).toEqual([[0, 0, 0, 0, 0, 0, 0], [2, 0, 0, 0, 1, 0, 0]]);
   });
 });
+
+import { periodRange, seriesFor } from "@/lib/charts";
+
+describe("periods", () => {
+  const now = new Date(2026, 10, 13, 12); // Fri 13 Nov 2026
+  it("week starts Monday and shifts by offset", () => {
+    expect(periodRange("week", 0, now).start).toEqual(new Date(2026, 10, 9));
+    expect(periodRange("week", -1, now).start).toEqual(new Date(2026, 10, 2));
+  });
+  it("month and year ranges", () => {
+    expect(periodRange("month", -1, now)).toEqual({ start: new Date(2026, 9, 1), end: new Date(2026, 10, 1) });
+    expect(periodRange("year", 0, now).end).toEqual(new Date(2027, 0, 1));
+  });
+  it("series sums per bucket", () => {
+    const s = seriesFor("week", new Date(2026, 10, 9), [{ weightKg: 1.5, createdAt: new Date(2026, 10, 10, 9) }]);
+    expect(s.map((x) => x.value)).toEqual([0, 1.5, 0, 0, 0, 0, 0]);
+    expect(seriesFor("month", new Date(2026, 10, 1), [])).toHaveLength(5);
+  });
+});

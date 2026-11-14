@@ -2,6 +2,7 @@ import "server-only";
 import type { Prisma, User } from "@prisma/client";
 import { db } from "./db";
 import { impact } from "./waste";
+import { earnedBadges } from "./rewards";
 
 // Which scans a user may see, by role.
 export function scanScope(user: Pick<User, "id" | "role" | "schoolId" | "grade">): Prisma.ScanWhereInput {
@@ -24,9 +25,9 @@ export const startOf = (period: "week" | "month" | "year") => {
   return d;
 };
 
-export async function impactFor(where: Prisma.ScanWhereInput, since?: Date) {
+export async function impactFor(where: Prisma.ScanWhereInput, since?: Date, until?: Date) {
   const scans = await db.scan.findMany({
-    where: { ...where, ...(since && { createdAt: { gte: since } }) },
+    where: { ...where, ...((since || until) && { createdAt: { ...(since && { gte: since }), ...(until && { lt: until }) } }) },
     select: { wasteType: true, weightKg: true, createdAt: true },
   });
   return { scans, ...impact(scans) };
@@ -48,8 +49,23 @@ export function visibleNotifications(userId: string, take = 30) {
   return db.notification.findMany({ where: { OR: [{ userId }, { userId: null }] }, orderBy: { createdAt: "desc" }, take });
 }
 
-// Same visibility as scanScope, expressed over users (for food logs, exports, etc.).
+// Same visibility as scanScope, expressed over users (for exports, etc.).
 export function peopleScope(user: Pick<User, "id" | "role" | "schoolId" | "grade">): Prisma.UserWhereInput {
   const s = scanScope(user);
   return s.userId ? { id: user.id } : ((s.user as Prisma.UserWhereInput) ?? {});
+}
+
+export async function syncBadges(userId: string) {
+  const [user, scans, types, purchases, challenges, have] = await Promise.all([
+    db.user.findUnique({ where: { id: userId }, select: { points: true } }),
+    db.scan.count({ where: { userId } }),
+    db.scan.groupBy({ by: ["wasteType"], where: { userId } }),
+    db.purchase.count({ where: { userId } }),
+    db.challengeJoin.count({ where: { userId, completed: true } }),
+    db.userBadge.findMany({ where: { userId }, select: { badgeId: true } }),
+  ]);
+  const owned = new Set(have.map((b) => b.badgeId));
+  const fresh = earnedBadges({ scans, points: user?.points ?? 0, types: types.length, purchases, challenges }).filter((b) => !owned.has(b.id));
+  if (fresh.length) await db.userBadge.createMany({ data: fresh.map((b) => ({ userId, badgeId: b.id })), skipDuplicates: true });
+  return new Set([...Array.from(owned), ...fresh.map((b) => b.id)]);
 }
