@@ -21,7 +21,7 @@ export default async function Notifications({ searchParams }: { searchParams: { 
         <nav className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
           {Object.entries(TABS).map(([k, v]) => <Link key={k} href={`/notifications?t=${k}`} className={`chip shrink-0 px-4 ${k === tab ? "chip-on" : ""}`}>{v}</Link>)}
         </nav>
-        <ul className="card overflow-hidden">
+        <ul className="stagger card overflow-hidden">
           {items.map((n) => (
             <li key={n.id} className="flex items-center gap-4 border-b border-line p-4 last:border-0">
               <IconCircle tone={ICON[n.kind][1]} size={46}>{ICON[n.kind][0]}</IconCircle>

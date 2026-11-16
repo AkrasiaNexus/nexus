@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { PERIOD_GOAL_KG, periodLabel, periodRange, type Period } from "@/lib/charts";
 import { impactFor, scanScope } from "@/lib/queries";
 import { goalPercent } from "@/lib/rewards";
-import { LeafHero } from "@/components/art";
+import { LeafGoal } from "@/components/LeafGoal";
 import { PillMenu, Stat } from "@/components/ui";
 
 const SCOPE_LABEL: Record<string, string> = { PARENT: "My Children", TEACHER: "My Class", HEALTH_MONITOR: "My Class", SCHOOL_ADMIN: "My School", SUPER_ADMIN: "Platform", EMPLOYEE: "Me", COMMUNITY: "Me" };
@@ -90,10 +90,7 @@ export default async function Home({ searchParams }: { searchParams: Params }) {
           : <span className="rounded-xl border border-white/[.06] bg-card px-4 py-2 text-sm">{SCOPE_LABEL[user.role]}{user.school ? ` · ${user.school.name}` : ""}</span>}
       </div>
 
-      <LeafHero size={250}>
-        <span className="text-4xl font-bold drop-shadow">{percent}%</span>
-        <span className="text-sm text-white/90">{personalGoal ? "Green Goal" : "Recycling Rate"}</span>
-      </LeafHero>
+      <LeafGoal percent={percent} label={personalGoal ? "Green Goal" : "Recycling Rate"} />
 
       <div className="flex flex-col items-center gap-3">
         <div className="flex w-full items-center gap-3" aria-label="Timeline">
@@ -119,7 +116,7 @@ export default async function Home({ searchParams }: { searchParams: Params }) {
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">Quick Actions</h2>
-        <div className="-mx-5 flex snap-x gap-3 overflow-x-auto px-5 pb-1">
+        <div className="stagger -mx-5 flex snap-x gap-3 overflow-x-auto px-5 pb-1">
           {actions.map(({ href, label, icon: Icon }) => (
             <Link key={href} href={href} className="card flex w-[calc((100%-1.5rem)/3)] shrink-0 snap-start flex-col items-center gap-2 py-4 text-center text-xs hover:border-leaf">
               <Icon className="text-leaf" size={28} />{label}

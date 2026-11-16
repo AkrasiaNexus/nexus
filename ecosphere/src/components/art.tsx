@@ -1,32 +1,5 @@
 // Decorative artwork recreating the mockup's glowing leaf look. Pure SVG, no images.
 
-export function LeafHero({ children, size = 240 }: { children?: React.ReactNode; size?: number }) {
-  return (
-    <div className="relative mx-auto" style={{ width: size, height: size }}>
-      <svg viewBox="0 0 200 200" className="absolute inset-0 drop-shadow-[0_0_30px_rgba(134,214,126,.35)]" aria-hidden>
-        <defs>
-          <linearGradient id="leafFill" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0" stopColor="#1f5a2a" />
-            <stop offset=".55" stopColor="#3f9a48" />
-            <stop offset="1" stopColor="#9be292" />
-          </linearGradient>
-          <radialGradient id="leafShine" cx=".7" cy=".25" r=".6">
-            <stop offset="0" stopColor="#fff" stopOpacity=".35" />
-            <stop offset="1" stopColor="#fff" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        <path d="M178 14C96 10 30 46 22 116c-4 34 10 60 26 72 4-40 30-84 78-118-40 36-62 76-66 120 78 4 128-60 118-176z" fill="url(#leafFill)" />
-        <path d="M178 14C96 10 30 46 22 116c-4 34 10 60 26 72 4-40 30-84 78-118-40 36-62 76-66 120 78 4 128-60 118-176z" fill="url(#leafShine)" />
-        <g stroke="#c8f5c0" strokeOpacity=".25" strokeWidth="1.2" fill="none">
-          <path d="M60 190C80 120 120 70 170 22" />
-          <path d="M95 120c-20-6-36-4-50 4M112 96c-16-10-34-12-50-8M130 74c-12-12-26-18-42-18M120 110c18 4 34 2 48-6M138 86c14 0 28-6 38-16" />
-        </g>
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center pl-6 pt-4 text-center">{children}</div>
-    </div>
-  );
-}
-
 export function LeafLogo({ size = 72 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden className="drop-shadow-[0_0_18px_rgba(134,214,126,.45)]">

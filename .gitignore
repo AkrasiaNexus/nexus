@@ -43,3 +43,7 @@ graphify-out/manifest.json
 graphify-out/.graphify_analysis.json
 graphify-out/.graphify_build.json
 graphify-out/.graphify_root
+
+# impeccable per-developer settings
+.impeccable/config.local.json
+.impeccable/review/

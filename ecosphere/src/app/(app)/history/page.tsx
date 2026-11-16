@@ -37,7 +37,7 @@ export default async function History({ searchParams }: { searchParams: { t?: st
         <nav className="flex justify-between gap-2">
           {TABS.map((t) => <Link key={t} href={`/history?t=${t}`} className={`chip ${t === tab ? "chip-on" : ""}`}>{t}</Link>)}
         </nav>
-        <ul className="flex flex-col">
+        <ul className="stagger flex flex-col">
           {rows.map((r) => (
             <li key={r.title + r.id} className="flex items-center gap-4 border-b border-white/[.05] py-3.5 last:border-0">
               <IconCircle tone={r.tone} size={46}>{r.icon}</IconCircle>

@@ -10,7 +10,7 @@ import { saveScan } from "../../actions";
 type Model = { classify: (img: HTMLImageElement, k?: number) => Promise<{ className: string; probability: number }[]> };
 type Result = { wasteType: WasteType; label: string; confidence: number };
 
-const LOW_CONFIDENCE = 0.35;
+const LOW_CONFIDENCE = 0.5; // below this the user is asked to confirm the category
 
 export function Scanner() {
   const model = useRef<Model | null>(null);
@@ -22,6 +22,7 @@ export function Scanner() {
   const [type, setType] = useState<WasteType>("PLASTIC");
   const [weight, setWeight] = useState("0.03");
   const [message, setMessage] = useState<string | null>(null);
+  const [earned, setEarned] = useState<{ points: number; key: number } | null>(null);
 
   useEffect(() => {
     // Model runs fully in the browser; photos never leave the device.
@@ -59,7 +60,11 @@ export function Scanner() {
       return pickType("OTHER");
     }
     setBusy(true);
-    const r = classify(await model.current.classify(img.current, 5));
+    // fromPixels reads the element at its rendered box, which distorts a cropped preview; use the source pixels.
+    const source = new Image();
+    source.src = img.current.src;
+    await source.decode();
+    const r = classify(await model.current.classify(source, 5));
     setResult(r);
     pickType(r.wasteType);
     setBusy(false);
@@ -71,6 +76,7 @@ export function Scanner() {
     const res = await saveScan({ label: result.label, wasteType: type, confidence: result.confidence, weightKg: Number(weight) });
     setBusy(false);
     setMessage(res?.error ?? `+${res?.points} points! Logged as ${GUIDE[type].name}.`);
+    if (res?.points) setEarned({ points: res.points, key: Date.now() });
     if (!res?.error) { setResult(null); setPreview(null); }
   }
 
@@ -90,7 +96,14 @@ export function Scanner() {
         <span className={`${corner} right-8 top-8 rounded-tr-xl border-r-2 border-t-2`} />
         <span className={`${corner} bottom-8 left-8 rounded-bl-xl border-b-2 border-l-2`} />
         <span className={`${corner} bottom-8 right-8 rounded-br-xl border-b-2 border-r-2`} />
-        {busy && <div className="absolute inset-0 grid place-items-center bg-ink/60"><Loader2 className="animate-spin text-leaf" size={36} /></div>}
+        {/* While the model reads the photo, a scan line sweeps the frame: the AI is visibly working. */}
+        {busy && (
+          <div className="absolute inset-0 overflow-hidden bg-ink/30" aria-label="Analysing photo">
+            <div className="scan-line absolute inset-x-0 h-1/3 bg-gradient-to-b from-transparent via-leaf/35 to-transparent" style={{ animation: "scan-sweep 1.1s var(--ease-out) infinite alternate" }} />
+            <Loader2 className="absolute inset-0 m-auto animate-spin text-leaf motion-reduce:animate-none" size={30} />
+          </div>
+        )}
+        {earned && <span key={earned.key} className="float-up pointer-events-none absolute inset-x-0 bottom-10 text-center text-2xl font-bold text-leaf" aria-hidden>+{earned.points} pts</span>}
       </div>
 
       <p className="text-center text-sm text-white/75">Take a photo or upload<br />an image</p>
@@ -113,12 +126,12 @@ export function Scanner() {
         {status === "failed" && "AI model unavailable offline. You can still log items manually."}
       </p>
 
-      {message && <p role="status" className="card p-3 text-center text-sm text-leaf">{message}</p>}
+      {message && <p key={message} role="status" className="sheet-up card p-3 text-center text-sm text-leaf">{message}</p>}
 
       {result && (
         <>
-          <section className="card flex items-center gap-4 p-4" aria-live="polite">
-            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#2f6b34] to-[#163a1b] text-[#9be292]"><Recycle size={28} /></span>
+          <section key={result.label} className="sheet-up card flex items-center gap-4 p-4" aria-live="polite">
+            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#2f6b34] to-[#163a1b] text-[#9be292]"><Recycle size={28} className="spin-once" /></span>
             <div className="flex-1">
               <p className="text-lg font-semibold capitalize">{result.label}</p>
               <p className="font-semibold text-leaf">{g.action}</p>
@@ -126,7 +139,7 @@ export function Scanner() {
             {result.confidence > 0 && <span className="chip">{Math.round(result.confidence * 100)}%</span>}
           </section>
 
-          <section className="card flex flex-col gap-3 p-4">
+          <section className="sheet-up card flex flex-col gap-3 p-4" style={{ animationDelay: "90ms" }}>
             {result.confidence < LOW_CONFIDENCE && (
               <p className="rounded-lg bg-yellow-500/10 p-2 text-xs text-yellow-300">Not sure about this one. Please check the category below. You know your item best.</p>
             )}

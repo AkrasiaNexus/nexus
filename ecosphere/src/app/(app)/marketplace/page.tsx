@@ -38,7 +38,7 @@ export default async function Marketplace({ searchParams }: { searchParams: { c?
           ))}
         </nav>
         <p className="text-center text-xs text-white/50">You have <b className="text-leaf">{user.points} pts</b> to spend</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="stagger grid grid-cols-2 gap-3">
           {items.map((it) => (
             <Link key={it.id} href={`/marketplace/${it.id}`} className="card flex flex-col gap-2 p-3 hover:border-leaf">
               <ItemArt emoji={it.emoji} />

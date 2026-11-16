@@ -75,6 +75,11 @@ This file is the user's standing preferences. Load and follow it every session. 
 - **Don't write Nexus code yourself** — tell the user to ask Jarvis (self-modification via forge_change + 4-char approval).
 - **Model routing** already handled by router.dispatch (ollama + gemini).
 
+## 12b. Impeccable design skill (always ON)
+- Repo skill: `.claude/skills/impeccable` (pbakaus/impeccable), with its design-detector hook wired in `.claude/settings.json` and enabled in `.impeccable/config.json`.
+- **Load the `impeccable` skill before ANY UI work** (new screens, styling, layout, copy, motion, review) in every project in this repo; use its commands (`animate`, `polish`, `critique`, `audit`, `delight`, `overdrive`...) by name.
+- Triage every detector finding: fix real problems; never add ignores to dodge a fix.
+
 ## 13. Graphify
 - For codebase questions: `graphify query` / `path` / `explain` first.
 - Use `graphify-out/wiki/index.md` for navigation.

@@ -24,7 +24,7 @@ export default function Login() {
   return (
     <div className="flex min-h-screen flex-col gap-8 px-6 pb-10 pt-20">
       <div className="flex flex-col items-center gap-3 text-center">
-        <LeafLogo size={84} />
+        <span className="blur-in"><LeafLogo size={84} /></span>
         <h1 className="text-3xl font-semibold">EcoSphere AI</h1>
         <p className="text-white/75">Welcome back!</p>
       </div>

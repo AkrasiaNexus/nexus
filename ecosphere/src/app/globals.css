@@ -18,3 +18,69 @@ body {
   .chip { @apply rounded-full border border-white/[.06] bg-card px-3.5 py-1.5 text-xs text-white/80 transition; }
   .chip-on { @apply border-leaf bg-leaf text-ink font-semibold; }
 }
+
+/* ── Motion system ─────────────────────────────────────────────
+   One authored moment (the leaf goal filling, see LeafGoal) plus quiet
+   supporting motion: push/fade between screens, data drawing in, press
+   feedback. Durations follow 120 / 240 / 360 / 900 ms; exits never wait. */
+:root {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --t-fast: 120ms;
+  --t-base: 240ms;
+  --t-view: 360ms;
+}
+
+::selection { background: rgba(134, 214, 126, 0.35); color: #fff; }
+:focus-visible { outline: 2px solid #86d67e; outline-offset: 2px; }
+
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes rise-in { from { opacity: 0; transform: translateY(10px); } }
+@keyframes push-in { from { opacity: 0; transform: translateX(28px); } }
+@keyframes sheet-up { from { opacity: 0; transform: translateY(28px) scale(0.98); } }
+@keyframes pop-in { 0% { opacity: 0; transform: scale(0.6); } 70% { transform: scale(1.06); } 100% { transform: scale(1); } }
+@keyframes ring-draw { from { stroke-dashoffset: var(--c); } }
+@keyframes line-draw { from { stroke-dashoffset: 1; } }
+@keyframes bar-grow { from { transform: scaleY(0); } }
+@keyframes spin-once { from { transform: rotate(-200deg); } }
+@keyframes float-up { 0% { opacity: 0; transform: translateY(6px); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-40px); } }
+@keyframes scan-sweep { from { transform: translateY(-100%); } to { transform: translateY(100%); } }
+@keyframes blur-in { from { opacity: 0; filter: blur(12px); transform: translateY(14px) scale(0.92); } }
+
+/* Screen changes: tab roots crossfade, sub-screens push in from the right like a native stack. */
+.view-fade { animation: fade-in var(--t-base) var(--ease-out) both; }
+.view-push { animation: push-in var(--t-view) var(--ease-out) both; }
+
+/* Lists that arrive as lists: short stagger, capped at 8 items (~280 ms total). */
+.stagger > * { animation: rise-in var(--t-view) var(--ease-out) both; }
+.stagger > :nth-child(2) { animation-delay: 35ms; }
+.stagger > :nth-child(3) { animation-delay: 70ms; }
+.stagger > :nth-child(4) { animation-delay: 105ms; }
+.stagger > :nth-child(5) { animation-delay: 140ms; }
+.stagger > :nth-child(6) { animation-delay: 175ms; }
+.stagger > :nth-child(7) { animation-delay: 210ms; }
+.stagger > :nth-child(n + 8) { animation-delay: 245ms; }
+
+.sheet-up { animation: sheet-up var(--t-view) var(--ease-out) both; }
+.pop-in { animation: pop-in 420ms var(--ease-out) both; }
+.spin-once { animation: spin-once 700ms var(--ease-out) both; }
+.float-up { animation: float-up 1100ms var(--ease-out) forwards; }
+.blur-in { animation: blur-in 800ms var(--ease-out) both; }
+
+/* Data replaced in place (period change): a quick crossfade, never a redraw from zero. */
+.data-swap { animation: fade-in var(--t-base) var(--ease-out) both; }
+.data-swap * { animation: none !important; }
+
+/* Press feedback on anything tappable that looks like a surface. */
+a.card, button.card, .press { transition: transform var(--t-fast) var(--ease-out), border-color var(--t-base); }
+a.card:active, button.card:active, .press:active { transform: scale(0.97); }
+
+/* Reduced motion: keep the meaning (fades, state colour) and drop spatial movement. */
+@media (prefers-reduced-motion: reduce) {
+  .view-push, .stagger > *, .sheet-up, .pop-in, .blur-in { animation-name: fade-in !important; }
+  .spin-once, .scan-line { animation: none !important; }
+  .float-up { animation: fade-in var(--t-base) both reverse !important; }
+  .bar-anim, .ring-anim, .line-anim, .chart-anim { animation: none !important; transition: none !important; }
+  .slide-anim { transition: none !important; }
+  a.card:active, button.card:active, .press:active { transform: none; }
+  * { scroll-behavior: auto !important; }
+}

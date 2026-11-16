@@ -6,6 +6,7 @@ import { syncBadges } from "@/lib/queries";
 import { BADGES } from "@/lib/rewards";
 import { GUIDE, round } from "@/lib/waste";
 import { LeafLogo } from "@/components/art";
+import { CountUp } from "@/components/Motion";
 import { Header, IconCircle, type Tone } from "@/components/ui";
 import { claimChallenge, joinChallenge, setAvatar } from "../../actions";
 
@@ -33,8 +34,8 @@ export default async function Rewards({ searchParams }: { searchParams: { all?: 
       <div className="flex flex-col gap-6 px-5">
         <section className="flex flex-col items-center gap-5 pt-6">
           <div className="relative grid h-40 w-40 place-items-center rounded-full border-2 border-leaf/50 bg-[radial-gradient(circle,#1f4a26,#0b1a0e)] shadow-[0_0_40px_rgba(134,214,126,.25)]">
-            <span className="absolute -top-9"><LeafLogo size={70} /></span>
-            <div className="pt-4 text-center"><p className="text-4xl font-bold">{user.points}</p><p className="text-sm text-white/70">Points</p></div>
+            <span className="blur-in absolute -top-9"><LeafLogo size={70} /></span>
+            <div className="pt-4 text-center"><p className="text-4xl font-bold"><CountUp value={user.points} duration={1100} /></p><p className="text-sm text-white/70">Points</p></div>
           </div>
           <Link href="/marketplace" className="btn w-full py-3.5">Redeem Rewards</Link>
         </section>
@@ -45,10 +46,12 @@ export default async function Rewards({ searchParams }: { searchParams: { all?: 
             <Link href={showAll ? "/rewards" : "/rewards?all=1"} className="flex items-center gap-1 text-sm text-leaf">{showAll ? "Show less" : "View All"} <ArrowRight size={14} /></Link>
           </div>
           <ul className={showAll ? "grid grid-cols-4 gap-4" : "flex justify-between"}>
-            {badges.map((b) => (
-              <li key={b.id} className={`flex flex-col items-center gap-1 ${earned.has(b.id) ? "" : "opacity-30 grayscale"}`} title={`${b.name}${earned.has(b.id) ? "" : " (locked)"}`}>
+            {badges.map((b, i) => (
+              <li key={b.id} className="pop-in" style={{ animationDelay: `${120 + i * 60}ms` }} title={`${b.name}${earned.has(b.id) ? "" : " (locked)"}`}>
+                <div className={`flex flex-col items-center gap-1 ${earned.has(b.id) ? "" : "opacity-30 grayscale"}`}>
                 <IconCircle tone={b.tone as Tone} size={64}><span className="text-3xl">{b.emoji}</span></IconCircle>
                 {showAll && <span className="text-center text-[10px] leading-tight">{b.name}</span>}
+                </div>
               </li>
             ))}
           </ul>
