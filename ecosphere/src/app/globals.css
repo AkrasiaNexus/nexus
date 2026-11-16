@@ -22,12 +22,12 @@ body {
 /* ── Motion system ─────────────────────────────────────────────
    One authored moment (the leaf goal filling, see LeafGoal) plus quiet
    supporting motion: push/fade between screens, data drawing in, press
-   feedback. Durations follow 120 / 240 / 360 / 900 ms; exits never wait. */
+   feedback. Durations follow 150 / 300 / 450 / 1300 ms (slowed ~25% after user review); exits never wait. */
 :root {
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --t-fast: 120ms;
-  --t-base: 240ms;
-  --t-view: 360ms;
+  --t-fast: 150ms;
+  --t-base: 300ms;
+  --t-view: 450ms;
 }
 
 ::selection { background: rgba(134, 214, 126, 0.35); color: #fff; }
@@ -38,7 +38,6 @@ body {
 @keyframes push-in { from { opacity: 0; transform: translateX(28px); } }
 @keyframes sheet-up { from { opacity: 0; transform: translateY(28px) scale(0.98); } }
 @keyframes pop-in { 0% { opacity: 0; transform: scale(0.6); } 70% { transform: scale(1.06); } 100% { transform: scale(1); } }
-@keyframes ring-draw { from { stroke-dashoffset: var(--c); } }
 @keyframes line-draw { from { stroke-dashoffset: 1; } }
 @keyframes bar-grow { from { transform: scaleY(0); } }
 @keyframes spin-once { from { transform: rotate(-200deg); } }
@@ -50,25 +49,21 @@ body {
 .view-fade { animation: fade-in var(--t-base) var(--ease-out) both; }
 .view-push { animation: push-in var(--t-view) var(--ease-out) both; }
 
-/* Lists that arrive as lists: short stagger, capped at 8 items (~280 ms total). */
+/* Lists that arrive as lists: short stagger, capped at 8 items (~350 ms total). */
 .stagger > * { animation: rise-in var(--t-view) var(--ease-out) both; }
-.stagger > :nth-child(2) { animation-delay: 35ms; }
-.stagger > :nth-child(3) { animation-delay: 70ms; }
-.stagger > :nth-child(4) { animation-delay: 105ms; }
-.stagger > :nth-child(5) { animation-delay: 140ms; }
-.stagger > :nth-child(6) { animation-delay: 175ms; }
-.stagger > :nth-child(7) { animation-delay: 210ms; }
-.stagger > :nth-child(n + 8) { animation-delay: 245ms; }
+.stagger > :nth-child(2) { animation-delay: 45ms; }
+.stagger > :nth-child(3) { animation-delay: 90ms; }
+.stagger > :nth-child(4) { animation-delay: 135ms; }
+.stagger > :nth-child(5) { animation-delay: 180ms; }
+.stagger > :nth-child(6) { animation-delay: 225ms; }
+.stagger > :nth-child(7) { animation-delay: 270ms; }
+.stagger > :nth-child(n + 8) { animation-delay: 315ms; }
 
 .sheet-up { animation: sheet-up var(--t-view) var(--ease-out) both; }
-.pop-in { animation: pop-in 420ms var(--ease-out) both; }
-.spin-once { animation: spin-once 700ms var(--ease-out) both; }
-.float-up { animation: float-up 1100ms var(--ease-out) forwards; }
-.blur-in { animation: blur-in 800ms var(--ease-out) both; }
-
-/* Data replaced in place (period change): a quick crossfade, never a redraw from zero. */
-.data-swap { animation: fade-in var(--t-base) var(--ease-out) both; }
-.data-swap * { animation: none !important; }
+.pop-in { animation: pop-in 520ms var(--ease-out) both; }
+.spin-once { animation: spin-once 900ms var(--ease-out) both; }
+.float-up { animation: float-up 1400ms var(--ease-out) forwards; }
+.blur-in { animation: blur-in 1000ms var(--ease-out) both; }
 
 /* Press feedback on anything tappable that looks like a surface. */
 a.card, button.card, .press { transition: transform var(--t-fast) var(--ease-out), border-color var(--t-base); }
@@ -79,7 +74,7 @@ a.card:active, button.card:active, .press:active { transform: scale(0.97); }
   .view-push, .stagger > *, .sheet-up, .pop-in, .blur-in { animation-name: fade-in !important; }
   .spin-once, .scan-line { animation: none !important; }
   .float-up { animation: fade-in var(--t-base) both reverse !important; }
-  .bar-anim, .ring-anim, .line-anim, .chart-anim { animation: none !important; transition: none !important; }
+  .bar-anim, .line-anim, .chart-anim { animation: none !important; transition: none !important; }
   .slide-anim { transition: none !important; }
   a.card:active, button.card:active, .press:active { transform: none; }
   * { scroll-behavior: auto !important; }

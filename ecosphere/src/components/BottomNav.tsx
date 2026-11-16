@@ -18,7 +18,7 @@ export function BottomNav() {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md rounded-t-3xl border-t border-white/[.06] bg-[#0b110d]/95 backdrop-blur">
       {/* Shared indicator: glides to the active tab so the switch reads as one continuous move. */}
-      <span aria-hidden className="pointer-events-none absolute top-0 flex w-1/4 justify-center transition-[transform,opacity] duration-[360ms] ease-[cubic-bezier(.16,1,.3,1)] motion-reduce:transition-none"
+      <span aria-hidden className="pointer-events-none absolute top-0 flex w-1/4 justify-center transition-[transform,opacity] duration-[450ms] ease-[cubic-bezier(.16,1,.3,1)] motion-reduce:transition-none"
         style={{ transform: `translateX(${Math.max(0, active) * 100}%)`, opacity: active < 0 ? 0 : 1 }}>
         <span className="h-[3px] w-8 rounded-b-full bg-leaf" />
       </span>

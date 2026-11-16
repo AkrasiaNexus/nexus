@@ -99,7 +99,7 @@ export function Scanner() {
         {/* While the model reads the photo, a scan line sweeps the frame: the AI is visibly working. */}
         {busy && (
           <div className="absolute inset-0 overflow-hidden bg-ink/30" aria-label="Analysing photo">
-            <div className="scan-line absolute inset-x-0 h-1/3 bg-gradient-to-b from-transparent via-leaf/35 to-transparent" style={{ animation: "scan-sweep 1.1s var(--ease-out) infinite alternate" }} />
+            <div className="scan-line absolute inset-x-0 h-1/3 bg-gradient-to-b from-transparent via-leaf/35 to-transparent" style={{ animation: "scan-sweep 1.4s var(--ease-out) infinite alternate" }} />
             <Loader2 className="absolute inset-0 m-auto animate-spin text-leaf motion-reduce:animate-none" size={30} />
           </div>
         )}
@@ -139,7 +139,7 @@ export function Scanner() {
             {result.confidence > 0 && <span className="chip">{Math.round(result.confidence * 100)}%</span>}
           </section>
 
-          <section className="sheet-up card flex flex-col gap-3 p-4" style={{ animationDelay: "90ms" }}>
+          <section className="sheet-up card flex flex-col gap-3 p-4" style={{ animationDelay: "110ms" }}>
             {result.confidence < LOW_CONFIDENCE && (
               <p className="rounded-lg bg-yellow-500/10 p-2 text-xs text-yellow-300">Not sure about this one. Please check the category below. You know your item best.</p>
             )}

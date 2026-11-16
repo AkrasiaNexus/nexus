@@ -55,7 +55,7 @@ export default async function Stats({ searchParams }: { searchParams: { p?: stri
       <div className="flex flex-col gap-4 px-5">
         <nav className="relative grid grid-cols-3 rounded-2xl border border-white/[.06] bg-card p-1">
           {/* Sliding selection pill: same DOM node across period changes, so it travels instead of jumping. */}
-          <span aria-hidden className="slide-anim absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-xl bg-leaf/90 transition-transform duration-[360ms] ease-[cubic-bezier(.16,1,.3,1)]"
+          <span aria-hidden className="slide-anim absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-xl bg-leaf/90 transition-transform duration-[450ms] ease-[cubic-bezier(.16,1,.3,1)]"
             style={{ transform: `translateX(${Object.keys(PERIODS).indexOf(period) * 100}%)` }} />
           {Object.entries(PERIODS).map(([k, v]) => (
             <Link key={k} href={`/stats?p=${k}&b=${board}`} aria-current={k === period ? "page" : undefined}

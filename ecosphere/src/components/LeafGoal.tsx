@@ -1,37 +1,25 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
-import { CountUp, easeOutExpo, reducedMotion } from "./Motion";
+import { useId, useRef } from "react";
+import { useTween } from "./Motion";
 
 const LEAF = "M178 14C96 10 30 46 22 116c-4 34 10 60 26 72 4-40 30-84 78-118-40 36-62 76-66 120 78 4 128-60 118-176z";
 // The clip frame is rotated 45° so "up" runs along the midrib: y=217 at the stem, y=-16 at the tip.
 const STEM_Y = 217;
 const SPAN = 233;
-const DURATION = 900;
 
 // Focal moment: the leaf fills with chlorophyll from stem to tip up to the goal, and refills on period change.
 export function LeafGoal({ percent, label, size = 250 }: { percent: number; label: string; size?: number }) {
   const id = useId().replace(/:/g, "");
   const rect = useRef<SVGRectElement>(null);
-  const level = useRef(0);
-
-  useEffect(() => {
-    const el = rect.current;
-    if (!el) return;
-    const set = (p: number) => { const h = (p / 100) * SPAN; el.setAttribute("y", String(STEM_Y - h)); el.setAttribute("height", String(h + 40)); };
-    const from = level.current;
-    if (reducedMotion()) { set(percent); level.current = percent; return; }
-    let raf = 0;
-    const t0 = performance.now();
-    const tick = (now: number) => {
-      const p = from + (percent - from) * easeOutExpo((now - t0) / DURATION);
-      set(p);
-      level.current = p;
-      if (now - t0 < DURATION) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [percent]);
+  const num = useRef<HTMLSpanElement>(null);
+  // Fill level and printed percent share one tween frame.
+  useTween(percent, (p) => {
+    const h = (p / 100) * SPAN;
+    rect.current?.setAttribute("y", String(STEM_Y - h));
+    rect.current?.setAttribute("height", String(h + 40));
+    if (num.current) num.current.textContent = `${Math.round(p)}%`;
+  });
 
   return (
     <div className="relative mx-auto" style={{ width: size, height: size }} role="img" aria-label={`${percent}% ${label}`}>
@@ -62,8 +50,8 @@ export function LeafGoal({ percent, label, size = 250 }: { percent: number; labe
         </g>
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center pl-6 pt-4 text-center">
-        <span className="text-4xl font-bold drop-shadow"><CountUp value={percent} duration={DURATION} suffix="%" /></span>
-        <span className="text-sm text-white/90">{label}</span>
+        <span ref={num} className="text-4xl font-bold tabular-nums drop-shadow" aria-hidden>0%</span>
+        <span className="text-sm text-white/90" aria-hidden>{label}</span>
       </div>
     </div>
   );

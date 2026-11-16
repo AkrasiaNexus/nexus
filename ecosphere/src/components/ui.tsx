@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { CountUp, DataSwap } from "./Motion";
+export { Ring } from "./Ring";
 
 // Mockup style: sub-screens get a back arrow + centred title; tab screens a large left title.
 export function Header({ title, back = "/home", right }: { title: string; back?: string | null; right?: React.ReactNode }) {
@@ -43,22 +43,23 @@ export function LineChart({ data, height = 150 }: { data: { label: string; value
   const line = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
   return (
     <figure>
-      <DataSwap id={data.map((d) => d.value).join()}>
+      {/* Re-keyed on new data so every period switch redraws the line left-to-right (user preference over a crossfade). */}
+      <div key={`${data.length}:${data.map((d) => d.value).join()}`}>
       <svg viewBox={`-6 0 ${w + 12} ${h}`} style={{ height }} className="w-full" role="img" aria-label="Trend chart">
         <defs>
           <linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#86d67e" stopOpacity=".45" /><stop offset="1" stopColor="#86d67e" stopOpacity="0" /></linearGradient>
         </defs>
         {pts.map(([x], i) => <line key={i} x1={x} x2={x} y1="0" y2={h} stroke="#86d67e" strokeOpacity=".12" />)}
-        <path d={`${line} L${w},${h} L0,${h} Z`} fill="url(#area)" className="chart-anim" style={{ animation: "fade-in 600ms 250ms var(--ease-out) both" }} />
-        <path d={line} fill="none" stroke="#9be292" strokeWidth="2" pathLength={1} strokeDasharray={1} className="line-anim" style={{ animation: "line-draw 900ms var(--ease-out) both" }} />
+        <path d={`${line} L${w},${h} L0,${h} Z`} fill="url(#area)" className="chart-anim" style={{ animation: "fade-in 750ms 320ms var(--ease-out) both" }} />
+        <path d={line} fill="none" stroke="#9be292" strokeWidth="2" pathLength={1} strokeDasharray={1} className="line-anim" style={{ animation: "line-draw 1300ms var(--ease-out) both" }} />
         {pts.map(([x, y], i) => (
           <circle key={i} cx={x} cy={y} r="3.5" fill="#0b120d" stroke="#9be292" strokeWidth="2" className="chart-anim"
-            style={{ transformBox: "fill-box", transformOrigin: "center", animation: `pop-in 360ms ${150 + (i / Math.max(1, pts.length - 1)) * 700}ms var(--ease-out) both` }}>
+            style={{ transformBox: "fill-box", transformOrigin: "center", animation: `pop-in 450ms ${190 + (i / Math.max(1, pts.length - 1)) * 1000}ms var(--ease-out) both` }}>
             <title>{`${data[i].label}: ${data[i].value} kg`}</title>
           </circle>
         ))}
       </svg>
-      </DataSwap>
+      </div>
       <figcaption className="flex justify-between px-0.5 text-[11px] text-white/50">{data.map((d) => <span key={d.label}>{d.label}</span>)}</figcaption>
     </figure>
   );
@@ -85,26 +86,6 @@ export function MenuRow({ href, icon, label, hint }: { href: string; icon: React
   );
 }
 
-export function Ring({ percent, label, size = 160 }: { percent: number; label: string; size?: number }) {
-  const r = 42;
-  const c = 2 * Math.PI * r;
-  return (
-    <div className="relative mx-auto" style={{ width: size, height: size }} role="img" aria-label={`${percent}% ${label}`}>
-      <svg viewBox="0 0 100 100" className="-rotate-90">
-        <circle cx="50" cy="50" r={r} fill="none" stroke="#1d3523" strokeWidth="8" />
-        <circle cx="50" cy="50" r={r} fill="none" stroke="#8fdc7f" strokeWidth="8" strokeLinecap="round" className="ring-anim"
-          strokeDasharray={c} strokeDashoffset={c * (1 - percent / 100)}
-          style={{ ["--c" as string]: c, animation: "ring-draw 900ms var(--ease-out) both", transition: "stroke-dashoffset 600ms var(--ease-out)" }} />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <svg width="18" height="18" viewBox="0 0 64 64" aria-hidden><path d="M56 6C30 6 10 20 10 42c0 6 2 10 4 14 3-12 12-24 26-30-11 8-18 18-21 30 26 2 41-18 37-50z" fill="#86d67e" /></svg>
-        <span className="text-3xl font-bold"><CountUp value={percent} suffix="%" /></span>
-        <span className="text-xs text-mute">{label}</span>
-      </div>
-    </div>
-  );
-}
-
 export function Bars({ data, height = "h-32" }: { data: { label: string; value: number }[]; height?: string }) {
   const max = Math.max(1, ...data.map((d) => d.value));
   return (
@@ -113,7 +94,7 @@ export function Bars({ data, height = "h-32" }: { data: { label: string; value: 
         <div key={i} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={`${d.label ? `${d.label}: ` : ""}${d.value} kg`}>
           <div className="flex w-full flex-1 items-end">
             <div className="bar-anim w-full origin-bottom rounded-t-md bg-gradient-to-t from-leafDark to-leaf"
-              style={{ height: `${(d.value / max) * 100}%`, minHeight: 2, animation: `bar-grow 520ms ${Math.min(i, 12) * 40}ms var(--ease-out) both` }} />
+              style={{ height: `${(d.value / max) * 100}%`, minHeight: 2, animation: `bar-grow 650ms ${Math.min(i, 12) * 50}ms var(--ease-out) both` }} />
           </div>
           {d.label && <span className="text-[10px] text-mute">{d.label}</span>}
         </div>
