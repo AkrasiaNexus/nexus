@@ -15,7 +15,7 @@ export default async function ManageUsers({ searchParams }: { searchParams: { q?
   return (
     <>
       <Header title="Manage Users" back="/profile" />
-      <div className="flex flex-col gap-4 px-5">
+      <div className="stagger flex flex-col gap-4 px-5">
         <form role="search"><input name="q" defaultValue={q} placeholder="Search name or email" aria-label="Search users" className="input" /></form>
         <ul className="card overflow-hidden">
           {users.map((u) => (

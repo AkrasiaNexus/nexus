@@ -13,7 +13,7 @@ export default async function Department() {
   return (
     <>
       <Header title="My Department" back="/profile" />
-      <div className="flex flex-col gap-4 px-5">
+      <div className="stagger flex flex-col gap-4 px-5">
         <p className="text-center text-white/65">{department}</p>
         <div className="grid grid-cols-3 gap-3"><Stat value={colleagues.length} label="Colleagues" /><Stat value={`${month.kg} kg`} label="Sorted this month" /><Stat value={`${month.recyclingRate}%`} label="Recycling rate" /></div>
         <section className="card p-4">

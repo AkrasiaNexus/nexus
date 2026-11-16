@@ -19,7 +19,7 @@ export default async function Privacy() {
   return (
     <>
       <Header title="Privacy & Responsible AI" back="/profile" />
-      <div className="flex flex-col gap-4 px-5">
+      <div className="stagger flex flex-col gap-4 px-5">
         <ul className="card divide-y divide-line">
           {PRINCIPLES.map(([t, d]) => <li key={t} className="p-4"><p className="text-sm font-medium text-leaf">{t}</p><p className="text-sm text-mute">{d}</p></li>)}
         </ul>

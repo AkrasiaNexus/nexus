@@ -25,7 +25,7 @@ export default async function TeacherDashboard() {
   return (
     <>
       <Header title={t.grade ?? "My Class"} back="/profile" />
-      <div className="flex flex-col gap-4 px-5">
+      <div className="stagger flex flex-col gap-4 px-5">
         <div className="grid grid-cols-3 gap-3">
           <Stat value={students.length} label="Students" />
           <Stat value={`${classImpact.kg} kg`} label="Sorted this month" />

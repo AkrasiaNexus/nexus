@@ -59,6 +59,19 @@ body {
 .stagger > :nth-child(7) { animation-delay: 270ms; }
 .stagger > :nth-child(n + 8) { animation-delay: 315ms; }
 
+.stagger-slow > * { animation: rise-in 650ms var(--ease-out) both; }
+.stagger-slow > :nth-child(2) { animation-delay: 110ms; }
+.stagger-slow > :nth-child(3) { animation-delay: 220ms; }
+.stagger-slow > :nth-child(4) { animation-delay: 330ms; }
+.stagger-slow > :nth-child(5) { animation-delay: 440ms; }
+.stagger-slow > :nth-child(6) { animation-delay: 550ms; }
+.stagger-slow > :nth-child(7) { animation-delay: 660ms; }
+.stagger-slow > :nth-child(n + 8) { animation-delay: 770ms; }
+
+/* Progress fills grow from their start, so a bar reads as "how far", not just "how long". */
+@keyframes grow-x { from { transform: scaleX(0); } }
+.grow-x { transform-origin: left; animation: grow-x 900ms 200ms var(--ease-out) both; }
+
 .sheet-up { animation: sheet-up var(--t-view) var(--ease-out) both; }
 .pop-in { animation: pop-in 520ms var(--ease-out) both; }
 .spin-once { animation: spin-once 900ms var(--ease-out) both; }
@@ -71,7 +84,8 @@ a.card:active, button.card:active, .press:active { transform: scale(0.97); }
 
 /* Reduced motion: keep the meaning (fades, state colour) and drop spatial movement. */
 @media (prefers-reduced-motion: reduce) {
-  .view-push, .stagger > *, .sheet-up, .pop-in, .blur-in { animation-name: fade-in !important; }
+  .view-push, .stagger > *, .stagger-slow > *, .sheet-up, .pop-in, .blur-in { animation-name: fade-in !important; }
+  .grow-x { animation: none !important; }
   .spin-once, .scan-line { animation: none !important; }
   .float-up { animation: fade-in var(--t-base) both reverse !important; }
   .bar-anim, .line-anim, .chart-anim { animation: none !important; transition: none !important; }

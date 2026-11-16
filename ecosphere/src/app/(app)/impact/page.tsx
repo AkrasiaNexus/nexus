@@ -23,7 +23,7 @@ export default async function Impact() {
   return (
     <>
       <Header title="Environmental & Social Impact" />
-      <div className="flex flex-col gap-4 px-5">
+      <div className="stagger flex flex-col gap-4 px-5">
         <div className="grid grid-cols-3 gap-3">
           <Stat icon={<Trash2 size={18} />} value={`${all.kg} kg`} label="Total waste reduced" />
           <Stat icon={<Leaf size={18} />} value={`${all.recyclingRate}%`} label="Recycling rate" />
@@ -42,7 +42,7 @@ export default async function Impact() {
           {sdg.items.map((s) => (
             <div key={s.target}>
               <div className="flex justify-between text-sm"><span><b className="text-leaf">{s.target}</b> {s.title}</span><span>{s.progress}%</span></div>
-              <div className="mt-1 h-2 rounded bg-panel"><div className="h-2 rounded bg-[#bf8b2e]" style={{ width: `${s.progress}%` }} /></div>
+              <div className="mt-1 h-2 rounded bg-panel"><div className="grow-x h-2 rounded bg-[#bf8b2e]" style={{ width: `${s.progress}%` }} /></div>
               <p className="mt-1 text-xs text-mute">{s.detail}</p>
             </div>
           ))}

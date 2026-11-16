@@ -19,14 +19,14 @@ export default async function ChildProgress() {
   return (
     <>
       <Header title="Child Progress" back="/profile" />
-      <div className="flex flex-col gap-4 px-5">
+      <div className="stagger flex flex-col gap-4 px-5">
         {children.map((c, i) => (
           <section key={c.id} className="card space-y-3 p-4">
             <div className="flex items-center gap-3">
               <span className="grid h-12 w-12 place-items-center rounded-full bg-[#cfd8d2] text-2xl">{c.avatar}</span>
               <div className="flex-1"><p className="font-medium">{c.name}</p><p className="text-xs text-white/60">{c.grade} · {c.points} pts</p></div>
             </div>
-            <div className="h-2 rounded bg-panel"><div className="h-2 rounded bg-leaf" style={{ width: `${goalPercent(month[i].kg)}%` }} /></div>
+            <div className="h-2 rounded bg-panel"><div className="grow-x h-2 rounded bg-leaf" style={{ width: `${goalPercent(month[i].kg)}%` }} /></div>
             <p className="text-xs text-white/60">{month[i].kg} of 20 kg monthly green goal</p>
             <p className="text-sm text-white/75">
               <b className="text-white">This week:</b> {week[i].scans.length} items ({week[i].kg} kg), {week[i].recyclingRate}% recycled, {week[i].co2} kg CO₂ saved.

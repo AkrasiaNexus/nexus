@@ -24,7 +24,7 @@ export default async function Events({ searchParams }: { searchParams: { k?: str
   return (
     <>
       <Header title="Events & Campaigns" />
-      <div className="flex flex-col gap-3 px-5">
+      <div className="stagger flex flex-col gap-3 px-5">
         <nav className="flex gap-2 overflow-x-auto pb-1">
           {Object.entries(KINDS).map(([key, v]) => <Link key={key} href={`/events?k=${key}`} className={`chip shrink-0 ${key === k ? "chip-on" : ""}`}>{v}</Link>)}
         </nav>

@@ -22,14 +22,14 @@ export default function Guide({ searchParams }: { searchParams: { type?: string 
   return (
     <>
       <Header title="Recycling Guide" />
-      <div className="flex flex-col gap-4 px-5">
+      <div className="stagger flex flex-col gap-4 px-5">
         <nav className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1" aria-label="Waste types">
           {WASTE_TYPES.map((t) => (
             <Link key={t} href={`/guide?type=${t}`} className={`chip shrink-0 px-4 ${t === type ? "chip-on" : ""}`}>{GUIDE[t].name.replace(" & Card", "").replace("Food & ", "")}</Link>
           ))}
         </nav>
         <section className="card overflow-hidden">
-          <div className="grid h-48 place-items-center bg-[radial-gradient(circle_at_60%_40%,#24342a,#0b120d_70%)] text-8xl"><span className="drop-shadow-[0_10px_14px_rgba(0,0,0,.7)]">{g.emoji}</span></div>
+          <div className="grid h-48 place-items-center bg-[radial-gradient(circle_at_60%_40%,#24342a,#0b120d_70%)] text-8xl"><span key={type} className="blur-in drop-shadow-[0_10px_14px_rgba(0,0,0,.7)]">{g.emoji}</span></div>
           <div className="space-y-1 p-5">
             <h2 className="text-2xl font-semibold">{g.name}</h2>
             <p className="text-white/75">{g.summary}</p>

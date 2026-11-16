@@ -33,11 +33,11 @@ export default async function Profile() {
     <div className="relative isolate">
       <LeafDecor />
       <Header title={TITLE[user.role]} />
-      <div className="flex flex-col gap-4 px-5">
+      <div className="stagger flex flex-col gap-4 px-5">
         <section className="flex flex-col items-center gap-1 text-center">
-          {emblem ?? <span className="grid h-28 w-28 place-items-center rounded-full border-4 border-leaf/40 bg-[#cfd8d2] text-6xl">{user.avatar}</span>}
-          <h2 className="mt-2 text-2xl font-semibold">{user.name}</h2>
-          <p className="text-white/65">{subtitle}</p>
+          <span className="pop-in">{emblem ?? <span className="grid h-28 w-28 place-items-center rounded-full border-4 border-leaf/40 bg-[#cfd8d2] text-6xl">{user.avatar}</span>}</span>
+          <h2 className="mt-2 text-2xl font-semibold" style={{ animation: "rise-in 600ms 200ms var(--ease-out) both" }}>{user.name}</h2>
+          <p className="text-white/65" style={{ animation: "rise-in 600ms 300ms var(--ease-out) both" }}>{subtitle}</p>
         </section>
         <RoleBody user={user} />
       </div>
@@ -46,7 +46,7 @@ export default async function Profile() {
 }
 
 const Menu = ({ items }: { items: { href: string; icon: React.ReactNode; label: string }[] }) => (
-  <nav className="card overflow-hidden">{items.map((m) => <MenuRow key={m.href + m.label} {...m} />)}</nav>
+  <nav className="stagger card overflow-hidden">{items.map((m) => <MenuRow key={m.href + m.label} {...m} />)}</nav>
 );
 const settings = { href: "/settings", icon: <Settings size={ICON} />, label: "Settings" };
 
@@ -82,7 +82,7 @@ async function RoleBody({ user }: { user: Me }) {
     const month = await impactFor(scope, startOf("month"));
     return (
       <>
-        <nav className="card overflow-hidden">
+        <nav className="stagger card overflow-hidden">
           <Link href="/child" className="flex items-center gap-3 border-b border-line px-4 py-3 hover:bg-panel">
             <IconCircle><Leaf size={22} /></IconCircle>
             <span className="flex-1">
@@ -158,7 +158,7 @@ async function RoleBody({ user }: { user: Me }) {
           <h3 className="text-sm font-medium">Community Progress</h3>
           <div className="flex items-center gap-4">
             <p className="text-3xl font-semibold">{pct}%</p>
-            <div className="h-2 flex-1 rounded-full bg-panel"><div className="h-2 rounded-full bg-leaf" style={{ width: `${pct}%` }} /></div>
+            <div className="h-2 flex-1 rounded-full bg-panel"><div className="grow-x h-2 rounded-full bg-leaf" style={{ width: `${pct}%` }} /></div>
           </div>
           <p className="mt-1 text-xs text-white/50">{community.kg} of {COMMUNITY_GOAL_KG} kg monthly community goal</p>
         </section>

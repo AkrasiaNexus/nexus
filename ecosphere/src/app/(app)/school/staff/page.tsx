@@ -10,7 +10,7 @@ export default async function ManageStaff() {
   return (
     <>
       <Header title="Manage Staff" back="/profile" />
-      <div className="flex flex-col gap-3 px-5">
+      <div className="stagger flex flex-col gap-3 px-5">
         <ul className="card overflow-hidden">
           {staff.map((s) => (
             <li key={s.id} className="flex items-center gap-3 border-b border-line p-4 last:border-0">

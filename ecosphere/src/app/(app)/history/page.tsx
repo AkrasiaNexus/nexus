@@ -32,7 +32,7 @@ export default async function History({ searchParams }: { searchParams: { t?: st
   return (
     <>
       <Header title="Activity History" back="/profile" />
-      <div className="flex flex-col gap-3 px-5">
+      <div className="stagger flex flex-col gap-3 px-5">
         {searchParams.msg && <p role="status" className="card p-3 text-center text-sm text-leaf">{searchParams.msg.slice(0, 100)}</p>}
         <nav className="flex justify-between gap-2">
           {TABS.map((t) => <Link key={t} href={`/history?t=${t}`} className={`chip ${t === tab ? "chip-on" : ""}`}>{t}</Link>)}

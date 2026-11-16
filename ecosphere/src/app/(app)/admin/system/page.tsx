@@ -30,7 +30,7 @@ export default async function SystemSettings() {
   return (
     <>
       <Header title="System Settings" back="/profile" />
-      <div className="flex flex-col gap-4 px-5">
+      <div className="stagger flex flex-col gap-4 px-5">
         <section className="card overflow-hidden">
           <h2 className="px-4 pt-4 text-sm font-medium">System monitoring</h2>
           <ul>

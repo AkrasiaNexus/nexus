@@ -13,7 +13,7 @@ export default function NewListing() {
   return (
     <>
       <Header title="New listing" back="/marketplace" />
-      <form action={action} className="flex flex-col gap-3 px-5">
+      <form action={action} className="stagger flex flex-col gap-3 px-5">
         <fieldset className="flex gap-2">
           <legend className="mb-2 text-xs text-mute">What do you want to do?</legend>
           {[["DONATE", "Donate (free)"], ["SELL", "Sell for points"], ["EXCHANGE", "Swap"]].map(([k, v]) => (

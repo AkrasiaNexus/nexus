@@ -18,7 +18,7 @@ export default async function ManageClasses() {
   return (
     <>
       <Header title="Manage Classes" back="/profile" />
-      <div className="flex flex-col gap-3 px-5">
+      <div className="stagger flex flex-col gap-3 px-5">
         {grades.map((g, i) => {
           const students = people.filter((p) => p.role === "STUDENT" && (p.grade ?? "Unassigned") === g);
           const staff = people.filter((p) => p.role !== "STUDENT" && p.grade === g);

@@ -52,7 +52,7 @@ export default async function Stats({ searchParams }: { searchParams: { p?: stri
   return (
     <>
       <Header title="Statistics" back={null} />
-      <div className="flex flex-col gap-4 px-5">
+      <div className="stagger flex flex-col gap-4 px-5">
         <nav className="relative grid grid-cols-3 rounded-2xl border border-white/[.06] bg-card p-1">
           {/* Sliding selection pill: same DOM node across period changes, so it travels instead of jumping. */}
           <span aria-hidden className="slide-anim absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-xl bg-leaf/90 transition-transform duration-[450ms] ease-[cubic-bezier(.16,1,.3,1)]"
@@ -92,7 +92,7 @@ export default async function Stats({ searchParams }: { searchParams: { p?: stri
             {byType.map(([t, kg]) => (
               <div key={t} className="flex items-center gap-2 text-xs">
                 <span className="w-24 shrink-0">{GUIDE[t].emoji} {GUIDE[t].name}</span>
-                <div className="h-2 flex-1 rounded bg-panel"><div className="h-2 rounded" style={{ width: `${(kg / maxType) * 100}%`, background: GUIDE[t].binColor }} /></div>
+                <div className="h-2 flex-1 rounded bg-panel"><div className="grow-x h-2 rounded" style={{ width: `${(kg / maxType) * 100}%`, background: GUIDE[t].binColor }} /></div>
                 <span className="w-12 text-right text-mute">{round(kg)} kg</span>
               </div>
             ))}

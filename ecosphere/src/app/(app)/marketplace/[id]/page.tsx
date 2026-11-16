@@ -17,8 +17,8 @@ export default async function Item({ params }: { params: { id: string } }) {
   return (
     <>
       <Header title={it.title} back="/marketplace" />
-      <div className="flex flex-col gap-4 px-5">
-        <ItemArt emoji={it.emoji} size="h-64" text="text-9xl" />
+      <div className="stagger flex flex-col gap-4 px-5">
+        <div className="blur-in"><ItemArt emoji={it.emoji} size="h-64" text="text-9xl" /></div>
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold">{it.title}</h2>

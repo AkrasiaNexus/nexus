@@ -83,7 +83,7 @@ export default async function Rewards({ searchParams }: { searchParams: { all?: 
                 </div>
                 {join ? (
                   <>
-                    <div className="h-2 rounded bg-panel"><div className="h-2 rounded bg-leaf" style={{ width: `${pct}%` }} /></div>
+                    <div className="h-2 rounded bg-panel"><div className="grow-x h-2 rounded bg-leaf" style={{ width: `${pct}%` }} /></div>
                     <p className="text-xs text-white/60">{round(progress[i])} / {c.targetKg} kg</p>
                     {join.completed ? <p className="text-sm text-leaf">✓ Completed</p>
                       : pct >= 100 && <form action={claimChallenge.bind(null, c.id)}><button className="btn w-full py-2 text-sm">Claim {c.rewardPoints} pts</button></form>}

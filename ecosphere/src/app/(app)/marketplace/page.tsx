@@ -26,7 +26,7 @@ export default async function Marketplace({ searchParams }: { searchParams: { c?
           <Link href="/history?t=Marketplace" aria-label="My purchases" className="rounded-full p-2 hover:bg-card"><ShoppingCart size={22} /></Link>
         </div>
       } />
-      <div className="flex flex-col gap-4 px-5">
+      <div className="stagger flex flex-col gap-4 px-5">
         <form className="relative" role="search">
           <Search size={18} className="absolute left-4 top-3.5 text-white/50" />
           <input name="q" defaultValue={q} placeholder="Search items..." className="input rounded-full pl-11" aria-label="Search items" />
@@ -38,7 +38,7 @@ export default async function Marketplace({ searchParams }: { searchParams: { c?
           ))}
         </nav>
         <p className="text-center text-xs text-white/50">You have <b className="text-leaf">{user.points} pts</b> to spend</p>
-        <div className="stagger grid grid-cols-2 gap-3">
+        <div className="stagger-slow grid grid-cols-2 gap-3">
           {items.map((it) => (
             <Link key={it.id} href={`/marketplace/${it.id}`} className="card flex flex-col gap-2 p-3 hover:border-leaf">
               <ItemArt emoji={it.emoji} />

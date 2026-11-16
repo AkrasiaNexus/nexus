@@ -26,13 +26,13 @@ export default async function SchoolReports() {
   return (
     <>
       <Header title={admin.school?.name ?? "School"} back="/profile" />
-      <div className="flex flex-col gap-4 px-5">
+      <div className="stagger flex flex-col gap-4 px-5">
         <section className="card space-y-3 p-4">
           <h2 className="text-sm font-medium">Class-wise waste sorted · this month</h2>
           {classes.map((c) => (
             <div key={c.grade} className="text-xs">
               <div className="flex justify-between"><span>{c.grade} <span className="text-mute">({c.count} students)</span></span><span>{c.kg} kg · {c.recyclingRate}% recycled</span></div>
-              <div className="mt-1 h-2 rounded bg-panel"><div className="h-2 rounded bg-leaf" style={{ width: `${(c.kg / max) * 100}%` }} /></div>
+              <div className="mt-1 h-2 rounded bg-panel"><div className="grow-x h-2 rounded bg-leaf" style={{ width: `${(c.kg / max) * 100}%` }} /></div>
             </div>
           ))}
           {classes.length === 0 && <p className="text-sm text-mute">No students yet.</p>}

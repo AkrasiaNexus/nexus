@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CountUp } from "./Motion";
 export { Ring } from "./Ring";
 
 // Mockup style: sub-screens get a back arrow + centred title; tab screens a large left title.
@@ -65,11 +66,19 @@ export function LineChart({ data, height = 150 }: { data: { label: string; value
   );
 }
 
+// "12.6 kg", "239 pts", 42 → counts up to the number and keeps its unit; anything else renders as is.
+function countable(value: React.ReactNode) {
+  const m = typeof value === "number" ? [String(value), String(value), ""] : typeof value === "string" ? value.match(/^(\d+(?:\.\d+)?)(.*)$/) : null;
+  if (!m) return value;
+  const decimals = m[1].includes(".") ? m[1].split(".")[1].length : 0;
+  return <CountUp value={Number(m[1])} decimals={decimals} suffix={m[2]} />;
+}
+
 export function Stat({ icon, value, label }: { icon?: React.ReactNode; value: React.ReactNode; label: string }) {
   return (
     <div className="card flex flex-col items-center gap-1 p-3 text-center">
       {icon && <span className="text-gold">{icon}</span>}
-      <span className="text-lg font-semibold">{value}</span>
+      <span className="text-lg font-semibold">{countable(value)}</span>
       <span className="text-[11px] leading-tight text-white/60">{label}</span>
     </div>
   );

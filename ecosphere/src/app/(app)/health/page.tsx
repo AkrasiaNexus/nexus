@@ -25,7 +25,7 @@ export default async function Health() {
   return (
     <>
       <Header title="Health & Safety" />
-      <div className="flex flex-col gap-4 px-5">
+      <div className="stagger flex flex-col gap-4 px-5">
         {classes.map((c, i) => <section key={c.className + i} className="card p-4"><HealthStatus report={latest[i]} />{!latest[i] && <p className="text-xs text-mute">{c.className}</p>}</section>)}
 
         {canReport && (

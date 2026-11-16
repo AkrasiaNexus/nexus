@@ -17,7 +17,7 @@ export default async function Notifications({ searchParams }: { searchParams: { 
   return (
     <>
       <Header title="Notifications" />
-      <div className="flex flex-col gap-3 px-5">
+      <div className="stagger flex flex-col gap-3 px-5">
         <nav className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
           {Object.entries(TABS).map(([k, v]) => <Link key={k} href={`/notifications?t=${k}`} className={`chip shrink-0 px-4 ${k === tab ? "chip-on" : ""}`}>{v}</Link>)}
         </nav>

@@ -38,7 +38,7 @@ export function SignupForm({ schools }: { schools: { id: string; name: string }[
         <Link href="/" aria-label="Back" className="-ml-2 w-fit rounded-full p-2 hover:bg-card"><ChevronLeft /></Link>
         <h1 className="text-2xl font-semibold">Select Your Role</h1>
         <p className="-mt-2 text-white/70">Choose how you&apos;ll use EcoSphere</p>
-        <div role="radiogroup" className="flex flex-col gap-3">
+        <div role="radiogroup" className="stagger flex flex-col gap-3">
           {ROLES.map(({ id, name, hint, icon: Icon }) => (
             <button key={id} type="button" role="radio" aria-checked={role === id} onClick={() => setRole(id)}
               className={`card flex items-center gap-4 p-4 text-left transition ${role === id ? "!border-leaf ring-1 ring-leaf" : ""}`}>

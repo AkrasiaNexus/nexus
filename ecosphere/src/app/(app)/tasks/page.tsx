@@ -12,7 +12,7 @@ export default async function Tasks() {
   return (
     <>
       <Header title="Class Tasks" />
-      <div className="flex flex-col gap-3 px-5">
+      <div className="stagger flex flex-col gap-3 px-5">
         {tasks.map((t) => {
           const d = t.dones[0];
           return (

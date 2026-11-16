@@ -84,7 +84,7 @@ export function Scanner() {
   const corner = "absolute h-8 w-8 border-white/80";
 
   return (
-    <div className="flex flex-col gap-4 px-5">
+    <div className="stagger flex flex-col gap-4 px-5">
       <div className="relative aspect-[4/3.6] overflow-hidden rounded-3xl border-2 border-white/80 bg-[radial-gradient(circle_at_50%_40%,#3a3f3b,#151a17)]">
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element

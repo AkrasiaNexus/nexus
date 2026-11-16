@@ -12,7 +12,7 @@ export default async function SettingsPage() {
   return (
     <>
       <Header title="Settings" back="/profile" />
-      <div className="flex flex-col gap-4 px-5">
+      <div className="stagger flex flex-col gap-4 px-5">
         <p className="text-center text-sm text-white/60">EcoSphere ID <span className="chip ml-1 font-mono">{user.memberId}</span></p>
         <section id="avatar" className="card p-4">
           <h2 className="mb-3 text-sm font-medium">Avatar</h2>

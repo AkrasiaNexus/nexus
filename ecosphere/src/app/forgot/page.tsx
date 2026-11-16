@@ -16,7 +16,7 @@ export default function Forgot() {
         <h1 className="text-2xl font-semibold">Forgot Password?</h1>
         <p className="text-sm text-white/65">Enter your email or ID. Your school admin (or the EcoSphere team) will reset it and give you a temporary password.</p>
       </div>
-      <form action={action} className="flex flex-col gap-4">
+      <form action={action} className="stagger flex flex-col gap-4">
         <input name="email" required placeholder="Email / Student ID / Employee ID" aria-label="Email or ID" className="input py-3.5" />
         {(state?.error || state?.ok) && <p role="status" className={`text-sm ${state.error ? "text-red-400" : "text-leaf"}`}>{state.error ?? state.ok}</p>}
         <button className="btn py-3.5">Request reset</button>

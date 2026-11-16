@@ -28,7 +28,7 @@ export default function Login() {
         <h1 className="text-3xl font-semibold">EcoSphere AI</h1>
         <p className="text-white/75">Welcome back!</p>
       </div>
-      <form action={action} className="flex flex-col gap-4">
+      <form action={action} className="stagger flex flex-col gap-4">
         <input name="email" required autoComplete="username" placeholder="Email / Student ID / Employee ID" aria-label="Email, Student ID or Employee ID" className="input py-3.5" />
         <div className="relative">
           <input name="password" type={show ? "text" : "password"} required autoComplete="current-password" placeholder="Password" aria-label="Password" className="input py-3.5 pr-12" />
