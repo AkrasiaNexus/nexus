@@ -104,7 +104,7 @@ function build({ mobile, reduce }) {
   // 01 Hook: the hero coin spins slowly and settles; it already reacts to the cursor (see below).
   if (!reduce) tl.add(hero, { rotateY: [0, 540], x: ["0vw", mobile ? "0vw" : "16vw"], y: ["0vh", mobile ? "8vh" : "0vh"], duration: C * .9, ease: "inOut(3)" }, at(0));
   // 02 Chaos: the coin shatters into many, scattered across the stage, spinning.
-  tl.add(hero, { opacity: 0, scale: move(.4) || 1, duration: C * .1 }, at(1, .05));
+  tl.add(hero, reduce ? { opacity: 0, duration: C * .1 } : { opacity: 0, scale: .4, duration: C * .1 }, at(1, .05));
   tl.add(coins, { opacity: [0, 1], x: () => `${(Math.random() - .5) * (mobile ? 80 : 70)}vw`, y: () => `${(Math.random() - .5) * 60}vh`,
     rotateY: () => move(Math.random() * 720), rotateZ: () => move((Math.random() - .5) * 60), delay: stagger(C * .01), duration: C * .4, ease: "out(3)" }, at(1, .1));
   // 03 Sort: jars appear; coins arc into their jar; fills rise with counters.
@@ -132,8 +132,18 @@ function build({ mobile, reduce }) {
   }
   return () => { off(); tl.revert(); };
 }
+// Keep the story position (0–1), not the pixel offset, across layout changes; geometry cached, re-measured on resize.
+const track = root.querySelector("[data-track]");
+let geo = {}, resume = 0, stableW = innerWidth;
+const measure = () => { geo = { top: track.offsetTop, span: Math.max(1, track.offsetHeight - innerHeight) }; };
+const place = () => (scrollY - geo.top) / geo.span;
+const restore = (p) => { if (p >= 0 && p <= 1) scrollTo(0, geo.top + p * geo.span); };
+measure(); resume = place();
+addEventListener("scroll", () => { if (innerWidth === stableW) resume = place(); }, { passive: true });
 createScope({ root, mediaQueries: { mobile: "(max-width: 767px)", reduce: "(prefers-reduced-motion: reduce)" } })
-  .add((self) => build({ mobile: !!self.matches.mobile, reduce: !!self.matches.reduce }));
+  .add((self) => { measure(); if (innerWidth !== stableW) restore(resume); stableW = innerWidth;
+    return build({ mobile: !!self.matches.mobile, reduce: !!self.matches.reduce }); });
+addEventListener("resize", () => { measure(); if (innerWidth !== stableW) { restore(resume); stableW = innerWidth; } });
 </script>
 </body>
 </html>

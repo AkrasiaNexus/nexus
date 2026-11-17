@@ -14,7 +14,8 @@ overlaps between copy and the object, invisible elements, back faces showing mir
 For several targets, compares visible state after slow scrolling vs a direct jump from the far end. Must print `ALL CONSISTENT`.
 Catches staggered tweens that never render their final frame, initial states that differ from tween `from` values, and scope rebuild leaks.
 
-## 4. Functional (write per site, ~15 asserts)
+## 4. Functional (`functional.cjs` generic + a few site-specific asserts)
+`URL=… SIGNATURE='[data-rig]' node functional.cjs` checks: CTA inert mid-story and live at the end, every chapter readable at its midpoint (normal + reduced motion), signature still under reduced motion, resize across the breakpoint keeps the chapter, zero console errors. Then add site-specific checks:
 - nav links (in-page jumps land on the right chapter; login/signup routes)
 - final CTA: `pointer-events:none`/`inert` mid-story, clickable at the end, navigates correctly
 - footer links resolve (public, no auth wall)

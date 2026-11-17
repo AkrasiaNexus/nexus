@@ -49,6 +49,15 @@ tl.add({}, { duration:1 }, at(N))     // pin the end so the last chapter has roo
 10. **Light beams/gradients with hard ends** look cheap: fade both ends with `mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent)`.
 11. **`session.user` from supabase `getSession()` on the server logs warnings**: only test the session's existence in middleware.
 
+## Accessibility and robustness checklist (from the code review)
+- **One real `<h1>`** (first chapter); later chapters `<h2>`. Animated word spans get `aria-hidden`, and the heading gets `aria-label` with the full sentence.
+- The decorative signature (phone, coins) is **`aria-hidden`**; its screens duplicate the copy.
+- Hidden CTAs carry **`inert` in the server markup** (React 18: spread `{ inert: "" }`), and the timeline removes it at the end. Otherwise they're tabbable before hydration.
+- **`<noscript>` style** that turns the stage into a plain, readable column with working CTAs (the story starts at `opacity:0`).
+- Async toggles (audio) are **single-flight** (`starting` flag + disabled button), wrapped in try/catch, and **dispose** their resources (`AudioContext.close()`) on unmount.
+- Programmatic jumps (nav links) set a short `jumping` flag so per-chapter effects (chimes, analytics) don't fire for every chapter crossed.
+- Cache track geometry; never read `offsetTop`/`offsetHeight` inside scroll handlers.
+
 ## Performance budget
 LCP < 1.5–2.5s · CLS < 0.05 · INP < 100ms · 60fps on a mid-range phone · page < 3MB.
 Animate transform/opacity (plus filter/clip-path sparingly). One animation clock. Heavy modules lazy, behind a designed 1–2s reveal.
