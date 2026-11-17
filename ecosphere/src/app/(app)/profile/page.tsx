@@ -212,6 +212,11 @@ async function RoleBody({ user }: { user: Me }) {
         <div className="grid grid-cols-3 gap-3"><Stat value={users ?? 0} label="Users" /><Stat value={schools ?? 0} label="Schools" /><Stat value={`${all.kg} kg`} label="Waste Reduced" /></div>
         <Menu items={[
           { href: "/admin/users", icon: <Users size={ICON} />, label: "Manage Users" },
+          { href: "/admin/marketplace", icon: <Store size={ICON} />, label: "Marketplace Moderation" },
+          { href: "/admin/schools", icon: <School size={ICON} />, label: "Schools" },
+          { href: "/admin/communities", icon: <UsersRound size={ICON} />, label: "Communities" },
+          { href: "/admin/challenges", icon: <Trophy size={ICON} />, label: "Challenges" },
+          { href: "/admin/rewards", icon: <Award size={ICON} />, label: "Rewards & Points" },
           { href: "/stats", icon: <FileBarChart size={ICON} />, label: "Platform Analytics" },
           { href: "/admin/system", icon: <Settings size={ICON} />, label: "System Settings" },
           { href: "/admin/audit", icon: <ScrollText size={ICON} />, label: "Audit Logs" },

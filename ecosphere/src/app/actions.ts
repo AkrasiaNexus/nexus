@@ -179,6 +179,7 @@ export async function toggleUserActive(userId: string) {
   await setActive(target.id, !target.active);
   await audit(me.id, target.active ? "USER_DISABLED" : "USER_ENABLED", target.email);
   revalidatePath("/admin/users");
+  revalidatePath(`/admin/users/${target.id}`);
 }
 
 // Disabling also bans the Supabase login, so an existing session can't refresh.

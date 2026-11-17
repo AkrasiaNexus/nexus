@@ -50,9 +50,10 @@ export async function setSetting(key: string, value: string) {
   revalidatePath("/admin/system");
 }
 
-export async function moderateListing(listingId: string, status: "APPROVED" | "REJECTED" | "REMOVED", _: FormState, fd: FormData): Promise<FormState> {
+export async function moderateListing(listingId: string, _: FormState, fd: FormData): Promise<FormState> {
   const me = await superAdmin();
-  if (!["APPROVED", "REJECTED", "REMOVED"].includes(status)) return { error: "Unknown decision." };
+  const status = String(fd.get("decision"));
+  if (!["APPROVED", "REJECTED", "REMOVED"].includes(status)) return { error: "Pick a decision." };
   const note = moderationSchema.parse(formObject(fd)).note;
   if (status !== "APPROVED" && !note) return { error: "Tell the owner why." };
   const db = admin();

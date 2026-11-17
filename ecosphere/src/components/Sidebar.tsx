@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Circle, BarChart3, Bell, BookOpen, Building2, CalendarDays, ClipboardCheck, Download, FileBarChart, Gift, Globe2, Handshake, HeartPulse, History, Home, Leaf, ScanLine, School, ScrollText, Settings, SlidersHorizontal, Store, Trophy, User, Users, UsersRound, type LucideIcon } from "lucide-react";
+import { Circle, BarChart3, Bell, BookOpen, Building2, CalendarDays, ClipboardCheck, Download, FileBarChart, Gift, Globe2, Handshake, HeartPulse, History, Home, Leaf, ScanLine, School, ScrollText, Settings, ShieldCheck, SlidersHorizontal, Store, Target, Trophy, User, Users, UsersRound, type LucideIcon } from "lucide-react";
 import type { NavSection } from "@/lib/nav";
 import { LeafLogo } from "./art";
 
 // Explicit map keeps the bundle to the icons the nav actually uses.
-const ICONS: Record<string, LucideIcon> = { BarChart3, Bell, BookOpen, Building2, CalendarDays, ClipboardCheck, Download, FileBarChart, Gift, Globe2, Handshake, HeartPulse, History, Home, Leaf, ScanLine, School, ScrollText, Settings, SlidersHorizontal, Store, Trophy, User, Users, UsersRound };
+const ICONS: Record<string, LucideIcon> = { BarChart3, Bell, BookOpen, Building2, CalendarDays, ClipboardCheck, Download, FileBarChart, Gift, Globe2, Handshake, HeartPulse, History, Home, Leaf, ScanLine, School, ScrollText, Settings, ShieldCheck, SlidersHorizontal, Store, Target, Trophy, User, Users, UsersRound };
 const icon = (name: string) => ICONS[name] ?? Circle;
 
 // Tablet: icon rail. Desktop: labelled sidebar. Hidden on phones (BottomNav takes over).
