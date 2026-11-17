@@ -20,6 +20,14 @@ Concept generators to try before settling:
 - **Metaphor mining.** List 10 nouns from the product's world, keep the one with the best motion verb.
 - **Constraint pick.** "Only one colour plus ink" or "only type, no images" often beats more stuff.
 
+## 2b. Two studio methods that keep winning
+- **Make the concept behave.** Name the idea in two words, then make the signature *act it out*. Dash Creative: "magnetic commerce", so the 3D logo pulls toward the cursor. EcoSphere: "scan to sort", so the phone turns and scans. If the motion could belong to any other brand, it isn't the concept.
+- **One brand asset persists as the interface.** Obys starts from its typeface; the logo transforms old to new and stays on screen through every layout, becoming UI. Pick one asset (logo, product, mascot, word) and let it travel through the whole scroll.
+- **Restraint is the hard part.** Podium chose one continuous sequence over pages and said the main challenge was "not what to build, but what to remove". Cut a chapter before you polish a weak one.
+- **Decide touch behaviour at concept time**, not after. Dash: "the experience changes significantly on touch devices; consider it earlier".
+
+When the user gives no concept, generate **3 concepts** with [concept-bank.md](concept-bank.md) as a springboard. Pitch each in one line (thesis · signature · signature moment), pick one with a reason, and note the two rejected in docs/STORY.md.
+
 ## 3. Arc and pacing
 - Default **5 scenes** (hook 0–15%, context 15–35%, journey 35–70%, climax 70–85%, resolution 85–100%). Visitors give 2–3 minutes.
 - More chapters are fine **only** if each is short and transitions are continuous (EcoSphere has 10 at ~110vh each). A **loop** structure (end returns to start) may exceed 5.
