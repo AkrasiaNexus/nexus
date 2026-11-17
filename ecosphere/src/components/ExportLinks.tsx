@@ -1,6 +1,6 @@
 import { Download } from "lucide-react";
 
-const TYPES = [["scans", "Waste records & AI classifications"], ["health", "Health & safety reports"], ["users", "Users & Eco Creds"]];
+const TYPES = [["scans", "Waste records & AI classifications"], ["health", "Health & safety reports"], ["users", "Users & EcoCreds"]];
 
 export function ExportLinks() {
   return (

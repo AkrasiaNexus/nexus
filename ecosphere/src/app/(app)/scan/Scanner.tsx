@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Camera, ImagePlus, Loader2, Recycle, ShieldCheck } from "lucide-react";
+import { Camera, CameraOff, ImagePlus, Loader2, Recycle, ShieldCheck } from "lucide-react";
 import type { WasteType } from "@/lib/types";
 import { GUIDE, WASTE_TYPES, classify } from "@/lib/waste";
 import { saveScan } from "../../actions";
@@ -11,10 +11,19 @@ type Model = { classify: (img: HTMLImageElement, k?: number) => Promise<{ classN
 type Result = { wasteType: WasteType; label: string; confidence: number; source?: "server" | "device" };
 
 const LOW_CONFIDENCE = 0.5; // below this the user is asked to confirm the category
+type Cam = "off" | "starting" | "live" | "denied" | "unavailable";
+const CAM_HELP: Partial<Record<Cam, string>> = {
+  denied: "Camera access is blocked. Allow it in your browser's site settings (the icon left of the address bar), then tap the button again. Or upload a photo.",
+  unavailable: "No camera found, or this page isn't on a secure (https) connection. Upload a photo instead.",
+};
 
 export function Scanner({ serverAI }: { serverAI: boolean }) {
   const model = useRef<Model | null>(null);
   const picked = useRef<File | null>(null);
+  const video = useRef<HTMLVideoElement>(null);
+  const stream = useRef<MediaStream | null>(null);
+  const fallbackInput = useRef<HTMLInputElement>(null);
+  const [cam, setCam] = useState<Cam>("off");
   const img = useRef<HTMLImageElement>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
   const [preview, setPreview] = useState<string | null>(null);
@@ -41,6 +50,54 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
   }, []);
 
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+  useEffect(() => () => stopCamera(), []);
+
+  function stopCamera() {
+    stream.current?.getTracks().forEach((t) => t.stop());
+    stream.current = null;
+  }
+
+  // First tap asks the browser for camera permission and opens a live preview; the next tap takes the photo.
+  async function startCamera() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      // No live-camera API (old browser / plain http): fall back to the phone's native camera picker.
+      setCam("unavailable");
+      return fallbackInput.current?.click();
+    }
+    setCam("starting");
+    setResult(null);
+    setMessage(null);
+    setPreview(null);
+    try {
+      stream.current = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
+      setCam("live");
+    } catch (e) {
+      // NotAllowedError = user/OS blocked it (older Chrome: PermissionDeniedError; Safari can report SecurityError).
+      setCam(["NotAllowedError", "PermissionDeniedError", "SecurityError"].includes((e as DOMException).name) ? "denied" : "unavailable");
+    }
+  }
+
+  // Attach the stream once the <video> is on screen.
+  useEffect(() => {
+    if (cam === "live" && video.current && stream.current) {
+      video.current.srcObject = stream.current;
+      video.current.play().catch(() => setCam("unavailable"));
+    }
+  }, [cam]);
+
+  function snap() {
+    const v = video.current;
+    if (!v?.videoWidth) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = v.videoWidth;
+    canvas.height = v.videoHeight;
+    canvas.getContext("2d")!.drawImage(v, 0, 0);
+    canvas.toBlob((blob) => {
+      stopCamera();
+      setCam("off");
+      if (blob) onFile(new File([blob], "scan.jpg", { type: "image/jpeg" }));
+    }, "image/jpeg", 0.9);
+  }
 
   function pickType(t: WasteType) {
     setType(t);
@@ -49,6 +106,8 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
 
   function onFile(file?: File) {
     if (!file || !file.type.startsWith("image/")) return;
+    stopCamera();
+    setCam("off");
     setResult(null);
     setMessage(null);
     picked.current = file;
@@ -104,11 +163,15 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
   return (
     <div className="stagger flex flex-col gap-4 px-5">
       <div className="relative aspect-[4/3.6] overflow-hidden rounded-3xl border-2 border-white/80 bg-[radial-gradient(circle_at_50%_40%,#3a3f3b,#151a17)]">
-        {preview ? (
+        {cam === "live" ? (
+          <video ref={video} playsInline muted className="h-full w-full object-cover" aria-label="Live camera preview" />
+        ) : preview ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img ref={img} src={preview} alt="Item to classify" className="h-full w-full object-cover" onLoad={analyse} />
         ) : (
-          <div className="grid h-full place-items-center text-white/40"><Camera size={44} /></div>
+          <div className="grid h-full place-items-center text-white/40">
+            {cam === "starting" ? <Loader2 size={36} className="animate-spin motion-reduce:animate-none" /> : cam === "denied" || cam === "unavailable" ? <CameraOff size={44} /> : <Camera size={44} />}
+          </div>
         )}
         <span className={`${corner} left-8 top-8 rounded-tl-xl border-l-2 border-t-2`} />
         <span className={`${corner} right-8 top-8 rounded-tr-xl border-r-2 border-t-2`} />
@@ -121,16 +184,23 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
             <Loader2 className="absolute inset-0 m-auto animate-spin text-leaf motion-reduce:animate-none" size={30} />
           </div>
         )}
-        {earned && <span key={earned.key} className="float-up pointer-events-none absolute inset-x-0 bottom-10 text-center text-2xl font-bold text-leaf" aria-hidden>+{earned.points} pts</span>}
+        {earned && <span key={earned.key} className="float-up pointer-events-none absolute inset-x-0 bottom-10 text-center text-2xl font-bold text-leaf" aria-hidden>+{earned.points} EC</span>}
       </div>
 
-      <p className="text-center text-sm text-white/75">Take a photo or upload<br />an image</p>
+      <p className="text-center text-sm text-white/75">
+        {cam === "live" ? "Point at the item and tap to snap" : cam === "starting" ? "Allow camera access when your browser asks" : <>Take a photo or upload<br />an image</>}
+      </p>
+      {CAM_HELP[cam] && <p role="alert" className="card p-3 text-center text-xs text-gold">{CAM_HELP[cam]}</p>}
 
       <div className="relative flex items-center justify-center">
-        <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-full border-4 border-leaf/40 p-1" aria-label="Take photo">
-          <span className="h-full w-full rounded-full bg-gradient-to-b from-[#9be292] to-[#6fc267] shadow-lg shadow-leaf/30" />
-          <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => onFile(e.target.files?.[0])} />
-        </label>
+        <button type="button" onClick={cam === "live" ? snap : startCamera} disabled={cam === "starting" || busy}
+          className="grid h-20 w-20 place-items-center rounded-full border-4 border-leaf/40 p-1 disabled:opacity-60" aria-label={cam === "live" ? "Take photo" : "Open camera"}>
+          <span className={`h-full w-full rounded-full bg-gradient-to-b from-[#9be292] to-[#6fc267] shadow-lg shadow-leaf/30 ${cam === "live" ? "ring-4 ring-white/80 ring-inset" : ""}`} />
+        </button>
+        <input ref={fallbackInput} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => onFile(e.target.files?.[0])} />
+        {cam === "live" && (
+          <button type="button" onClick={() => { stopCamera(); setCam("off"); }} className="absolute left-4 grid h-12 w-12 place-items-center rounded-2xl bg-card" aria-label="Close camera"><CameraOff size={22} /></button>
+        )}
         <label className="absolute right-4 grid h-12 w-12 cursor-pointer place-items-center rounded-2xl bg-card" aria-label="Upload image">
           <ImagePlus size={22} />
           <input type="file" accept="image/*" className="sr-only" onChange={(e) => onFile(e.target.files?.[0])} />
@@ -175,7 +245,7 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
               Approx. weight
               <input type="number" min="0.01" max="50" step="0.01" value={weight} onChange={(e) => setWeight(e.target.value)} className="input w-24 py-2" /> kg
             </label>
-            <button className="btn" onClick={save} disabled={busy || !(Number(weight) > 0)}>Log it · +{g.points} pts</button>
+            <button className="btn" onClick={save} disabled={busy || !(Number(weight) > 0)}>Log it · +{g.points} EC</button>
             <Link href={`/guide?type=${type}`} className="text-center text-xs text-leaf">Full recycling guide →</Link>
           </section>
         </>

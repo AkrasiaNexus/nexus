@@ -92,7 +92,7 @@ export default async function Community() {
                 {list.map((m) => (
                   <li key={m.id} className="flex items-center gap-3 border-b border-line px-4 py-3 text-sm last:border-0">
                     <span className="text-xl">{m.avatar}</span>
-                    <span className="min-w-0 flex-1"><span className={m.active ? "" : "text-white/40 line-through"}>{m.name}</span><span className="block text-xs text-white/50">{m.memberId} · {m.points} pts</span></span>
+                    <span className="min-w-0 flex-1"><span className={m.active ? "" : "text-white/40 line-through"}>{m.name}</span><span className="block text-xs text-white/50">{m.memberId} · {m.points} EC</span></span>
                     {m.role === "COMMUNITY" && <form action={toggleCommunityMember.bind(null, m.id)}><button className={`chip ${m.active ? "" : "chip-on"}`}>{m.active ? "Suspend" : "Reactivate"}</button></form>}
                   </li>
                 ))}

@@ -66,7 +66,7 @@ export function LineChart({ data, height = 150 }: { data: { label: string; value
   );
 }
 
-// "12.6 kg", "239 pts", 42 → counts up to the number and keeps its unit; anything else renders as is.
+// "12.6 kg", "239 EC", 42 → counts up to the number and keeps its unit; anything else renders as is.
 function countable(value: React.ReactNode) {
   const m = typeof value === "number" ? [String(value), String(value), ""] : typeof value === "string" ? value.match(/^(\d+(?:\.\d+)?)(.*)$/) : null;
   if (!m) return value;

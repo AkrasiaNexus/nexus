@@ -20,7 +20,7 @@ export default async function Department() {
         <section className="card p-4">
           <h3 className="mb-2 text-sm font-medium">Department leaderboard</h3>
           <ol className="space-y-2 text-sm">
-            {colleagues.map((c, i) => <li key={c.id} className={`flex gap-2 ${c.id === me.id ? "text-leaf" : ""}`}><span className="w-5 text-white/50">{i + 1}</span><span className="flex-1">{c.avatar} {c.name}</span><span>{c.points} pts</span></li>)}
+            {colleagues.map((c, i) => <li key={c.id} className={`flex gap-2 ${c.id === me.id ? "text-leaf" : ""}`}><span className="w-5 text-white/50">{i + 1}</span><span className="flex-1">{c.avatar} {c.name}</span><span>{c.points} EC</span></li>)}
           </ol>
         </section>
       </div>

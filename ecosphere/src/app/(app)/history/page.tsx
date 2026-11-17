@@ -65,13 +65,13 @@ export default async function History({ searchParams }: { searchParams: { t?: st
       <div className="stagger flex flex-col gap-3 px-5">
         {searchParams.msg && <p role="status" className="card p-3 text-center text-sm text-leaf">{searchParams.msg.slice(0, 100)}</p>}
         <nav aria-label="Category" className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
-          {TABS.map((t) => <Link key={t} href={href(t, range)} aria-current={t === tab ? "page" : undefined} className={`chip shrink-0 ${t === tab ? "chip-on" : ""}`}>{t === "Scan" ? "Scans" : t}</Link>)}
+          {TABS.map((t) => <Link key={t} href={href(t, range)} aria-current={t === tab ? "page" : undefined} className={`chip shrink-0 ${t === tab ? "chip-on" : ""}`}>{t === "Scan" ? "Scans" : t === "Points" ? "EcoCreds" : t}</Link>)}
         </nav>
         <nav aria-label="Date range" className="flex items-center gap-1 text-xs">
           {Object.entries(RANGES).map(([k, v]) => (
             <Link key={k} href={href(tab, k)} aria-current={k === range ? "true" : undefined} className={`rounded-full px-3 py-1.5 ${k === range ? "bg-card text-white" : "text-mute hover:text-white"}`}>{v}</Link>
           ))}
-          {net !== 0 && <span className={`ml-auto ${net > 0 ? "text-leaf" : "text-orange-300"}`}>{net > 0 ? "+" : ""}{net} pts</span>}
+          {net !== 0 && <span className={`ml-auto ${net > 0 ? "text-leaf" : "text-orange-300"}`}>{net > 0 ? "+" : ""}{net} EC</span>}
         </nav>
         <ul className="stagger flex flex-col">
           {rows.map((r) => (
@@ -80,7 +80,7 @@ export default async function History({ searchParams }: { searchParams: { t?: st
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm">{r.title}</p>
                 {r.sub && <p className="truncate text-sm text-white/70">{r.sub}</p>}
-                {r.pts !== undefined && <p className={`text-sm ${r.pts > 0 ? "text-leaf" : "text-orange-300"}`}>{r.pts > 0 ? "+" : ""}{r.pts} pts</p>}
+                {r.pts !== undefined && <p className={`text-sm ${r.pts > 0 ? "text-leaf" : "text-orange-300"}`}>{r.pts > 0 ? "+" : ""}{r.pts} EC</p>}
               </div>
               <span className="shrink-0 self-start text-[11px] text-white/50">{timeAgo(r.at)}</span>
             </li>

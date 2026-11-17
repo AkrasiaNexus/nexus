@@ -34,7 +34,7 @@ export default async function UserDetail({ params }: { params: { id: string } })
             <p className="truncate text-xs text-mute">{u.email} · <span className="font-mono">{u.memberId}</span></p>
             <p className="text-xs text-mute">{roleLabel(u.role)}{u.school ? ` · ${u.school.name}` : ""}{u.grade ? ` · ${u.grade}` : ""}{u.community ? ` · ${u.community}` : ""}</p>
           </div>
-          <div className="text-right"><p className="text-lg font-semibold text-leaf">{u.points}</p><p className="text-[11px] text-mute">pts · {scans ?? 0} scans</p></div>
+          <div className="text-right"><p className="text-lg font-semibold text-leaf">{u.points}</p><p className="text-[11px] text-mute">EC · {scans ?? 0} scans</p></div>
         </section>
 
         {editable ? (

@@ -36,14 +36,14 @@ export default async function Marketplace({ searchParams }: { searchParams: { c?
             <Link key={c} href={`/marketplace?c=${c}${q ? `&q=${encodeURIComponent(q)}` : ""}`} className={`chip px-4 ${c === cat ? "chip-on" : ""}`}>{c}</Link>
           ))}
         </nav>
-        <p className="text-center text-xs text-white/50">You have <b className="text-leaf">{user.points} pts</b> to spend</p>
+        <p className="text-center text-xs text-white/50">You have <b className="text-leaf">{user.points} EC</b> to spend</p>
         <div className="stagger-slow grid grid-cols-2 gap-3">
           {items.map((it) => (
             <Link key={it.id} href={`/marketplace/${it.id}`} className="card flex flex-col gap-2 p-3 hover:border-leaf">
               <ItemArt emoji={it.emoji} src={it.imageUrl} />
               <h2 className="text-sm font-medium leading-tight">{it.title}</h2>
               <p className="mt-auto flex items-center gap-1 text-sm text-leaf">
-                <Star size={14} fill="currentColor" />{it.pricePoints ? `${it.pricePoints} pts` : it.kind === "EXCHANGE" ? "Swap" : "Free"}
+                <Star size={14} fill="currentColor" />{it.pricePoints ? `${it.pricePoints} EC` : it.kind === "EXCHANGE" ? "Swap" : "Free"}
               </p>
             </Link>
           ))}

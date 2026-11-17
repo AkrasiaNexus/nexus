@@ -188,13 +188,13 @@ export default async function Stats({ searchParams: q }: { searchParams: Params 
 
         <section className="card p-4">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-medium">Eco Creds leaderboard</h2>
+            <h2 className="text-sm font-medium">EcoCreds leaderboard</h2>
             <nav className="flex gap-1">{boards.map((b) => <Link key={b} href={href({ b })} className={`chip ${b === board ? "chip-on" : ""}`}>{b}</Link>)}</nav>
           </div>
           <ol className="space-y-2">
             {rows.map((r, i) => (
               <li key={r.key} className={`flex items-center gap-3 text-sm ${r.me ? "text-leaf" : ""}`}>
-                <span className="w-5 text-mute">{i + 1}</span><span className="flex-1">{r.label}</span><span>{r.points} pts</span>
+                <span className="w-5 text-mute">{i + 1}</span><span className="flex-1">{r.label}</span><span>{r.points} EC</span>
               </li>
             ))}
             {rows.length === 0 && <li className="text-xs text-white/50">No rankings yet.</li>}

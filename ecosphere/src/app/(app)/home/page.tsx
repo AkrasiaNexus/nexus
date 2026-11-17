@@ -76,7 +76,7 @@ export default async function Home({ searchParams }: { searchParams: Params }) {
     { href: "/scan", label: "Scan Waste", icon: ScanLine },
     { href: "/stats", label: "Statistics", icon: BarChart3 },
     { href: "/guide", label: "Recycling Guide", icon: BookOpen },
-    { href: "/rewards", label: "Eco Creds", icon: Gift },
+    { href: "/rewards", label: "EcoCreds", icon: Gift },
     { href: "/marketplace", label: "Marketplace", icon: Store },
     { href: "/challenges", label: "Challenges", icon: Trophy },
     ...(isStudent ? [{ href: "/tasks", label: "Tasks", icon: ClipboardCheck }] : []),
@@ -115,7 +115,7 @@ export default async function Home({ searchParams }: { searchParams: Params }) {
       </div>
 
       <LeafGoal percent={percent} label={personalGoal ? "Green Goal" : "Recycling Rate"} />
-      {isPersonal && <Link href="/rewards" className="-mt-3 self-center text-sm text-white/60"><b className="text-leaf">{user.points}</b> Eco Creds</Link>}
+      {isPersonal && <Link href="/rewards" className="-mt-3 self-center text-sm text-white/60"><b className="text-leaf">{user.points}</b> EcoCreds</Link>}
 
       <div className="flex flex-col items-center gap-3">
         <div className="flex w-full items-center gap-3" aria-label="Timeline">

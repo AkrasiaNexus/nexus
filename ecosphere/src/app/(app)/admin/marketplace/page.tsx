@@ -50,7 +50,7 @@ export default async function Moderation({ searchParams }: { searchParams: { tab
                   <div className="w-20 shrink-0"><ItemArt emoji={l.emoji} src={l.imageUrl} alt={l.title} size="h-20" text="text-4xl" /></div>
                   <div className="min-w-0 flex-1 text-sm">
                     <p className="font-semibold">{l.title}</p>
-                    <p className="text-xs text-mute">{l.kind.toLowerCase()} · {CONDITION_LABEL[l.condition]} · {l.pricePoints ? `${l.pricePoints} pts` : "free"} · by {names.get(l.ownerId)?.name ?? "member"} · {timeAgo(l.createdAt)}</p>
+                    <p className="text-xs text-mute">{l.kind.toLowerCase()} · {CONDITION_LABEL[l.condition]} · {l.pricePoints ? `${l.pricePoints} EC` : "free"} · by {names.get(l.ownerId)?.name ?? "member"} · {timeAgo(l.createdAt)}</p>
                     <p className="mt-1 text-white/75">{l.description}</p>
                   </div>
                 </div>

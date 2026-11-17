@@ -55,7 +55,7 @@ export default async function TeacherDashboard() {
           <h2 className="font-semibold">Tasks</h2>
           {tasks.map((task) => (
             <article key={task.id} className="card space-y-2 p-4 text-sm">
-              <p className="font-medium">{task.title} <span className="text-xs text-mute">· due {task.dueAt.toLocaleDateString()} · +{task.points} pts</span></p>
+              <p className="font-medium">{task.title} <span className="text-xs text-mute">· due {task.dueAt.toLocaleDateString()} · +{task.points} EC</span></p>
               <p className="text-xs text-mute">{task.dones.length}/{students.length} done</p>
               {task.dones.filter((d: { approved: boolean }) => !d.approved).map((d: { userId: string; user: { name: string } }) => (
                 <form key={d.userId} action={approveTask.bind(null, task.id, d.userId)} className="flex items-center justify-between">

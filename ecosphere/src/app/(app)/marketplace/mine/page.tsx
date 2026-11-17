@@ -57,7 +57,7 @@ export default async function Mine({ searchParams }: { searchParams: { tab?: str
                       <p className="truncate text-sm font-medium">{l.title}</p>
                       <p className={`text-xs ${s.tone}`}>{s.label}{l.moderationNote && l.status !== "APPROVED" ? ` · ${l.moderationNote}` : ""}</p>
                     </div>
-                    <span className="text-xs text-mute">{l.pricePoints ? `${l.pricePoints} pts` : "Free"}</span>
+                    <span className="text-xs text-mute">{l.pricePoints ? `${l.pricePoints} EC` : "Free"}</span>
                   </Link>
                 </li>
               );
@@ -79,7 +79,7 @@ export default async function Mine({ searchParams }: { searchParams: { tab?: str
                     <p className="truncate text-sm font-medium">{item.get(p.listingId)?.title ?? "Removed item"}</p>
                     <p className="text-xs text-mute">{bought ? "You got this" : `Claimed by ${names.get(p.userId)?.name ?? "a member"}`} · {timeAgo(new Date(p.createdAt))}</p>
                   </div>
-                  <span className={`text-sm font-medium ${bought ? "text-white/80" : "text-leaf"}`}>{p.points ? `${bought ? "−" : "+"}${p.points} pts` : "Free"}</span>
+                  <span className={`text-sm font-medium ${bought ? "text-white/80" : "text-leaf"}`}>{p.points ? `${bought ? "−" : "+"}${p.points} EC` : "Free"}</span>
                 </li>
               );
             })}

@@ -92,7 +92,7 @@ export async function createTask(_: FormState, fd: FormData): Promise<FormState>
     .insert({ ...parsed.data, dueAt: parsed.data.dueAt.toISOString(), className: teacher.grade, schoolId: teacher.schoolId, creatorId: teacher.id })
     .select().single();
   if (error) return { error: "Could not create the task." };
-  await notifySchool(teacher.schoolId, { kind: "TASK", title: `New task: ${task.title}`, body: `Due ${new Date(task.dueAt).toLocaleDateString()} · +${task.points} pts` }, teacher.grade);
+  await notifySchool(teacher.schoolId, { kind: "TASK", title: `New task: ${task.title}`, body: `Due ${new Date(task.dueAt).toLocaleDateString()} · +${task.points} EC` }, teacher.grade);
   revalidatePath("/teacher");
   return { ok: "Task assigned to your class." };
 }
@@ -180,7 +180,7 @@ export async function createClassChallenge(_: FormState, fd: FormData): Promise<
     ...parsed.data, endsAt: parsed.data.endsAt.toISOString(), schoolId: teacher.schoolId, className: teacher.grade, creatorId: teacher.id,
   });
   if (error) return { error: "Could not create the challenge." };
-  await notifySchool(teacher.schoolId, { kind: "CHALLENGE", title: `New class challenge: ${parsed.data.title}`, body: `+${parsed.data.rewardPoints} pts · ends ${parsed.data.endsAt.toLocaleDateString()}` }, teacher.grade);
+  await notifySchool(teacher.schoolId, { kind: "CHALLENGE", title: `New class challenge: ${parsed.data.title}`, body: `+${parsed.data.rewardPoints} EC · ends ${parsed.data.endsAt.toLocaleDateString()}` }, teacher.grade);
   await audit(teacher.id, "CHALLENGE_CREATED", parsed.data.title);
   revalidatePath("/rewards");
   return { ok: "Challenge published to your class." };

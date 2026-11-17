@@ -37,7 +37,7 @@ export async function ChallengeList({ userId, limit }: { userId: string; limit?:
                 <div className="h-2 rounded bg-panel"><div className="grow-x h-2 rounded bg-leaf" style={{ width: `${pct}%` }} /></div>
                 <p className="text-xs text-white/60">{round(progress[i])} / {c.targetKg} kg</p>
                 {c.join.completed ? <p className="text-sm text-leaf">✓ Completed</p>
-                  : pct >= 100 && <form action={claimChallenge.bind(null, c.id)}><button className="btn w-full py-2 text-sm">Claim {c.rewardPoints} pts</button></form>}
+                  : pct >= 100 && <form action={claimChallenge.bind(null, c.id)}><button className="btn w-full py-2 text-sm">Claim {c.rewardPoints} EC</button></form>}
               </>
             ) : (
               <form action={joinChallenge.bind(null, c.id)}><button className="btn-ghost w-full py-2 text-sm">Join challenge</button></form>

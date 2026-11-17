@@ -29,7 +29,7 @@ export default async function AdminChallenges() {
           <div className="grid grid-cols-2 gap-2">
             <select name="wasteType" aria-label="Waste type" className="input">{WASTE_TYPES.map((t) => <option key={t} value={t}>{GUIDE[t].name}</option>)}</select>
             <input name="targetKg" type="number" step="0.1" min="0.1" max="100" required placeholder="Target kg" aria-label="Target kg" className="input" />
-            <input name="rewardPoints" type="number" min="0" max="200" required placeholder="Reward pts" aria-label="Reward points" className="input" />
+            <input name="rewardPoints" type="number" min="0" max="200" required placeholder="Reward EC" aria-label="Reward points" className="input" />
             <input name="endsAt" type="date" required aria-label="End date" className="input" />
           </div>
         </ActionForm>
@@ -41,7 +41,7 @@ export default async function AdminChallenges() {
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{c.title}</p>
                   <p className="text-xs text-mute">
-                    {c.schoolId ? `${c.className} · ${school.get(c.schoolId) ?? "school"}` : "Platform-wide"} · {GUIDE[c.wasteType as keyof typeof GUIDE].name} {c.targetKg} kg · +{c.rewardPoints} pts · {stat(c.id)}
+                    {c.schoolId ? `${c.className} · ${school.get(c.schoolId) ?? "school"}` : "Platform-wide"} · {GUIDE[c.wasteType as keyof typeof GUIDE].name} {c.targetKg} kg · +{c.rewardPoints} EC · {stat(c.id)}
                   </p>
                   <p className={`text-xs ${live ? "text-leaf" : "text-mute"}`}>{live ? `Ends ${c.endsAt.toLocaleDateString()}` : `Ended ${c.endsAt.toLocaleDateString()}`}</p>
                 </div>

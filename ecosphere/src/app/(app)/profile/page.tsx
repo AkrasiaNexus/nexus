@@ -123,7 +123,7 @@ async function RoleBody({ user }: { user: Me }) {
       <>
         <div className="grid grid-cols-2 gap-3">
           <Stat icon={<Trash2 size={24} className="text-gold" />} value={`${all.kg} kg`} label="Waste Reduced" />
-          <Stat icon={<Leaf size={24} className="text-leaf" />} value={`${user.points} pts`} label="Eco Creds" />
+          <Stat icon={<Leaf size={24} className="text-leaf" />} value={`${user.points} EC`} label="EcoCreds" />
         </div>
         <Menu items={[
           { href: "/department", icon: <Users size={ICON} />, label: "My Department" },
@@ -216,7 +216,7 @@ async function RoleBody({ user }: { user: Me }) {
           { href: "/admin/schools", icon: <School size={ICON} />, label: "Schools" },
           { href: "/admin/communities", icon: <UsersRound size={ICON} />, label: "Communities" },
           { href: "/admin/challenges", icon: <Trophy size={ICON} />, label: "Challenges" },
-          { href: "/admin/rewards", icon: <Award size={ICON} />, label: "Rewards & Points" },
+          { href: "/admin/rewards", icon: <Award size={ICON} />, label: "EcoCred Rewards" },
           { href: "/stats", icon: <FileBarChart size={ICON} />, label: "Platform Analytics" },
           { href: "/admin/system", icon: <Settings size={ICON} />, label: "System Settings" },
           { href: "/admin/audit", icon: <ScrollText size={ICON} />, label: "Audit Logs" },

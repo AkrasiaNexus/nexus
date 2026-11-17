@@ -28,7 +28,7 @@ export default async function Item({ params }: { params: { id: string } }) {
             <h2 className="text-xl font-semibold">{it.title}</h2>
             <p className="text-sm text-white/60">{KIND[it.kind]} · {it.category}{it.ownerId && ` · ${CONDITION_LABEL[it.condition]}`}{it.owner && ` · by ${it.owner.name}`}</p>
           </div>
-          <p className="flex shrink-0 items-center gap-1 text-lg font-semibold text-leaf"><Star size={16} fill="currentColor" />{it.pricePoints ? `${it.pricePoints} pts` : "Free"}</p>
+          <p className="flex shrink-0 items-center gap-1 text-lg font-semibold text-leaf"><Star size={16} fill="currentColor" />{it.pricePoints ? `${it.pricePoints} EC` : "Free"}</p>
         </div>
         {mine && it.status !== "APPROVED" && (
           <p role="status" className="card p-3 text-sm text-gold">
@@ -36,7 +36,7 @@ export default async function Item({ params }: { params: { id: string } }) {
           </p>
         )}
         <p className="card p-4 text-sm text-white/75">{it.description}</p>
-        {!it.ownerId && <p className="text-xs text-white/50">{it.stock} left · you have {user.points} pts</p>}
+        {!it.ownerId && <p className="text-xs text-white/50">{it.stock} left · you have {user.points} EC</p>}
         {it.ownerId && !mine && <p className="text-xs text-white/50">Hand-over happens at school or in a public place. The owner is notified when you claim it.</p>}
         {mine
           ? <form action={closeListing.bind(null, it.id)}><button className="btn-ghost w-full">Remove my listing</button></form>

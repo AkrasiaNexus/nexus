@@ -43,7 +43,7 @@ export async function adjustPoints(userId: string, _: FormState, fd: FormData): 
   const { error } = await createClient().rpc("adjust_points", { p_user: String(userId), p_delta: parsed.data.delta, p_reason: parsed.data.reason });
   if (error) return { error: error.message.includes("Not enough") ? "That would take their balance below zero." : "Could not adjust points." };
   revalidatePath(`/admin/users/${userId}`);
-  return { ok: `${parsed.data.delta > 0 ? "+" : ""}${parsed.data.delta} pts applied.` };
+  return { ok: `${parsed.data.delta > 0 ? "+" : ""}${parsed.data.delta} EC applied.` };
 }
 
 export async function setSetting(key: string, value: string) {
@@ -122,7 +122,7 @@ export async function createChallenge(_: FormState, fd: FormData): Promise<FormS
   const db = admin();
   const { error } = await db.from("challenges").insert({ ...parsed.data, endsAt: parsed.data.endsAt.toISOString(), creatorId: me.id });
   if (error) return { error: "Could not create the challenge." };
-  await db.from("notifications").insert({ kind: "CHALLENGE", title: `New challenge: ${parsed.data.title}`, body: `+${parsed.data.rewardPoints} pts · ends ${parsed.data.endsAt.toLocaleDateString()}` });
+  await db.from("notifications").insert({ kind: "CHALLENGE", title: `New challenge: ${parsed.data.title}`, body: `+${parsed.data.rewardPoints} EC · ends ${parsed.data.endsAt.toLocaleDateString()}` });
   await audit(me.id, "CHALLENGE_CREATED", parsed.data.title);
   revalidatePath("/admin/challenges");
   return { ok: "Challenge published to everyone." };
