@@ -44,7 +44,10 @@ tl.add({}, { duration:1 }, at(N))     // pin the end so the last chapter has roo
 5. **`dvh` resizes as the mobile toolbar moves**, so pinned scenes jump. Use `100svh` for the stage (`lvh` for step heights).
 6. **Next 14 can't bundle onnxruntime-web / some ESM-heavy libs**: load them at runtime with `import(/* webpackIgnore: true */ url)` from a pinned CDN version, keep the npm package as a devDependency for types.
 7. **Dash animations break with `vector-effect: non-scaling-stroke`**: reveal lines with a `clip-path: inset(0 100% 0 0)` keyframe.
-8. **`session.user` from supabase `getSession()` on the server logs warnings**: only test the session's existence in middleware.
+8. **Edge slabs for CSS-3D thickness:** `transform-origin` on the body's edge, then `rotateY(90deg) translateX(-depth/2)` (no leading translate), or the slab floats half its depth away from the body.
+9. **Cursor reaction without fighting the timeline:** wrap the object in a `[data-tilt]` layer (`transform-style: preserve-3d`) and drive it with `createAnimatable(el, { rotateX: 900, rotateY: 900, ease: 'out(3)' })` inside the same scope; fine pointers only, skipped for reduced motion. The timeline keeps owning the outer rig.
+10. **Light beams/gradients with hard ends** look cheap: fade both ends with `mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent)`.
+11. **`session.user` from supabase `getSession()` on the server logs warnings**: only test the session's existence in middleware.
 
 ## Performance budget
 LCP < 1.5–2.5s · CLS < 0.05 · INP < 100ms · 60fps on a mid-range phone · page < 3MB.

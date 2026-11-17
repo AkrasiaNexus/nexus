@@ -26,6 +26,7 @@ Pick patterns that serve the storyboard. Use 4–6 per site, plus the one signat
 - **Card deal + focus.** Cards stagger in, one scales up to centre stage, returns; the shelf slides to the next set.
 
 ## Atmosphere
+- **Object leans toward the cursor** (±6–9°) on a separate tilt layer: the hook is alive before the first scroll.
 - **Light that follows the cursor.** A page-level radial glow at the pointer plus a card sheen and edge catch (mask-composite border). Fine pointers only.
 - **Depth of field.** Background shapes at mixed blur/opacity, so 2D layers feel spatial.
 - **Particles with purpose.** A few motes drifting off the signature at an emotional beat; never ambient confetti.
