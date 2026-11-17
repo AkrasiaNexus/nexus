@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Droplet, Recycle, Sparkles, TreePine } from "lucide-react";
-import type { WasteType } from "@prisma/client";
+import type { WasteType } from "@/lib/types";
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
 import { impactFor, scanScope, startOf } from "@/lib/queries";
 import { GUIDE, round } from "@/lib/waste";
 import { WEEKDAYS, heatmapGrid, periodRange, seriesFor } from "@/lib/charts";
@@ -20,15 +20,15 @@ export default async function Stats({ searchParams }: { searchParams: { p?: stri
   const scope = scanScope(user);
   const fourWeeksAgo = new Date(Date.now() - 28 * 86_400_000);
   const { start, end } = periodRange(period);
-  const [data, last4w, leaders, schools] = await Promise.all([
+  const [data, last4w, allStudents, schoolRes] = await Promise.all([
     impactFor(scope, start, end),
     impactFor(scope, fourWeeksAgo),
-    db.user.findMany({
-      where: { role: "STUDENT", active: true, ...(user.schoolId && { schoolId: user.schoolId }) },
-      orderBy: { points: "desc" }, select: { id: true, name: true, points: true, avatar: true, grade: true, schoolId: true },
-    }),
-    db.school.findMany({ include: { users: { where: { role: "STUDENT", active: true }, select: { points: true } } } }),
+    createClient().from("public_profiles").select("id, name, points, avatar, grade, schoolId").eq("role", "STUDENT").eq("active", true).order("points", { ascending: false }),
+    createClient().from("schools").select("id, name"),
   ]);
+  const students = (allStudents.data ?? []) as { id: string; name: string; points: number; avatar: string; grade: string | null; schoolId: string | null }[];
+  const leaders = user.schoolId ? students.filter((x) => x.schoolId === user.schoolId) : students;
+  const schools = (schoolRes.data ?? []).map((sc) => ({ ...sc, users: students.filter((x) => x.schoolId === sc.id) }));
   const sum = (xs: { points: number }[]) => xs.reduce((t, x) => t + x.points, 0);
   const rows = board === "Students"
     ? leaders.slice(0, 5).map((l) => ({ key: l.id, label: `${l.avatar} ${l.name}`, points: l.points, me: l.id === user.id }))

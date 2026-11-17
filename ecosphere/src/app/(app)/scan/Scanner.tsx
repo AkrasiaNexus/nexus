@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Camera, ImagePlus, Loader2, Recycle, ShieldCheck } from "lucide-react";
-import type { WasteType } from "@prisma/client";
+import type { WasteType } from "@/lib/types";
 import { GUIDE, WASTE_TYPES, classify } from "@/lib/waste";
 import { saveScan } from "../../actions";
 

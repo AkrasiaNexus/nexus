@@ -1,10 +1,13 @@
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
+import { publicNames, withDates } from "@/lib/queries";
 import { Header, timeAgo } from "@/components/ui";
 
 export default async function AuditLogs() {
   await requireUser(["SUPER_ADMIN"]);
-  const logs = await db.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 100, include: { actor: { select: { name: true } } } });
+  const rows = withDates((await createClient().from("audit_logs").select("*").order("createdAt", { ascending: false }).limit(100)).data, "createdAt");
+  const actors = await publicNames(rows.map((l) => l.actorId));
+  const logs = rows.map((l) => ({ ...l, actor: actors.get(l.actorId) ?? null }));
   return (
     <>
       <Header title="Audit Logs" back="/profile" />

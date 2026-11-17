@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { WasteType } from "@prisma/client";
+import type { WasteType } from "@/lib/types";
 import { GUIDE, WASTE_TYPES } from "@/lib/waste";
 import { Lightbulb } from "lucide-react";
 import { Header, IconCircle } from "@/components/ui";

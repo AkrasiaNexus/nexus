@@ -1,5 +1,7 @@
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
+import { withDates } from "@/lib/queries";
+import type { HealthRow } from "@/components/HealthStatus";
 import { healthAlerts } from "@/lib/health";
 import { ActionForm } from "@/components/ActionForm";
 import { HealthStatus } from "@/components/HealthStatus";
@@ -13,13 +15,18 @@ const sel = (name: string, opts: string[], def?: string) => (
 export default async function Health() {
   const user = await requireUser(["HEALTH_MONITOR", "TEACHER", "SCHOOL_ADMIN", "STUDENT", "PARENT"]);
   // Which (school, class) pairs this user may see.
-  const classes = user.role === "PARENT"
-    ? (await db.user.findMany({ where: { parentId: user.id }, select: { schoolId: true, grade: true } })).map((c) => ({ schoolId: c.schoolId ?? "", className: c.grade ?? "" }))
+  const sb = createClient();
+  const people = user.role === "PARENT"
+    ? (await sb.from("profiles").select("schoolId, grade").eq("parentId", user.id)).data ?? []
     : user.role === "SCHOOL_ADMIN"
-      ? (await db.user.groupBy({ by: ["grade"], where: { schoolId: user.schoolId, role: "STUDENT" } })).map((g) => ({ schoolId: user.schoolId ?? "", className: g.grade ?? "" }))
-      : [{ schoolId: user.schoolId ?? "", className: user.grade ?? "" }];
-  const latest = await Promise.all(classes.map((c) => db.healthReport.findFirst({ where: c, orderBy: { createdAt: "desc" } })));
-  const history = await db.healthReport.findMany({ where: { OR: classes }, orderBy: { createdAt: "desc" }, take: 15 });
+      ? (await sb.from("profiles").select("schoolId, grade").eq("schoolId", user.schoolId ?? "").eq("role", "STUDENT")).data ?? []
+      : [{ schoolId: user.schoolId, grade: user.grade }];
+  const classes = Array.from(new Map(people.map((p) => [`${p.schoolId}|${p.grade}`, { schoolId: p.schoolId ?? "", className: p.grade ?? "" }])).values());
+  // Row-level security returns only reports for classes this user may see; newest first.
+  const reports = withDates((await sb.from("health_reports").select("*").order("createdAt", { ascending: false }).limit(200)).data, "createdAt") as HealthRow[];
+  const inClass = (r: HealthRow, c: { schoolId: string; className: string }) => r.schoolId === c.schoolId && r.className === c.className;
+  const latest = classes.map((c) => reports.find((r) => inClass(r, c)) ?? null);
+  const history = reports.filter((r) => classes.some((c) => inClass(r, c))).slice(0, 15);
   const canReport = ["HEALTH_MONITOR", "TEACHER", "SCHOOL_ADMIN"].includes(user.role);
 
   return (

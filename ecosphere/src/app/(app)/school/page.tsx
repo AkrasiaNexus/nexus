@@ -1,5 +1,7 @@
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
+import { withDates } from "@/lib/queries";
+import type { HealthRow } from "@/components/HealthStatus";
 import { startOf } from "@/lib/queries";
 import { impact } from "@/lib/waste";
 import { BroadcastForm } from "@/components/BroadcastForm";
@@ -9,18 +11,18 @@ import { Header } from "@/components/ui";
 
 export default async function SchoolReports() {
   const admin = await requireUser(["SCHOOL_ADMIN"]);
-  const students = await db.user.findMany({
-    where: { schoolId: admin.schoolId, role: "STUDENT" },
-    include: { scans: { where: { createdAt: { gte: startOf("month") } }, select: { wasteType: true, weightKg: true } } },
-    orderBy: { points: "desc" },
-  });
+  const sb = createClient();
+  const since = startOf("month");
+  const students = ((await sb.from("profiles").select("*, scans(wasteType, weightKg, createdAt)").eq("schoolId", admin.schoolId ?? "").eq("role", "STUDENT").order("points", { ascending: false })).data ?? [])
+    .map((s) => ({ ...s, scans: (s.scans ?? []).filter((x: { createdAt: string }) => new Date(x.createdAt) >= since) }));
+  const allReports = withDates((await sb.from("health_reports").select("*").eq("schoolId", admin.schoolId ?? "").order("createdAt", { ascending: false }).limit(300)).data, "createdAt") as HealthRow[];
   const grades = Array.from(new Set(students.map((s) => s.grade ?? "Unassigned")));
   const classes = grades
     .map((grade) => students.filter((s) => (s.grade ?? "Unassigned") === grade))
     .map((list) => ({ grade: list[0].grade ?? "Unassigned", count: list.length, ...impact(list.flatMap((s) => s.scans)) }))
     .sort((a, b) => b.kg - a.kg);
   const max = Math.max(1, ...classes.map((c) => c.kg));
-  const reports = await Promise.all(classes.map((c) => db.healthReport.findFirst({ where: { schoolId: admin.schoolId ?? "", className: c.grade }, orderBy: { createdAt: "desc" } })));
+  const reports = classes.map((c) => allReports.find((r) => r.className === c.grade) ?? null);
   const STATUS = { OK: "🟢", WATCH: "🟡", ACTION: "🔴" };
 
   return (

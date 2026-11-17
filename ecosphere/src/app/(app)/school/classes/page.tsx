@@ -1,5 +1,7 @@
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
+import { withDates } from "@/lib/queries";
+import type { HealthRow } from "@/components/HealthStatus";
 import { healthAlerts, healthStatus } from "@/lib/health";
 import { startOf } from "@/lib/queries";
 import { impact } from "@/lib/waste";
@@ -9,12 +11,13 @@ const DOT = { OK: "🟢", WATCH: "🟡", ACTION: "🔴" };
 
 export default async function ManageClasses() {
   const admin = await requireUser(["SCHOOL_ADMIN"]);
-  const people = await db.user.findMany({
-    where: { schoolId: admin.schoolId, role: { in: ["STUDENT", "TEACHER", "HEALTH_MONITOR"] } },
-    include: { scans: { where: { createdAt: { gte: startOf("month") } }, select: { wasteType: true, weightKg: true } } },
-  });
+  const sb = createClient();
+  const since = startOf("month");
+  const people = ((await sb.from("profiles").select("*, scans(wasteType, weightKg, createdAt)").eq("schoolId", admin.schoolId ?? "").in("role", ["STUDENT", "TEACHER", "HEALTH_MONITOR"])).data ?? [])
+    .map((p) => ({ ...p, scans: (p.scans ?? []).filter((x: { createdAt: string }) => new Date(x.createdAt) >= since) }));
+  const allReports = withDates((await sb.from("health_reports").select("*").eq("schoolId", admin.schoolId ?? "").order("createdAt", { ascending: false }).limit(300)).data, "createdAt") as HealthRow[];
   const grades = Array.from(new Set(people.map((p) => p.grade ?? "Unassigned"))).sort();
-  const reports = await Promise.all(grades.map((g) => db.healthReport.findFirst({ where: { schoolId: admin.schoolId ?? "", className: g }, orderBy: { createdAt: "desc" } })));
+  const reports = grades.map((g) => allReports.find((r) => r.className === g) ?? null);
   return (
     <>
       <Header title="Manage Classes" back="/profile" />

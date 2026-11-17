@@ -1,19 +1,27 @@
 import "server-only";
-import type { Prisma, User } from "@prisma/client";
-import { db } from "./db";
+import { admin } from "./supabase/admin";
+import { createClient } from "./supabase/server";
+import type { Profile, WasteType } from "./types";
 import { impact } from "./waste";
 import { earnedBadges } from "./rewards";
 
-// Which scans a user may see, by role.
-export function scanScope(user: Pick<User, "id" | "role" | "schoolId" | "grade">): Prisma.ScanWhereInput {
+// Named scopes enforced in SQL by scans_in_scope(); rows come back without user identity.
+export type Scope = "me" | "children" | "class" | "school" | "department" | "community" | "platform";
+
+export function scanScope(user: Pick<Profile, "role">): Scope {
   switch (user.role) {
-    case "PARENT": return { user: { parentId: user.id } };
-    case "SCHOOL_ADMIN": return { user: { schoolId: user.schoolId ?? "__none__" } };
+    case "PARENT": return "children";
+    case "SCHOOL_ADMIN": return "school";
     case "TEACHER":
-    case "HEALTH_MONITOR": return { user: { schoolId: user.schoolId ?? "__none__", grade: user.grade ?? "__none__", role: "STUDENT" } };
-    case "SUPER_ADMIN": return {};
-    default: return { userId: user.id };
+    case "HEALTH_MONITOR": return "class";
+    case "SUPER_ADMIN": return "platform";
+    default: return "me";
   }
+}
+
+// Supabase returns timestamps as ISO strings; the UI works with Date objects.
+export function withDates<T extends Record<string, unknown>>(rows: T[] | null, ...keys: (keyof T)[]) {
+  return (rows ?? []).map((r) => ({ ...r, ...Object.fromEntries(keys.map((k) => [k, r[k] ? new Date(r[k] as string) : r[k]])) })) as (T & Record<(typeof keys)[number], Date>)[];
 }
 
 export const startOf = (period: "week" | "month" | "year") => {
@@ -25,11 +33,19 @@ export const startOf = (period: "week" | "month" | "year") => {
   return d;
 };
 
-export async function impactFor(where: Prisma.ScanWhereInput, since?: Date, until?: Date) {
-  const scans = await db.scan.findMany({
-    where: { ...where, ...((since || until) && { createdAt: { ...(since && { gte: since }), ...(until && { lt: until }) } }) },
-    select: { wasteType: true, weightKg: true, createdAt: true },
-  });
+type ScanRow = { wasteType: WasteType; weightKg: number; createdAt: string };
+
+export async function impactFor(scope: Scope, since?: Date, until?: Date) {
+  const { data } = await createClient().rpc("scans_in_scope", { p_scope: scope, p_since: since?.toISOString() ?? null, p_until: until?.toISOString() ?? null });
+  const scans = withDates(data as ScanRow[] | null, "createdAt");
+  return { scans, ...impact(scans) };
+}
+
+// One person's scans (row-level security decides whether the caller may see them).
+export async function impactForUser(userId: string, since?: Date) {
+  let q = createClient().from("scans").select("wasteType, weightKg, createdAt").eq("userId", userId);
+  if (since) q = q.gte("createdAt", since.toISOString());
+  const scans = withDates((await q).data as ScanRow[] | null, "createdAt");
   return { scans, ...impact(scans) };
 }
 
@@ -45,27 +61,32 @@ export function dailySeries(scans: { weightKg: number; createdAt: Date }[], days
   });
 }
 
-export function visibleNotifications(userId: string, take = 30) {
-  return db.notification.findMany({ where: { OR: [{ userId }, { userId: null }] }, orderBy: { createdAt: "desc" }, take });
-}
-
-// Same visibility as scanScope, expressed over users (for exports, etc.).
-export function peopleScope(user: Pick<User, "id" | "role" | "schoolId" | "grade">): Prisma.UserWhereInput {
-  const s = scanScope(user);
-  return s.userId ? { id: user.id } : ((s.user as Prisma.UserWhereInput) ?? {});
+export async function visibleNotifications(userId: string, take = 30) {
+  const { data } = await createClient().from("notifications").select("*").or(`userId.eq.${userId},userId.is.null`).order("createdAt", { ascending: false }).limit(take);
+  return withDates(data as { id: string; kind: string; title: string; body: string; createdAt: string; userId: string | null }[] | null, "createdAt");
 }
 
 export async function syncBadges(userId: string) {
-  const [user, scans, types, purchases, challenges, have] = await Promise.all([
-    db.user.findUnique({ where: { id: userId }, select: { points: true } }),
-    db.scan.count({ where: { userId } }),
-    db.scan.groupBy({ by: ["wasteType"], where: { userId } }),
-    db.purchase.count({ where: { userId } }),
-    db.challengeJoin.count({ where: { userId, completed: true } }),
-    db.userBadge.findMany({ where: { userId }, select: { badgeId: true } }),
+  const db = admin();
+  const [user, scans, purchases, challenges, have] = await Promise.all([
+    db.from("profiles").select("points").eq("id", userId).single(),
+    db.from("scans").select("wasteType").eq("userId", userId),
+    db.from("purchases").select("id", { count: "exact", head: true }).eq("userId", userId),
+    db.from("challenge_joins").select("userId", { count: "exact", head: true }).eq("userId", userId).eq("completed", true),
+    db.from("user_badges").select("badgeId").eq("userId", userId),
   ]);
-  const owned = new Set(have.map((b) => b.badgeId));
-  const fresh = earnedBadges({ scans, points: user?.points ?? 0, types: types.length, purchases, challenges }).filter((b) => !owned.has(b.id));
-  if (fresh.length) await db.userBadge.createMany({ data: fresh.map((b) => ({ userId, badgeId: b.id })), skipDuplicates: true });
+  const owned = new Set((have.data ?? []).map((b) => b.badgeId as string));
+  const types = new Set((scans.data ?? []).map((s) => s.wasteType)).size;
+  const fresh = earnedBadges({ scans: scans.data?.length ?? 0, points: user.data?.points ?? 0, types, purchases: purchases.count ?? 0, challenges: challenges.count ?? 0 })
+    .filter((b) => !owned.has(b.id));
+  if (fresh.length) await db.from("user_badges").upsert(fresh.map((b) => ({ userId, badgeId: b.id })), { ignoreDuplicates: true });
   return new Set([...Array.from(owned), ...fresh.map((b) => b.id)]);
+}
+
+// Display names for other people (leaderboards, listing owners, task creators): no email or private fields.
+export async function publicNames(ids: (string | null | undefined)[]) {
+  const unique = Array.from(new Set(ids.filter(Boolean))) as string[];
+  if (!unique.length) return new Map<string, { name: string; avatar: string }>();
+  const { data } = await createClient().from("public_profiles").select("id, name, avatar").in("id", unique);
+  return new Map((data ?? []).map((p) => [p.id as string, { name: p.name as string, avatar: p.avatar as string }]));
 }

@@ -1,6 +1,8 @@
 import { Download } from "lucide-react";
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
+import { withDates } from "@/lib/queries";
+import type { HealthRow } from "@/components/HealthStatus";
 import { impactFor, scanScope, startOf } from "@/lib/queries";
 import { impact } from "@/lib/waste";
 import { ActionForm } from "@/components/ActionForm";
@@ -11,15 +13,16 @@ import { approveTask, createEvent, createTask } from "../../feature-actions";
 export default async function TeacherDashboard() {
   const t = await requireUser(["TEACHER"]);
   const since = startOf("month");
-  const [classImpact, students, tasks, health] = await Promise.all([
+  const sb = createClient();
+  const [classImpact, studentRes, taskRes, healthRes] = await Promise.all([
     impactFor(scanScope(t), since),
-    db.user.findMany({
-      where: { schoolId: t.schoolId, grade: t.grade, role: "STUDENT" }, orderBy: { points: "desc" },
-      include: { scans: { where: { createdAt: { gte: since } }, select: { wasteType: true, weightKg: true } }, taskDones: true },
-    }),
-    db.task.findMany({ where: { creatorId: t.id }, orderBy: { dueAt: "desc" }, include: { dones: { include: { user: { select: { name: true } } } } } }),
-    db.healthReport.findFirst({ where: { schoolId: t.schoolId ?? "", className: t.grade ?? "" }, orderBy: { createdAt: "desc" } }),
+    sb.from("profiles").select("*, scans(wasteType, weightKg, createdAt), taskDones:task_dones(*)").eq("schoolId", t.schoolId ?? "").eq("grade", t.grade ?? "").eq("role", "STUDENT").order("points", { ascending: false }),
+    sb.from("tasks").select("*, dones:task_dones(*, user:profiles(name))").eq("creatorId", t.id).order("dueAt", { ascending: false }),
+    sb.from("health_reports").select("*").eq("schoolId", t.schoolId ?? "").eq("className", t.grade ?? "").order("createdAt", { ascending: false }).limit(1).maybeSingle(),
   ]);
+  const students = (studentRes.data ?? []).map((s) => ({ ...s, scans: (s.scans ?? []).filter((x: { createdAt: string }) => new Date(x.createdAt) >= since) }));
+  const tasks = withDates(taskRes.data, "dueAt");
+  const health = healthRes.data ? ({ ...healthRes.data, createdAt: new Date(healthRes.data.createdAt) } as HealthRow) : null;
   const active = students.filter((s) => s.scans.length > 0).length;
 
   return (
@@ -40,7 +43,7 @@ export default async function TeacherDashboard() {
             <thead className="text-mute"><tr><th className="text-left">Student</th><th>Items</th><th>kg</th><th>Recycled</th><th>Tasks</th><th>Pts</th></tr></thead>
             <tbody>
               {students.map((s) => { const i = impact(s.scans); return (
-                <tr key={s.id} className="border-t border-line text-center"><td className="py-2 text-left">{s.avatar} {s.name}</td><td>{s.scans.length}</td><td>{i.kg}</td><td>{i.recyclingRate}%</td><td>{s.taskDones.filter((d) => d.approved).length}</td><td>{s.points}</td></tr>
+                <tr key={s.id} className="border-t border-line text-center"><td className="py-2 text-left">{s.avatar} {s.name}</td><td>{s.scans.length}</td><td>{i.kg}</td><td>{i.recyclingRate}%</td><td>{s.taskDones.filter((d: { approved: boolean }) => d.approved).length}</td><td>{s.points}</td></tr>
               ); })}
             </tbody>
           </table>
@@ -53,7 +56,7 @@ export default async function TeacherDashboard() {
             <article key={task.id} className="card space-y-2 p-4 text-sm">
               <p className="font-medium">{task.title} <span className="text-xs text-mute">· due {task.dueAt.toLocaleDateString()} · +{task.points} pts</span></p>
               <p className="text-xs text-mute">{task.dones.length}/{students.length} done</p>
-              {task.dones.filter((d) => !d.approved).map((d) => (
+              {task.dones.filter((d: { approved: boolean }) => !d.approved).map((d: { userId: string; user: { name: string } }) => (
                 <form key={d.userId} action={approveTask.bind(null, task.id, d.userId)} className="flex items-center justify-between">
                   <span className="text-xs">{d.user.name} marked done</span><button className="chip chip-on">Approve</button>
                 </form>

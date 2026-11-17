@@ -1,15 +1,16 @@
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
 import { impactFor, startOf } from "@/lib/queries";
 import { Header, Stat } from "@/components/ui";
 
 export default async function Department() {
   const me = await requireUser(["EMPLOYEE"]);
   const department = me.department ?? "General";
-  const [colleagues, month] = await Promise.all([
-    db.user.findMany({ where: { role: "EMPLOYEE", department: me.department }, orderBy: { points: "desc" }, select: { id: true, name: true, points: true, avatar: true } }),
-    impactFor({ user: { role: "EMPLOYEE", department: me.department } }, startOf("month")),
+  const [colleagueRes, month] = await Promise.all([
+    createClient().from("public_profiles").select("id, name, points, avatar").eq("role", "EMPLOYEE").eq("department", me.department ?? "").order("points", { ascending: false }),
+    impactFor("department", startOf("month")),
   ]);
+  const colleagues = (colleagueRes.data ?? []) as { id: string; name: string; points: number; avatar: string }[];
   return (
     <>
       <Header title="My Department" back="/profile" />

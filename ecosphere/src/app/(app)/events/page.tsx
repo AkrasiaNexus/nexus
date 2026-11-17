@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { CalendarDays, MapPin } from "lucide-react";
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
+import { publicNames, withDates } from "@/lib/queries";
 import { ActionForm } from "@/components/ActionForm";
 import { Header } from "@/components/ui";
 import { createEvent, toggleRsvp } from "../../feature-actions";
@@ -12,14 +13,16 @@ const ICON: Record<string, string> = { EVENT: "📅", WORKSHOP: "🛠️", CAMPA
 export default async function Events({ searchParams }: { searchParams: { k?: string } }) {
   const user = await requireUser();
   const k = searchParams.k && searchParams.k in KINDS ? searchParams.k : "ALL";
-  // Parents see events at their children's schools.
-  const schoolIds = user.role === "PARENT"
-    ? (await db.user.findMany({ where: { parentId: user.id }, select: { schoolId: true } })).flatMap((c) => (c.schoolId ? [c.schoolId] : []))
-    : user.schoolId ? [user.schoolId] : [];
-  const events = await db.event.findMany({
-    where: { startsAt: { gte: new Date() }, OR: [{ schoolId: null }, { schoolId: { in: schoolIds } }], ...(k !== "ALL" && { kind: k }) },
-    include: { rsvps: true, organizer: { select: { name: true } } }, orderBy: { startsAt: "asc" },
-  });
+  // Row-level security limits events to open ones + the user's (or their children's) school.
+  const sb = createClient();
+  let q = sb.from("events").select("*").gte("startsAt", new Date().toISOString()).order("startsAt");
+  if (k !== "ALL") q = q.eq("kind", k);
+  const rows = withDates((await q).data, "startsAt");
+  const [{ data: rsvps }, organizers] = await Promise.all([
+    rows.length ? sb.from("event_rsvps").select("eventId, userId").in("eventId", rows.map((e) => e.id)) : Promise.resolve({ data: [] as { eventId: string; userId: string }[] }),
+    publicNames(rows.map((e) => e.organizerId)),
+  ]);
+  const events = rows.map((e) => ({ ...e, rsvps: (rsvps ?? []).filter((r) => r.eventId === e.id), organizer: organizers.get(e.organizerId) ?? null }));
   const canCreate = ["TEACHER", "SCHOOL_ADMIN", "COMMUNITY", "SUPER_ADMIN"].includes(user.role);
   return (
     <>
@@ -29,7 +32,7 @@ export default async function Events({ searchParams }: { searchParams: { k?: str
           {Object.entries(KINDS).map(([key, v]) => <Link key={key} href={`/events?k=${key}`} className={`chip shrink-0 ${key === k ? "chip-on" : ""}`}>{v}</Link>)}
         </nav>
         {events.map((e) => {
-          const going = e.rsvps.some((r) => r.userId === user.id);
+          const going = e.rsvps.some((r: { userId: string }) => r.userId === user.id);
           return (
             <article key={e.id} className="card space-y-2 p-4">
               <div className="flex gap-3"><span className="text-2xl">{ICON[e.kind]}</span>

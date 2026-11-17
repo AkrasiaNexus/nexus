@@ -1,7 +1,7 @@
 import { Activity, Database, Download, Lock, ScanLine, ShieldAlert, Users } from "lucide-react";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
 import { Header, IconCircle } from "@/components/ui";
 import { setSignupsOpen } from "../../../actions";
 
@@ -9,14 +9,18 @@ export default async function SystemSettings() {
   await requireUser(["SUPER_ADMIN"]);
   const day = new Date(Date.now() - 86_400_000);
   const started = Date.now();
-  const [users, active, scans24, logins24, fails24, setting] = await Promise.all([
-    db.user.count(),
-    db.user.count({ where: { active: true } }),
-    db.scan.count({ where: { createdAt: { gte: day } } }),
-    db.auditLog.count({ where: { action: "LOGIN", createdAt: { gte: day } } }),
-    db.auditLog.count({ where: { action: "LOGIN_FAIL", createdAt: { gte: day } } }),
-    db.setting.findUnique({ where: { key: "signupsOpen" } }),
+  const sb = createClient();
+  const n = (r: { count: number | null }) => r.count ?? 0;
+  const since = day.toISOString();
+  const [usersR, activeR, scansR, loginsR, failsR, settingR] = await Promise.all([
+    sb.from("profiles").select("id", { count: "exact", head: true }),
+    sb.from("profiles").select("id", { count: "exact", head: true }).eq("active", true),
+    sb.from("scans").select("id", { count: "exact", head: true }).gte("createdAt", since),
+    sb.from("audit_logs").select("id", { count: "exact", head: true }).eq("action", "LOGIN").gte("createdAt", since),
+    sb.from("audit_logs").select("id", { count: "exact", head: true }).eq("action", "LOGIN_FAIL").gte("createdAt", since),
+    sb.from("settings").select("value").eq("key", "signupsOpen").maybeSingle(),
   ]);
+  const [users, active, scans24, logins24, fails24, setting] = [n(usersR), n(activeR), n(scansR), n(loginsR), n(failsR), settingR.data];
   const dbMs = Date.now() - started;
   const open = setting?.value !== "false";
   const checks = [

@@ -1,12 +1,12 @@
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/ui";
 import { ResetButton } from "@/components/ResetButton";
 import { toggleStaffActive } from "../../../actions";
 
 export default async function ManageStaff() {
   const admin = await requireUser(["SCHOOL_ADMIN"]);
-  const staff = await db.user.findMany({ where: { schoolId: admin.schoolId, role: { in: ["TEACHER", "HEALTH_MONITOR"] } }, orderBy: { name: "asc" } });
+  const staff = (await createClient().from("profiles").select("*").eq("schoolId", admin.schoolId ?? "").in("role", ["TEACHER", "HEALTH_MONITOR"]).order("name")).data ?? [];
   return (
     <>
       <Header title="Manage Staff" back="/profile" />

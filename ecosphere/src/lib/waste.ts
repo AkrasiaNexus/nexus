@@ -1,4 +1,4 @@
-import type { WasteType } from "@prisma/client";
+import type { WasteType } from "@/lib/types";
 
 export const WASTE_TYPES = ["PLASTIC", "PAPER", "GLASS", "METAL", "ORGANIC", "EWASTE", "TEXTILE", "OTHER"] as const;
 

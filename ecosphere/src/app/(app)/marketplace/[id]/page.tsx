@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { Star } from "lucide-react";
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
+import { publicNames } from "@/lib/queries";
 import { ItemArt } from "@/components/ItemArt";
 import { Header } from "@/components/ui";
 import { closeListing } from "../../../feature-actions";
@@ -11,8 +12,9 @@ const KIND: Record<string, string> = { REWARD: "Eco reward", SELL: "Second-hand"
 
 export default async function Item({ params }: { params: { id: string } }) {
   const user = await requireUser();
-  const it = await db.listing.findUnique({ where: { id: params.id }, include: { owner: { select: { name: true } } } });
-  if (!it || !it.active) notFound();
+  const { data: row } = await createClient().from("listings").select("*").eq("id", params.id).maybeSingle();
+  if (!row || !row.active) notFound();
+  const it = { ...row, owner: row.ownerId ? (await publicNames([row.ownerId])).get(row.ownerId) ?? null : null };
   const mine = it.ownerId === user.id;
   return (
     <>

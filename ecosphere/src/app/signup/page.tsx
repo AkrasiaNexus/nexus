@@ -1,9 +1,9 @@
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
 import { SignupForm } from "./SignupForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function Signup() {
-  const schools = await db.school.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } });
+  const schools = (await createClient().from("schools").select("id, name").order("name")).data ?? [];
   return <SignupForm schools={schools} />;
 }

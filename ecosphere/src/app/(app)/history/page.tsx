@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Award, ClipboardCheck, Leaf, ShoppingBag, Trophy } from "lucide-react";
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
+import { withDates } from "@/lib/queries";
 import { syncBadges } from "@/lib/queries";
 import { BADGES } from "@/lib/rewards";
 import { Header, IconCircle, timeAgo, type Tone } from "@/components/ui";
@@ -14,13 +15,21 @@ export default async function History({ searchParams }: { searchParams: { t?: st
   const tab = TABS.find((t) => t === searchParams.t) ?? "All";
   const want = (t: (typeof TABS)[number]) => tab === "All" || tab === t;
   await syncBadges(user.id);
-  const [scans, purchases, challenges, badges, tasks] = await Promise.all([
-    want("Scan") ? db.scan.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 40 }) : [],
-    want("Marketplace") ? db.purchase.findMany({ where: { userId: user.id }, include: { listing: true }, orderBy: { createdAt: "desc" }, take: 40 }) : [],
-    want("Rewards") ? db.challengeJoin.findMany({ where: { userId: user.id, completed: true }, include: { challenge: true } }) : [],
-    want("Rewards") ? db.userBadge.findMany({ where: { userId: user.id } }) : [],
-    want("Rewards") ? db.taskDone.findMany({ where: { userId: user.id, approved: true }, include: { task: true } }) : [],
+  const sb = createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase rows (no generated DB types)
+  const none = Promise.resolve({ data: [] as any[] });
+  const [scanRes, purchaseRes, challengeRes, badgeRes, taskRes] = await Promise.all([
+    want("Scan") ? sb.from("scans").select("*").eq("userId", user.id).order("createdAt", { ascending: false }).limit(40) : none,
+    want("Marketplace") ? sb.from("purchases").select("*, listing:listings(title, ownerId)").eq("userId", user.id).order("createdAt", { ascending: false }).limit(40) : none,
+    want("Rewards") ? sb.from("challenge_joins").select("*, challenge:challenges(title, rewardPoints)").eq("userId", user.id).eq("completed", true) : none,
+    want("Rewards") ? sb.from("user_badges").select("*").eq("userId", user.id) : none,
+    want("Rewards") ? sb.from("task_dones").select("*, task:tasks(title, points)").eq("userId", user.id).eq("approved", true) : none,
   ]);
+  const scans = withDates(scanRes.data, "createdAt");
+  const purchases = withDates(purchaseRes.data, "createdAt");
+  const challenges = withDates(challengeRes.data, "completedAt", "joinedAt");
+  const badges = withDates(badgeRes.data, "earnedAt");
+  const tasks = withDates(taskRes.data, "doneAt");
   const rows: Row[] = [
     ...scans.map((s) => ({ id: s.id, at: s.createdAt, icon: <Leaf size={22} />, tone: "green" as Tone, title: `Scanned: ${s.label}`, pts: `+${s.points} pts`, good: true })),
     ...purchases.map((p) => ({ id: p.id, at: p.createdAt, icon: <ShoppingBag size={22} />, tone: "orange" as Tone, title: `${p.listing.ownerId ? "Claimed" : "Purchased"}: ${p.listing.title}`, pts: p.points ? `-${p.points} pts` : "Free" })),

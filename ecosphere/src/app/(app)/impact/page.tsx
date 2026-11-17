@@ -1,6 +1,6 @@
 import { Droplets, Leaf, Recycle, TreePine, Users, Trash2 } from "lucide-react";
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { admin } from "@/lib/supabase/admin";
 import { impactFor, startOf } from "@/lib/queries";
 import { sdgIndicators } from "@/lib/sdg";
 import { round } from "@/lib/waste";
@@ -10,14 +10,20 @@ import { Header, Stat } from "@/components/ui";
 export default async function Impact() {
   await requireUser();
   const month = startOf("month");
-  const [all, totalUsers, activeUsers, reuseTrades, ewaste, eventsHeld] = await Promise.all([
-    impactFor({}),
-    db.user.count({ where: { active: true } }),
-    db.user.count({ where: { active: true, scans: { some: { createdAt: { gte: month } } } } }),
-    db.purchase.count({ where: { listing: { ownerId: { not: null } } } }),
-    db.scan.aggregate({ where: { wasteType: "EWASTE" }, _sum: { weightKg: true } }),
-    db.event.count(),
+  // Platform-wide public totals only (no personal data leaves the server).
+  const db = admin();
+  const [all, users, activeScans, peerPurchases, eventCount] = await Promise.all([
+    impactFor("platform"),
+    db.from("profiles").select("id", { count: "exact", head: true }).eq("active", true),
+    db.from("scans").select("userId").gte("createdAt", month.toISOString()),
+    db.from("purchases").select("id, listing:listings!inner(ownerId)").not("listing.ownerId", "is", null),
+    db.from("events").select("id", { count: "exact", head: true }),
   ]);
+  const totalUsers = users.count ?? 0;
+  const activeUsers = new Set((activeScans.data ?? []).map((x) => x.userId)).size;
+  const reuseTrades = peerPurchases.data?.length ?? 0;
+  const ewaste = { _sum: { weightKg: all.scans.filter((x) => x.wasteType === "EWASTE").reduce((t, x) => t + x.weightKg, 0) } };
+  const eventsHeld = eventCount.count ?? 0;
   const sdg = sdgIndicators({ recyclingRate: all.recyclingRate, activeUsers, totalUsers, reuseTrades, ewasteKg: round(ewaste._sum.weightKg ?? 0), eventsHeld });
 
   return (

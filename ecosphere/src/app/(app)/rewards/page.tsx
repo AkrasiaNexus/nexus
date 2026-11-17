@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { ArrowRight, Plus } from "lucide-react";
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
 import { syncBadges } from "@/lib/queries";
 import { BADGES } from "@/lib/rewards";
 import { GUIDE, round } from "@/lib/waste";
+import type { WasteType } from "@/lib/types";
 import { LeafLogo } from "@/components/art";
 import { CountUp } from "@/components/Motion";
 import { Header, IconCircle, type Tone } from "@/components/ui";
@@ -15,16 +16,21 @@ const QUICK_AVATARS = ["🧑‍🎓", "👩‍🎓", "🦊"];
 export default async function Rewards({ searchParams }: { searchParams: { all?: string } }) {
   const user = await requireUser();
   const showAll = searchParams.all === "1";
-  const [earned, challenges] = await Promise.all([
+  const [earned, challengeRes] = await Promise.all([
     syncBadges(user.id),
-    db.challenge.findMany({ where: { endsAt: { gte: new Date() } }, include: { joins: { where: { userId: user.id } } }, orderBy: { endsAt: "asc" } }),
+    createClient().from("challenges").select("*").gte("endsAt", new Date().toISOString()).order("endsAt"),
   ]);
-  const progress = await Promise.all(challenges.map(async (c) => {
+  const sb = createClient();
+  const [{ data: joins }, { data: myScans }] = await Promise.all([
+    sb.from("challenge_joins").select("*").eq("userId", user.id),
+    sb.from("scans").select("wasteType, weightKg, createdAt").eq("userId", user.id),
+  ]);
+  const challenges = (challengeRes.data ?? []).map((c) => ({ ...c, endsAt: new Date(c.endsAt), joins: (joins ?? []).filter((j) => j.challengeId === c.id) }));
+  // Progress = kg of the challenge's waste type logged since joining.
+  const progress = challenges.map((c) => {
     const join = c.joins[0];
-    if (!join) return 0;
-    const s = await db.scan.aggregate({ where: { userId: user.id, wasteType: c.wasteType, createdAt: { gte: join.joinedAt } }, _sum: { weightKg: true } });
-    return s._sum.weightKg ?? 0;
-  }));
+    return join ? (myScans ?? []).filter((x) => x.wasteType === c.wasteType && x.createdAt >= join.joinedAt).reduce((t, x) => t + x.weightKg, 0) : 0;
+  });
   const badges = showAll ? BADGES : BADGES.filter((b) => earned.has(b.id)).concat(BADGES.filter((b) => !earned.has(b.id))).slice(0, 4);
   const avatars = Array.from(new Set([...QUICK_AVATARS, user.avatar]));
 
@@ -77,7 +83,7 @@ export default async function Rewards({ searchParams }: { searchParams: { all?: 
             return (
               <article key={c.id} className="card space-y-2 p-4">
                 <div className="flex items-start gap-3">
-                  <span className="text-2xl">{GUIDE[c.wasteType].emoji}</span>
+                  <span className="text-2xl">{GUIDE[c.wasteType as WasteType].emoji}</span>
                   <div className="flex-1"><p className="font-medium">{c.title}</p><p className="text-xs text-white/60">{c.description}</p></div>
                   <span className="chip shrink-0">+{c.rewardPoints}</span>
                 </div>

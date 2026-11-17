@@ -1,13 +1,12 @@
 import "server-only";
-import type { NoticeKind } from "@prisma/client";
-import { db } from "./db";
+import { admin } from "./supabase/admin";
+import type { NoticeKind } from "./types";
 
-// Notify everyone at a school (optionally one class), plus parents of the students in it.
+// Notify everyone at a school (optionally one class + the school admin), plus parents of those students.
 export async function notifySchool(schoolId: string, n: { kind: NoticeKind; title: string; body: string }, className?: string) {
-  const members = await db.user.findMany({
-    where: { schoolId, active: true, ...(className && { OR: [{ grade: className }, { role: "SCHOOL_ADMIN" }] }) },
-    select: { id: true, parentId: true },
-  });
-  const ids = new Set(members.flatMap((m) => (m.parentId ? [m.id, m.parentId] : [m.id])));
-  await db.notification.createMany({ data: Array.from(ids, (userId) => ({ userId, ...n })) });
+  let q = admin().from("profiles").select("id, parentId").eq("schoolId", schoolId).eq("active", true);
+  if (className) q = q.or(`grade.eq.${JSON.stringify(className)},role.eq.SCHOOL_ADMIN`);
+  const { data: members } = await q;
+  const ids = new Set((members ?? []).flatMap((m) => (m.parentId ? [m.id, m.parentId] : [m.id])));
+  if (ids.size) await admin().from("notifications").insert(Array.from(ids, (userId) => ({ userId, ...n })));
 }

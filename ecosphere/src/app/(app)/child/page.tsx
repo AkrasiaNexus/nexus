@@ -1,21 +1,27 @@
 import { HeartPulse } from "lucide-react";
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
+import { withDates } from "@/lib/queries";
+import type { HealthRow } from "@/components/HealthStatus";
 import { healthAlerts } from "@/lib/health";
-import { impactFor, startOf } from "@/lib/queries";
+import { impactForUser, startOf } from "@/lib/queries";
 import { goalPercent } from "@/lib/rewards";
 import { Header, timeAgo } from "@/components/ui";
 import { LinkChildForm } from "../profile/LinkChildForm";
 
 export default async function ChildProgress() {
   const parent = await requireUser(["PARENT"]);
-  const children = await db.user.findMany({ where: { parentId: parent.id } });
-  const [month, week, health, messages] = await Promise.all([
-    Promise.all(children.map((c) => impactFor({ userId: c.id }, startOf("month")))),
-    Promise.all(children.map((c) => impactFor({ userId: c.id }, startOf("week")))),
-    Promise.all(children.map((c) => db.healthReport.findFirst({ where: { schoolId: c.schoolId ?? "", className: c.grade ?? "" }, orderBy: { createdAt: "desc" } }))),
-    db.notification.findMany({ where: { userId: parent.id }, orderBy: { createdAt: "desc" }, take: 4 }),
+  const sb = createClient();
+  const children = (await sb.from("profiles").select("*").eq("parentId", parent.id)).data ?? [];
+  const [month, week, reports, notes] = await Promise.all([
+    Promise.all(children.map((c) => impactForUser(c.id, startOf("month")))),
+    Promise.all(children.map((c) => impactForUser(c.id, startOf("week")))),
+    sb.from("health_reports").select("*").order("createdAt", { ascending: false }).limit(100),
+    sb.from("notifications").select("*").eq("userId", parent.id).order("createdAt", { ascending: false }).limit(4),
   ]);
+  const allReports = withDates(reports.data, "createdAt") as HealthRow[];
+  const health = children.map((c) => allReports.find((r) => r.schoolId === c.schoolId && r.className === c.grade) ?? null);
+  const messages = withDates(notes.data, "createdAt");
   return (
     <>
       <Header title="Child Progress" back="/profile" />

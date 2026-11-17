@@ -1,14 +1,20 @@
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
+import { publicNames, withDates } from "@/lib/queries";
 import { Header } from "@/components/ui";
 import { markTaskDone } from "../../feature-actions";
 
 export default async function Tasks() {
   const s = await requireUser(["STUDENT"]);
-  const tasks = await db.task.findMany({
-    where: { schoolId: s.schoolId ?? "", className: s.grade ?? "" }, orderBy: { dueAt: "asc" },
-    include: { dones: { where: { userId: s.id } }, creator: { select: { name: true } } },
-  });
+  const sb = createClient();
+  const [{ data: rows }, { data: dones }] = await Promise.all([
+    sb.from("tasks").select("*").eq("schoolId", s.schoolId ?? "").eq("className", s.grade ?? "").order("dueAt"),
+    sb.from("task_dones").select("*").eq("userId", s.id),
+  ]);
+  const creators = await publicNames((rows ?? []).map((t) => t.creatorId));
+  const tasks = withDates(rows, "dueAt").map((t) => ({
+    ...t, dones: (dones ?? []).filter((d) => d.taskId === t.id), creator: creators.get(t.creatorId) ?? { name: "Your teacher" },
+  }));
   return (
     <>
       <Header title="Class Tasks" />

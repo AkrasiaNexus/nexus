@@ -1,5 +1,5 @@
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
 import { BroadcastForm } from "@/components/BroadcastForm";
 import { ResetButton } from "@/components/ResetButton";
 import { Header } from "@/components/ui";
@@ -8,10 +8,12 @@ import { toggleUserActive } from "../../../actions";
 export default async function ManageUsers({ searchParams }: { searchParams: { q?: string } }) {
   const admin = await requireUser(["SUPER_ADMIN"]);
   const q = (searchParams.q ?? "").slice(0, 60);
-  const users = await db.user.findMany({
-    where: q ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { email: { contains: q, mode: "insensitive" } }] } : {},
-    orderBy: { createdAt: "desc" }, take: 100, include: { school: true },
-  });
+  let query = createClient().from("profiles").select("*, school:schools(name)").order("createdAt", { ascending: false }).limit(100);
+  if (q) {
+    const like = `%${q.replace(/[%_,()\\]/g, "")}%`; // strip filter syntax characters from user input
+    query = query.or(`name.ilike.${like},email.ilike.${like}`);
+  }
+  const users = (await query).data ?? [];
   return (
     <>
       <Header title="Manage Users" back="/profile" />

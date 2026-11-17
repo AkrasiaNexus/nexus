@@ -1,10 +1,12 @@
-import type { HealthReport } from "@prisma/client";
+import type { HealthReport } from "@/lib/types";
+
+export type HealthRow = Omit<HealthReport, "createdAt"> & { createdAt: Date };
 import { healthAlerts, healthStatus } from "@/lib/health";
 import { timeAgo } from "./ui";
 
 const STYLE = { OK: "text-leaf", WATCH: "text-yellow-300", ACTION: "text-red-400" };
 
-export function HealthStatus({ report }: { report: HealthReport | null }) {
+export function HealthStatus({ report }: { report: HealthRow | null }) {
   if (!report) return <p className="text-sm text-mute">No health report yet.</p>;
   const alerts = healthAlerts(report);
   const status = healthStatus(alerts);

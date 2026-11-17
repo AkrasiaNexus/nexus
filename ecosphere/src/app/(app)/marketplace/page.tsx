@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { Plus, Search, ShoppingCart, Star } from "lucide-react";
-import type { Prisma } from "@prisma/client";
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
 import { ItemArt } from "@/components/ItemArt";
 import { Header } from "@/components/ui";
 
@@ -12,12 +11,12 @@ export default async function Marketplace({ searchParams }: { searchParams: { c?
   const user = await requireUser();
   const cat = CATS.includes(searchParams.c ?? "") ? searchParams.c! : "All";
   const q = (searchParams.q ?? "").slice(0, 60);
-  const where: Prisma.ListingWhereInput = {
-    active: true,
-    ...(cat !== "All" && { category: cat }),
-    ...(q && { title: { contains: q, mode: "insensitive" } }),
-  };
-  const items = await db.listing.findMany({ where, orderBy: [{ ownerId: { sort: "asc", nulls: "first" } }, { id: "asc" }] });
+  let query = createClient().from("listings").select("*").eq("active", true);
+  if (cat !== "All") query = query.eq("category", cat);
+  if (q) query = query.ilike("title", `%${q.replace(/[%_\\]/g, "\\$&")}%`);
+  // Eco rewards first (no owner), then peer listings, each in insertion order.
+  const items = ((await query.order("ownerId", { ascending: true, nullsFirst: true }).order("createdAt")).data ?? []) as
+    { id: string; title: string; emoji: string; kind: string; pricePoints: number }[];
   return (
     <>
       <Header title="Marketplace" back={null} right={

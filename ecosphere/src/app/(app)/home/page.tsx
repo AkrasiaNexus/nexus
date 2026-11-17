@@ -1,10 +1,9 @@
 import Link from "next/link";
-import type { Prisma } from "@prisma/client";
 import { Bell, BookOpen, CalendarDays, ChevronLeft, ChevronRight, ClipboardCheck, Cloud, Droplet, Gift, Globe2, Handshake, HeartPulse, ScanLine, School, ShieldCheck, Store, Trash2 } from "lucide-react";
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
 import { PERIOD_GOAL_KG, periodLabel, periodRange, type Period } from "@/lib/charts";
-import { impactFor, scanScope } from "@/lib/queries";
+import { impactFor, scanScope, withDates, type Scope } from "@/lib/queries";
 import { goalPercent } from "@/lib/rewards";
 import { LeafGoal } from "@/components/LeafGoal";
 import { PillMenu, Stat } from "@/components/ui";
@@ -34,21 +33,30 @@ export default async function Home({ searchParams }: { searchParams: Params }) {
   const offset = Math.max(-(SLIDER_STEPS - 1), Math.min(0, Number(searchParams.o) || 0));
   const url = (q: Params) => `/home?${new URLSearchParams({ s: view, p: period, o: String(offset), ...q })}`;
 
-  const scope: Prisma.ScanWhereInput = view === "class" ? { user: { schoolId: user.schoolId, grade: user.grade } }
-    : view === "school" ? { user: { schoolId: user.schoolId } } : scanScope(user);
+  const scope: Scope = view === "class" ? "class" : view === "school" ? "school" : scanScope(user);
   const { start, end } = periodRange(period, offset);
   const personalGoal = isPersonal && view === "me";
   const now = new Date();
   const inAWeek = new Date(Date.now() + 7 * 86_400_000);
+  const sb = createClient();
 
-  const [data, unread, tasks, events, challenge, top] = await Promise.all([
+  const [data, unread, taskRes, doneRes, rsvpRes, challengeRes, myScans] = await Promise.all([
     impactFor(scope, start, end),
-    db.notification.count({ where: { OR: [{ userId: user.id }, { userId: null }], createdAt: { gte: new Date(Date.now() - 2 * 86_400_000) } } }),
-    isStudent ? db.task.findMany({ where: { schoolId: user.schoolId ?? "", className: user.grade ?? "", dueAt: { gte: now }, dones: { none: { userId: user.id } } }, orderBy: { dueAt: "asc" }, take: 3 }) : [],
-    db.event.findMany({ where: { startsAt: { gte: now, lte: inAWeek }, rsvps: { some: { userId: user.id } } }, orderBy: { startsAt: "asc" }, take: 3 }),
-    db.challenge.findFirst({ where: { endsAt: { gte: now, lte: inAWeek } }, orderBy: { endsAt: "asc" } }),
-    db.scan.groupBy({ by: ["wasteType"], where: { userId: user.id }, _sum: { weightKg: true }, orderBy: { _sum: { weightKg: "desc" } }, take: 1 }),
+    sb.from("notifications").select("id", { count: "exact", head: true }).or(`userId.eq.${user.id},userId.is.null`).gte("createdAt", new Date(Date.now() - 2 * 86_400_000).toISOString()),
+    isStudent ? sb.from("tasks").select("id, title, dueAt").eq("schoolId", user.schoolId ?? "").eq("className", user.grade ?? "").gte("dueAt", now.toISOString()).order("dueAt").limit(10) : null,
+    sb.from("task_dones").select("taskId").eq("userId", user.id),
+    sb.from("event_rsvps").select("event:events(id, title, startsAt)").eq("userId", user.id),
+    sb.from("challenges").select("title, endsAt").gte("endsAt", now.toISOString()).lte("endsAt", inAWeek.toISOString()).order("endsAt").limit(1).maybeSingle(),
+    sb.from("scans").select("wasteType, weightKg").eq("userId", user.id),
   ]);
+  const done = new Set((doneRes.data ?? []).map((d) => d.taskId));
+  const tasks = withDates(taskRes?.data ?? [], "dueAt").filter((t) => !done.has(t.id)).slice(0, 3);
+  const events = withDates((rsvpRes.data ?? []).flatMap((r) => (Array.isArray(r.event) ? r.event : r.event ? [r.event] : [])), "startsAt")
+    .filter((e) => e.startsAt >= now && e.startsAt <= inAWeek).sort((a, b) => +a.startsAt - +b.startsAt).slice(0, 3);
+  const challenge = challengeRes.data ? { ...challengeRes.data, endsAt: new Date(challengeRes.data.endsAt) } : null;
+  const totals = (myScans.data ?? []).reduce<Record<string, number>>((acc, x) => ({ ...acc, [x.wasteType]: (acc[x.wasteType] ?? 0) + x.weightKg }), {});
+  const top = Object.entries(totals).sort((x, y) => y[1] - x[1]).slice(0, 1).map(([wasteType]) => ({ wasteType }));
+  const unreadCount = unread.count ?? 0;
   const percent = personalGoal ? goalPercent(data.kg, PERIOD_GOAL_KG[period]) : data.recyclingRate;
 
   // First three match the mockup; the rest scroll sideways.
@@ -78,9 +86,9 @@ export default async function Home({ searchParams }: { searchParams: Params }) {
       <div className="flex items-center gap-4">
         <span className="grid h-14 w-14 place-items-center rounded-full border-2 border-white/15 bg-card text-3xl">{user.avatar}</span>
         <p className="flex-1 text-lg leading-tight">Welcome back,<br /><b className="font-semibold">{user.name.split(" ")[0]}!</b></p>
-        <Link href="/notifications" aria-label={`Notifications${unread ? ` (${unread} new)` : ""}`} className="relative rounded-full p-2 hover:bg-card">
+        <Link href="/notifications" aria-label={`Notifications${unreadCount ? ` (${unreadCount} new)` : ""}`} className="relative rounded-full p-2 hover:bg-card">
           <Bell size={24} />
-          {unread > 0 && <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-leaf" />}
+          {unreadCount > 0 && <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-leaf" />}
         </Link>
       </div>
 

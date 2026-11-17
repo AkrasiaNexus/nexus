@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Activity, Award, Bell, Building2, CalendarDays, ChevronRight, ClipboardCheck, ClipboardList, Crown, FileBarChart, HeartPulse, Leaf, MapPin, School, ScrollText, Settings, SlidersHorizontal, Star, Trash2, Trophy, Users, UsersRound } from "lucide-react";
-import type { Role, User } from "@prisma/client";
+import type { Role } from "@/lib/types";
+import type { CurrentUser } from "@/lib/auth";
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { admin } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { dailySeries, impactFor, scanScope, startOf } from "@/lib/queries";
 import { LeafDecor } from "@/components/art";
 import { Bars, Header, IconCircle, MenuRow, Stat } from "@/components/ui";
@@ -18,7 +20,7 @@ const TITLE: Record<Role, string> = {
 const COMMUNITY_GOAL_KG = 100; // monthly target for a community's collective sorting
 const ICON = 20;
 
-type Me = User & { school: { name: string } | null };
+type Me = CurrentUser;
 
 export default async function Profile() {
   const user = await requireUser();
@@ -54,7 +56,8 @@ async function RoleBody({ user }: { user: Me }) {
   const scope = scanScope(user);
 
   if (user.role === "STUDENT") {
-    const [joined, week] = await Promise.all([db.challengeJoin.count({ where: { userId: user.id } }), impactFor(scope, startOf("week"))]);
+    const [{ count: joinedCount }, week] = await Promise.all([createClient().from("challenge_joins").select("userId", { count: "exact", head: true }).eq("userId", user.id), impactFor(scope, startOf("week"))]);
+    const joined = joinedCount ?? 0;
     return (
       <>
         <div className="grid grid-cols-2 gap-3">
@@ -78,7 +81,7 @@ async function RoleBody({ user }: { user: Me }) {
   }
 
   if (user.role === "PARENT") {
-    const children = await db.user.findMany({ where: { parentId: user.id }, select: { id: true, name: true, grade: true } });
+    const children = (await createClient().from("profiles").select("id, name, grade").eq("parentId", user.id)).data ?? [];
     const month = await impactFor(scope, startOf("month"));
     return (
       <>
@@ -126,14 +129,14 @@ async function RoleBody({ user }: { user: Me }) {
   }
 
   if (user.role === "SCHOOL_ADMIN") {
-    const [students, classes, all] = await Promise.all([
-      db.user.count({ where: { schoolId: user.schoolId, role: "STUDENT" } }),
-      db.user.groupBy({ by: ["grade"], where: { schoolId: user.schoolId, role: "STUDENT" } }),
+    const [{ count: students }, { data: grades }, all] = await Promise.all([
+      admin().from("profiles").select("id", { count: "exact", head: true }).eq("schoolId", user.schoolId ?? "").eq("role", "STUDENT"),
+      admin().from("profiles").select("grade").eq("schoolId", user.schoolId ?? "").eq("role", "STUDENT"),
       impactFor(scope),
     ]);
     return (
       <>
-        <div className="grid grid-cols-3 gap-3"><Stat value={students} label="Students" /><Stat value={classes.length} label="Classes" /><Stat value={`${all.kg} kg`} label="Waste Recycled" /></div>
+        <div className="grid grid-cols-3 gap-3"><Stat value={students ?? 0} label="Students" /><Stat value={new Set((grades ?? []).map((g) => g.grade)).size} label="Classes" /><Stat value={`${all.kg} kg`} label="Waste Recycled" /></div>
         <Menu items={[
           { href: "/school", icon: <FileBarChart size={ICON} />, label: "School Reports" },
           { href: "/school/classes", icon: <Users size={ICON} />, label: "Manage Classes" },
@@ -148,7 +151,7 @@ async function RoleBody({ user }: { user: Me }) {
   if (user.role === "COMMUNITY") {
     const [all, community] = await Promise.all([
       impactFor(scope),
-      impactFor({ user: { role: "COMMUNITY", ...(user.community && { community: user.community }) } }, startOf("month")),
+      impactFor("community", startOf("month")),
     ]);
     const pct = Math.min(100, Math.round((community.kg / COMMUNITY_GOAL_KG) * 100));
     return (
@@ -173,10 +176,10 @@ async function RoleBody({ user }: { user: Me }) {
   }
 
   if (user.role === "SUPER_ADMIN") {
-    const [users, schools, all] = await Promise.all([db.user.count(), db.school.count(), impactFor({})]);
+    const [{ count: users }, { count: schools }, all] = await Promise.all([admin().from("profiles").select("id", { count: "exact", head: true }), admin().from("schools").select("id", { count: "exact", head: true }), impactFor("platform")]);
     return (
       <>
-        <div className="grid grid-cols-3 gap-3"><Stat value={users} label="Users" /><Stat value={schools} label="Schools" /><Stat value={`${all.kg} kg`} label="Waste Reduced" /></div>
+        <div className="grid grid-cols-3 gap-3"><Stat value={users ?? 0} label="Users" /><Stat value={schools ?? 0} label="Schools" /><Stat value={`${all.kg} kg`} label="Waste Reduced" /></div>
         <Menu items={[
           { href: "/admin/users", icon: <Users size={ICON} />, label: "Manage Users" },
           { href: "/stats", icon: <FileBarChart size={ICON} />, label: "Platform Analytics" },
@@ -189,10 +192,10 @@ async function RoleBody({ user }: { user: Me }) {
   }
 
   // Teacher / Health Monitor
-  const [students, all] = await Promise.all([db.user.count({ where: { schoolId: user.schoolId, grade: user.grade, role: "STUDENT" } }), impactFor(scope)]);
+  const [{ count: students }, all] = await Promise.all([admin().from("profiles").select("id", { count: "exact", head: true }).eq("schoolId", user.schoolId ?? "").eq("grade", user.grade ?? "").eq("role", "STUDENT"), impactFor(scope)]);
   return (
     <>
-      <div className="grid grid-cols-3 gap-3"><Stat value={user.grade ?? "—"} label="Class" /><Stat value={students} label="Students" /><Stat value={`${all.kg} kg`} label="Class Waste" /></div>
+      <div className="grid grid-cols-3 gap-3"><Stat value={user.grade ?? "—"} label="Class" /><Stat value={students ?? 0} label="Students" /><Stat value={`${all.kg} kg`} label="Class Waste" /></div>
       <Menu items={user.role === "TEACHER" ? [
         { href: "/teacher", icon: <Building2 size={ICON} />, label: "My Class & Tasks" },
         { href: "/health", icon: <HeartPulse size={ICON} />, label: "Classroom Health & Safety" },
