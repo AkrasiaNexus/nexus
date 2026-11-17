@@ -16,35 +16,46 @@ import "./phone.css";
 import "./cinematic.css";
 
 // Headline split into words so the timeline can stagger them and light up the key ones.
+// The heading carries the full sentence as its label; the animated word spans are hidden from screen readers.
 function Words({ text, hl }: { text: string; hl: readonly string[] }) {
-  return <>{text.split(" ").map((w, i) => <span key={i} data-word {...(hl.includes(w) ? { "data-hl": "" } : {})} className="inline-block whitespace-pre" style={{ opacity: 0 }}>{w} </span>)}</>;
+  return <>{text.split(" ").map((w, i) => <span key={i} aria-hidden data-word {...(hl.includes(w) ? { "data-hl": "" } : {})} className="inline-block whitespace-pre" style={{ opacity: 0 }}>{w} </span>)}</>;
 }
 
 export function Cinematic() {
   const root = useRef<HTMLElement>(null);
   const ambient = useRef<Ambient | null>(null);
   const [sound, setSound] = useState(false);
+  const [soundBusy, setSoundBusy] = useState(false);
+  const jumping = useRef(false); // programmatic nav jumps shouldn't chime through every chapter
   const toggleSound = async () => {
     ambient.current ??= createAmbient();
+    setSoundBusy(true);
     if (ambient.current.on) ambient.current.stop(); else await ambient.current.start();
     setSound(ambient.current.on);
+    setSoundBusy(false);
   };
-  useEffect(() => () => ambient.current?.stop(), []);
+  useEffect(() => () => ambient.current?.dispose(), []);
 
   useEffect(() => {
     // Responsive animation scope: the timeline is rebuilt (and the old one reverted) when these queries flip.
     // The track height differs per layout, so keep the visitor's place in the story, not their pixel offset.
     const track = root.current!.querySelector<HTMLElement>("[data-track]")!;
-    const place = () => (window.scrollY - track.offsetTop) / Math.max(1, track.offsetHeight - window.innerHeight);
+    // Track geometry is cached (no layout reads per scroll event) and re-measured only on resize/rebuild.
+    let geo = { top: 0, span: 1 };
+    const measure = () => { geo = { top: track.offsetTop, span: Math.max(1, track.offsetHeight - window.innerHeight) }; };
+    measure();
+    const place = () => (window.scrollY - geo.top) / geo.span;
+    const restore = (p: number) => { if (p >= 0 && p <= 1) window.scrollTo(0, geo.top + p * geo.span); };
     // Recorded only while the layout is stable: during a resize the CSS height has already changed under us.
     let resume = place(), stableWidth = window.innerWidth;
     const remember = () => { if (window.innerWidth === stableWidth) resume = place(); };
     window.addEventListener("scroll", remember, { passive: true });
     const scope = createScope({ root: root.current!, mediaQueries: { mobile: "(max-width: 767px)", reduce: "(prefers-reduced-motion: reduce)" } })
       .add((self) => {
-        if (window.innerWidth !== stableWidth && resume > 0 && resume < 1) window.scrollTo(0, track.offsetTop + resume * (track.offsetHeight - window.innerHeight));
+        measure();
+        if (window.innerWidth !== stableWidth) restore(resume);
         stableWidth = window.innerWidth;
-        const tl = buildTimeline(root.current!, { mobile: !!self?.matches.mobile, reduce: !!self?.matches.reduce, onChapter: (i) => ambient.current?.chime(i) });
+        const tl = buildTimeline(root.current!, { mobile: !!self?.matches.mobile, reduce: !!self?.matches.reduce, onChapter: (i) => { if (!jumping.current) ambient.current?.chime(i); } });
         // The hook reacts in the first second: on a mouse/trackpad the phone leans toward the cursor,
         // layered on top of (not fighting) the scroll timeline, which owns the outer rig.
         let off = () => {};
@@ -56,11 +67,13 @@ export function Cinematic() {
         }
         return () => { off(); tl.revert(); };
       });
-    // A resize that stays within one layout just re-baselines; crossing the breakpoint is handled by the scope rebuild above.
+    // Same-layout resize: vh-based heights changed, so put the visitor back at their story position.
+    // (Crossing the breakpoint is handled by the scope rebuild above.)
     let lastMobile = window.matchMedia("(max-width: 767px)").matches;
     const settle = () => {
       const mobile = window.matchMedia("(max-width: 767px)").matches;
-      if (mobile === lastMobile && window.innerWidth !== stableWidth) { stableWidth = window.innerWidth; resume = place(); }
+      measure();
+      if (mobile === lastMobile && window.innerWidth !== stableWidth) { restore(resume); stableWidth = window.innerWidth; }
       lastMobile = mobile;
     };
     window.addEventListener("resize", settle);
@@ -70,6 +83,8 @@ export function Cinematic() {
   // Nav/footer jumps land on a chapter's place in the pinned track.
   const jump = (chapter: number) => (e: React.MouseEvent) => {
     e.preventDefault();
+    jumping.current = true;
+    window.setTimeout(() => { jumping.current = false; }, 1400);
     const track = root.current!.querySelector<HTMLElement>("[data-track]")!;
     const top = track.getBoundingClientRect().top + window.scrollY;
     window.scrollTo({ top: top + ((track.offsetHeight - window.innerHeight) * (chapter + 0.45)) / 10, behavior: "smooth" });
@@ -77,10 +92,12 @@ export function Cinematic() {
 
   return (
     <main ref={root} className="cine">
+      {/* Without JS the story can't scrub, so show it as plain readable text with working CTAs. */}
+      <noscript><style>{`.cine-track{height:auto}.cine-stage{position:static;height:auto;overflow:visible;padding:14vh 0}.cine-text{position:static!important;translate:none!important;width:min(90vw,640px)!important;margin:0 auto 10vh;text-align:left}[data-word],[data-rest],[data-cta],[data-final-logo]{opacity:1!important;pointer-events:auto!important}.cine-cta,.cine-final-logo{position:static;translate:none;justify-content:center;margin:4vh auto}[data-rig],[data-shadow],[data-chip],[data-panel],[data-bottle],[data-exchange],[data-bg],[data-intro-logo],.cine-particle{display:none!important}`}</style></noscript>
       <nav className="cine-nav" aria-label="Main">
         <a href="#top" onClick={jump(0)} className="flex items-center gap-2 font-semibold"><LeafLogo size={22} />EcoSphere <span className="text-leaf">AI</span></a>
         <div className="flex items-center gap-1 text-sm">
-          <button type="button" onClick={toggleSound} aria-pressed={sound} aria-label={sound ? "Turn sound off" : "Turn sound on"}
+          <button type="button" onClick={toggleSound} disabled={soundBusy} aria-pressed={sound} aria-label={sound ? "Turn sound off" : "Turn sound on"}
             className="flex items-center gap-1.5 rounded-full px-3 py-2 text-white/70 hover:text-white">
             {sound ? <Volume2 size={16} /> : <VolumeX size={16} />}<span className="hidden sm:inline">Sound</span>
             {sound && <span className="cine-eq" aria-hidden><i /><i /><i /></span>}
@@ -112,7 +129,9 @@ export function Cinematic() {
 
           {CHAPTERS.map((c, i) => (
             <div key={c.id} data-ch={i} className={`cine-text ${i === 0 || i === 1 || i >= 8 ? "cine-text-center" : ""}`} id={i === 2 ? "features" : undefined}>
-              <h2 className="cine-h"><Words text={c.title} hl={c.hl} /></h2>
+              {i === 0
+                ? <h1 className="cine-h" aria-label={c.title}><Words text={c.title} hl={c.hl} /></h1>
+                : <h2 className="cine-h" aria-label={c.title}><Words text={c.title} hl={c.hl} /></h2>}
               {c.body && <p data-rest className="cine-p" style={{ opacity: 0 }}>{c.body}</p>}
               {c.id === "roles" && (
                 <ol data-rest className="mt-6 flex flex-wrap gap-2" style={{ opacity: 0 }} aria-label="Roles">
@@ -163,7 +182,7 @@ export function Cinematic() {
           </div>
 
           <div data-final-logo className="cine-final-logo" style={{ opacity: 0 }}><LeafLogo size={40} /><span className="text-xl font-semibold">EcoSphere <span className="text-leaf">AI</span></span></div>
-          <div data-cta className="cine-cta" style={{ opacity: 0, pointerEvents: "none" }}>
+          <div data-cta className="cine-cta" style={{ opacity: 0, pointerEvents: "none" }} {...({ inert: "" } as object)}>{/* React 18 emits inert only as a string attr */}
             <Link href="/login" className="btn-ghost bg-black/40 px-6">Explore EcoSphere AI</Link>
             <Link href="/signup" className="btn px-6">Get Started</Link>
           </div>

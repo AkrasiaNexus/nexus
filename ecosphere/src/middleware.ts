@@ -27,7 +27,7 @@ export async function middleware(req: NextRequest) {
   const signedIn = !!session; // don't read session.user here: unverified (Supabase warns)
   const { pathname } = req.nextUrl;
   const isPublic = PUBLIC.includes(pathname);
-  if (signedIn && isPublic && !pathname.startsWith("/auth/")) return NextResponse.redirect(new URL("/home", req.url));
+  if (signedIn && isPublic && !pathname.startsWith("/auth/") && pathname !== "/legal") return NextResponse.redirect(new URL("/home", req.url));
   if (!signedIn && !isPublic) return NextResponse.redirect(new URL("/login", req.url));
   return res;
 }

@@ -2,12 +2,19 @@
 // A soft two-note pad that breathes, plus a quiet chime from a pentatonic scale on each new chapter.
 const SCALE = [392, 440, 523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51]; // G4 pentatonic, one note per chapter
 
-export type Ambient = { start: () => Promise<void>; stop: () => void; chime: (chapter: number) => void; readonly on: boolean };
+export type Ambient = { start: () => Promise<void>; stop: () => void; dispose: () => void; chime: (chapter: number) => void; readonly on: boolean };
 
 export function createAmbient(): Ambient {
-  let ctx: AudioContext | null = null, master: GainNode | null = null, nodes: AudioScheduledSourceNode[] = [], on = false;
+  let ctx: AudioContext | null = null, master: GainNode | null = null, nodes: AudioScheduledSourceNode[] = [], on = false, starting = false;
 
+  // Single-flight: a double click while resume() is pending must not build a second, unstoppable pad.
   const start = async () => {
+    if (on || starting) return;
+    starting = true;
+    try { await startPad(); } catch (e) { console.error("Ambient sound unavailable", e); } finally { starting = false; }
+  };
+
+  const startPad = async () => {
     ctx ??= new AudioContext();
     await ctx.resume();
     master = ctx.createGain();
@@ -52,5 +59,7 @@ export function createAmbient(): Ambient {
     o.start(t); o.stop(t + 2.3);
   };
 
-  return { start, stop, chime, get on() { return on; } };
+  const dispose = () => { stop(); setTimeout(() => { ctx?.close(); ctx = null; }, 1600); };
+
+  return { start, stop, dispose, chime, get on() { return on; } };
 }

@@ -3,7 +3,7 @@
 // `screen` is the live UI; the frame never re-renders when it changes.
 export function Phone({ screen, back }: { screen: React.ReactNode; back?: React.ReactNode }) {
   return (
-    <div className="phone" data-phone>
+    <div className="phone" data-phone aria-hidden>
       <div className="phone-face phone-front">
         <div className="phone-glass">
           <div className="phone-screen" data-screen-root>{screen}</div>
