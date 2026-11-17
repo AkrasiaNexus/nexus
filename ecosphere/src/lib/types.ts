@@ -6,7 +6,7 @@ export type NoticeKind = "ANNOUNCEMENT" | "CHALLENGE" | "PICKUP" | "EVENT" | "TA
 export type Profile = {
   id: string; memberId: string; email: string; name: string; role: Role; points: number; avatar: string;
   grade: string | null; department: string | null; community: string | null; active: boolean;
-  createdAt: string; schoolId: string | null; parentId: string | null;
+  createdAt: string; schoolId: string | null; parentId: string | null; pendingParentId: string | null;
 };
 export type HealthReport = {
   id: string; schoolId: string; className: string; reporterId: string; airQuality: string; temperatureC: number;

@@ -16,7 +16,9 @@ const BOARDS = ["Students", "Classes", "Schools"] as const;
 export default async function Stats({ searchParams }: { searchParams: { p?: string; b?: string } }) {
   const user = await requireUser();
   const period: Period = searchParams.p && searchParams.p in PERIODS ? (searchParams.p as Period) : "week";
-  const board = BOARDS.find((b) => b === searchParams.b) ?? "Students";
+  // Student-level boards only exist within your own school; everyone else sees school totals.
+  const boards = user.schoolId ? BOARDS : (["Schools"] as const);
+  const board = boards.find((b) => b === searchParams.b) ?? boards[0];
   const scope = scanScope(user);
   const fourWeeksAgo = new Date(Date.now() - 28 * 86_400_000);
   const { start, end } = periodRange(period);
@@ -24,18 +26,18 @@ export default async function Stats({ searchParams }: { searchParams: { p?: stri
     impactFor(scope, start, end),
     impactFor(scope, fourWeeksAgo),
     createClient().from("public_profiles").select("id, name, points, avatar, grade, schoolId").eq("role", "STUDENT").eq("active", true).order("points", { ascending: false }),
-    createClient().from("schools").select("id, name"),
+    createClient().rpc("school_totals"),
   ]);
   const students = (allStudents.data ?? []) as { id: string; name: string; points: number; avatar: string; grade: string | null; schoolId: string | null }[];
-  const leaders = user.schoolId ? students.filter((x) => x.schoolId === user.schoolId) : students;
-  const schools = (schoolRes.data ?? []).map((sc) => ({ ...sc, users: students.filter((x) => x.schoolId === sc.id) }));
+  const leaders = students.filter((x) => x.schoolId === user.schoolId);
+  const schools = (schoolRes.data ?? []) as { id: string; name: string; points: number }[];
   const sum = (xs: { points: number }[]) => xs.reduce((t, x) => t + x.points, 0);
   const rows = board === "Students"
     ? leaders.slice(0, 5).map((l) => ({ key: l.id, label: `${l.avatar} ${l.name}`, points: l.points, me: l.id === user.id }))
     : board === "Classes"
       ? Array.from(new Set(leaders.map((l) => l.grade ?? "—"))).map((g) => ({ key: g, label: `Class ${g}`, points: sum(leaders.filter((l) => (l.grade ?? "—") === g)), me: g === user.grade }))
         .sort((a, b) => b.points - a.points).slice(0, 5)
-      : schools.map((s) => ({ key: s.id, label: s.name, points: sum(s.users), me: s.id === user.schoolId })).sort((a, b) => b.points - a.points);
+      : schools.map((s) => ({ key: s.id, label: s.name, points: Number(s.points), me: s.id === user.schoolId })).sort((a, b) => b.points - a.points);
 
   const byType = Object.entries(
     data.scans.reduce<Record<string, number>>((acc, s) => ({ ...acc, [s.wasteType]: (acc[s.wasteType] ?? 0) + s.weightKg }), {}),
@@ -119,7 +121,7 @@ export default async function Stats({ searchParams }: { searchParams: { p?: stri
         <section className="card p-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-medium">Green points leaderboard</h2>
-            <nav className="flex gap-1">{BOARDS.map((b) => <Link key={b} href={`/stats?p=${period}&b=${b}`} className={`chip ${b === board ? "chip-on" : ""}`}>{b}</Link>)}</nav>
+            <nav className="flex gap-1">{boards.map((b) => <Link key={b} href={`/stats?p=${period}&b=${b}`} className={`chip ${b === board ? "chip-on" : ""}`}>{b}</Link>)}</nav>
           </div>
           <ol className="space-y-2">
             {rows.map((r, i) => (

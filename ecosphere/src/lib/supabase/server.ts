@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
 export const SESSION_ONLY_COOKIE = "eco_session_only";
+export const RECOVERY_COOKIE = "eco_recovery";
 
 // Cookie options for Supabase auth cookies. Without "Remember me" they become browser-session cookies.
 export function authCookieOptions<T extends { maxAge?: number; expires?: Date }>(options: T, sessionOnly: boolean): T {

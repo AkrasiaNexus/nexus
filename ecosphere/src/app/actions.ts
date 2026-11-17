@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { audit, requireUser, verifyPassword } from "@/lib/auth";
 import { admin } from "@/lib/supabase/admin";
-import { SESSION_ONLY_COOKIE, createClient } from "@/lib/supabase/server";
+import { RECOVERY_COOKIE, SESSION_ONLY_COOKIE, createClient } from "@/lib/supabase/server";
 import { CLASS_ROLES, SCHOOL_ROLES, loginSchema, memberIdFor, scanSchema, signupSchema, MAX_LOGIN_FAILS } from "@/lib/validation";
 import { notifySchool } from "@/lib/notify";
 import { syncBadges } from "@/lib/queries";
@@ -26,10 +26,24 @@ function setRemember(remember: boolean) {
   else cookies().set(SESSION_ONLY_COOKIE, "1", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/" });
 }
 
+// Email links must point at our own site, never at a Host header an attacker could forge.
 const siteUrl = () => {
-  const h = headers();
-  return `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
+  if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/$/, "");
+  if (process.env.NODE_ENV === "production") throw new Error("SITE_URL must be set in production");
+  return `http://${headers().get("host")}`;
 };
+
+const STAFF_ROLES = ["TEACHER", "HEALTH_MONITOR", "SCHOOL_ADMIN"];
+const LINK_SENT = "If that student has an account, they've been asked to approve the link in their Settings.";
+
+// HIGH 1: a parent link is only a request until the student approves it (answerParentRequest).
+async function requestParentLink(parentId: string, parentName: string, childEmail: string) {
+  const db = admin();
+  const { data: child } = await db.from("profiles").select("id, parentId, pendingParentId").eq("email", childEmail).eq("role", "STUDENT").maybeSingle();
+  if (!child || child.parentId || child.pendingParentId) return;
+  await db.from("profiles").update({ pendingParentId: parentId }).eq("id", child.id);
+  await db.from("notifications").insert({ userId: child.id, kind: "ANNOUNCEMENT", title: `${parentName} wants to link as your parent`, body: "Approve or decline in Settings. Only approve someone you know." });
+}
 
 export async function login(_: FormState, fd: FormData): Promise<FormState> {
   const parsed = loginSchema.safeParse(formObject(fd));
@@ -46,7 +60,7 @@ export async function login(_: FormState, fd: FormData): Promise<FormState> {
   const fail = async (error = "Wrong email/ID or password.") => { await audit(null, "LOGIN_FAIL", id); return { error }; };
   if (!profile?.active) return fail();
   const adminCode = process.env.ADMIN_LOGIN_CODE;
-  if (ADMIN_ROLES.includes(profile.role) && adminCode && fd.get("adminCode") !== adminCode) return fail("Admin accounts need a valid Admin Code.");
+  if (ADMIN_ROLES.includes(profile.role) && adminCode && fd.get("adminCode") !== adminCode) return fail("Wrong email/ID, password or Admin Code.");
 
   setRemember(fd.get("remember") === "on");
   const { error } = await createClient().auth.signInWithPassword({ email: profile.email, password });
@@ -69,12 +83,9 @@ export async function signup(_: FormState, fd: FormData): Promise<FormState> {
     return { error: "A valid staff code from your school is required." };
   if (d.schoolId && !(await db.from("schools").select("id").eq("id", d.schoolId).maybeSingle()).data) return { error: "Unknown school." };
 
-  const child = d.role === "PARENT" && d.childEmail
-    ? (await db.from("profiles").select("id").eq("email", d.childEmail).eq("role", "STUDENT").maybeSingle()).data
-    : null;
-  if (d.role === "PARENT" && d.childEmail && !child) return { error: "No student account found with that email." };
-
-  const { data: created, error } = await db.auth.admin.createUser({ email: d.email, password: d.password, email_confirm: true });
+  // MEDIUM 6: staff and school admins start disabled until their school admin (or a super admin) enables them.
+  const needsApproval = STAFF_ROLES.includes(d.role);
+  const { data: created, error } = await db.auth.admin.createUser({ email: d.email, password: d.password, email_confirm: true, ...(needsApproval && { ban_duration: BAN_FOREVER }) });
   if (error || !created.user) return { error: error?.message.includes("already") ? "That email is already registered." : "Could not create the account. Try again." };
   const memberId = memberIdFor(d.role);
   const { error: profileError } = await db.from("profiles").insert({
@@ -84,14 +95,22 @@ export async function signup(_: FormState, fd: FormData): Promise<FormState> {
     department: d.role === "EMPLOYEE" ? d.department : null,
     community: d.role === "COMMUNITY" ? d.community : null,
     avatar: { STUDENT: "🧑‍🎓", PARENT: "👪", EMPLOYEE: "🧑‍💼", TEACHER: "🧑‍🏫", HEALTH_MONITOR: "🩺", SCHOOL_ADMIN: "🏫", COMMUNITY: "🌍" }[d.role],
+    active: !needsApproval,
   });
   if (profileError) {
     await db.auth.admin.deleteUser(created.user.id); // never leave a login without a profile
     return { error: "Could not create the account. Try again." };
   }
-  if (child) await db.from("profiles").update({ parentId: created.user.id }).eq("id", child.id);
   await db.from("notifications").insert({ userId: created.user.id, kind: "ANNOUNCEMENT", title: "Welcome to EcoSphere AI!", body: `Your EcoSphere ID is ${memberId}. Scan your first item to earn 10 points.` });
   await audit(created.user.id, "SIGNUP", d.role);
+  if (needsApproval) {
+    let approvers = db.from("profiles").select("id").eq("active", true);
+    approvers = d.role === "SCHOOL_ADMIN" ? approvers.eq("role", "SUPER_ADMIN") : approvers.eq("role", "SCHOOL_ADMIN").eq("schoolId", d.schoolId ?? "");
+    const { data: list } = await approvers;
+    await db.from("notifications").insert((list ?? []).map((a) => ({ userId: a.id, kind: "ANNOUNCEMENT" as const, title: "New staff account to approve", body: `${d.name} (${memberId}) signed up as ${d.role.replace("_", " ").toLowerCase()}. Enable them in Manage Staff / Manage Users.` })));
+    return { ok: `Account created (ID ${memberId}). It will work once ${d.role === "SCHOOL_ADMIN" ? "the EcoSphere team" : "your school admin"} approves it.` };
+  }
+  if (d.role === "PARENT" && d.childEmail) await requestParentLink(created.user.id, d.name, d.childEmail);
   setRemember(true);
   await createClient().auth.signInWithPassword({ email: d.email, password: d.password });
   redirect("/home");
@@ -127,7 +146,8 @@ export async function joinChallenge(challengeId: string) {
   const user = await requireUser();
   const { data: challenge } = await createClient().from("challenges").select("id, endsAt").eq("id", String(challengeId)).maybeSingle();
   if (!challenge || new Date(challenge.endsAt) < new Date()) return;
-  await createClient().from("challenge_joins").upsert({ userId: user.id, challengeId: challenge.id }, { ignoreDuplicates: true });
+  // Server-side insert: joinedAt is always "now", so past scans can't count toward a challenge.
+  await admin().from("challenge_joins").upsert({ userId: user.id, challengeId: challenge.id }, { ignoreDuplicates: true });
   revalidatePath("/rewards");
 }
 
@@ -179,14 +199,10 @@ export async function broadcast(_: FormState, fd: FormData): Promise<FormState> 
 export async function linkChild(_: FormState, fd: FormData): Promise<FormState> {
   const parent = await requireUser(["PARENT"]);
   const email = String(fd.get("email") ?? "").trim().toLowerCase().slice(0, 120);
-  const db = admin();
-  const { data: child } = await db.from("profiles").select("id, name, parentId").eq("email", email).eq("role", "STUDENT").maybeSingle();
-  if (!child) return { error: "No student found with that email." };
-  if (child.parentId && child.parentId !== parent.id) return { error: "That student is already linked to another parent." };
-  await db.from("profiles").update({ parentId: parent.id }).eq("id", child.id);
-  await audit(parent.id, "LINK_CHILD", email);
-  revalidatePath("/child");
-  return { ok: `Linked ${child.name}` };
+  if (!email.includes("@")) return { error: "Enter your child's EcoSphere email." };
+  await requestParentLink(parent.id, parent.name, email);
+  await audit(parent.id, "LINK_CHILD_REQUEST", email);
+  return { ok: LINK_SENT };
 }
 
 // Sends Supabase's password-reset email. Same answer whether or not the account exists.
@@ -231,7 +247,7 @@ export async function updateSettings(_: FormState, fd: FormData): Promise<FormSt
   if (next) {
     if (next.length < 8 || next.length > 200) return { error: "New password must be at least 8 characters." };
     if (!(await verifyPassword(user.email, current))) return { error: "Current password is wrong." };
-    const { error } = await createClient().auth.updateUser({ password: next });
+    const { error } = await admin().auth.admin.updateUserById(user.id, { password: next });
     if (error) return { error: "Could not change the password." };
   }
   await admin().from("profiles").update({ name }).eq("id", user.id);
@@ -260,11 +276,21 @@ export async function setSignupsOpen(open: boolean) {
 export async function setNewPassword(_: FormState, fd: FormData): Promise<FormState> {
   const password = String(fd.get("password") ?? "");
   if (password.length < 8 || password.length > 200) return { error: "Password must be at least 8 characters." };
+  // Only right after following a reset email (auth/callback sets this short-lived cookie).
+  if (cookies().get(RECOVERY_COOKIE)?.value !== "1") return { error: "This reset link has expired. Request a new one." };
   const sb = createClient();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return { error: "This reset link has expired. Request a new one." };
   const { error } = await sb.auth.updateUser({ password });
   if (error) return { error: "Could not save the password. Try a different one." };
+  cookies().delete(RECOVERY_COOKIE);
   await audit(user.id, "PASSWORD_RESET_EMAIL");
   redirect("/home");
+}
+
+export async function answerParentRequest(accept: boolean) {
+  const user = await requireUser(["STUDENT"]);
+  await createClient().rpc("answer_parent_request", { p_accept: accept });
+  await audit(user.id, accept ? "PARENT_LINK_APPROVED" : "PARENT_LINK_DECLINED");
+  revalidatePath("/settings");
 }

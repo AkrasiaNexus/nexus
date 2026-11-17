@@ -8,13 +8,17 @@ insert into auth.users (id, email, aud, role) values
   ('00000000-0000-0000-0000-0000000000a1', 'rls-student@eco.test', 'authenticated', 'authenticated'),
   ('00000000-0000-0000-0000-0000000000a2', 'rls-other@eco.test',   'authenticated', 'authenticated'),
   ('00000000-0000-0000-0000-0000000000a3', 'rls-parent@eco.test',  'authenticated', 'authenticated'),
-  ('00000000-0000-0000-0000-0000000000a4', 'rls-teacher@eco.test', 'authenticated', 'authenticated');
+  ('00000000-0000-0000-0000-0000000000a4', 'rls-teacher@eco.test', 'authenticated', 'authenticated'),
+  ('00000000-0000-0000-0000-0000000000a5', 'rls-stranger@eco.test', 'authenticated', 'authenticated');
 insert into schools (id, name, city) values ('00000000-0000-0000-0000-0000000000b1', 'RLS Test School', 'Test');
 insert into profiles (id, "memberId", email, name, role, grade, "schoolId", "parentId") values
   ('00000000-0000-0000-0000-0000000000a3', 'RLS-P', 'rls-parent@eco.test',  'Rls Parent',  'PARENT',  null, null, null),
   ('00000000-0000-0000-0000-0000000000a1', 'RLS-S', 'rls-student@eco.test', 'Rls Student', 'STUDENT', 'C1', '00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000a3'),
   ('00000000-0000-0000-0000-0000000000a2', 'RLS-O', 'rls-other@eco.test',   'Rls Other',   'STUDENT', 'C2', '00000000-0000-0000-0000-0000000000b1', null),
-  ('00000000-0000-0000-0000-0000000000a4', 'RLS-T', 'rls-teacher@eco.test', 'Rls Teacher', 'TEACHER', 'C1', '00000000-0000-0000-0000-0000000000b1', null);
+  ('00000000-0000-0000-0000-0000000000a4', 'RLS-T', 'rls-teacher@eco.test', 'Rls Teacher', 'TEACHER', 'C1', '00000000-0000-0000-0000-0000000000b1', null),
+  ('00000000-0000-0000-0000-0000000000a5', 'RLS-X', 'rls-stranger@eco.test', 'Rls Stranger', 'COMMUNITY', null, null, null);
+-- The stranger has *requested* to be the other student's parent; it must grant nothing until approved.
+update profiles set "pendingParentId" = '00000000-0000-0000-0000-0000000000a5' where id = '00000000-0000-0000-0000-0000000000a2';
 insert into scans ("userId", label, "wasteType", confidence, "weightKg", points) values
   ('00000000-0000-0000-0000-0000000000a1', 'bottle', 'PLASTIC', 0.9, 1, 10),
   ('00000000-0000-0000-0000-0000000000a2', 'can', 'METAL', 0.9, 1, 10);
@@ -39,6 +43,23 @@ insert into rls_results select 'parent sees child scans', count(*) = 2, count(*)
 -- As the teacher of class C1
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a4","role":"authenticated"}', true);
 insert into rls_results select 'teacher sees own class student, not other class', count(*) = 2, string_agg("memberId", ',') from profiles where "memberId" like 'RLS-%';
+
+-- As an unrelated community member
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a5","role":"authenticated"}', true);
+insert into rls_results select 'pending parent request grants no access', count(*) = 0, count(*)::text from scans where "userId" = '00000000-0000-0000-0000-0000000000a2';
+insert into rls_results select 'directory hides other schools'' students', count(*) = 0, string_agg(name, ',') from public_profiles where role = 'STUDENT' and name like 'Rls%';
+insert into rls_results select 'school totals are aggregate only', count(*) >= 1, count(*)::text from school_totals();
+insert into rls_results select 'cannot self-insert a challenge join', not has_table_privilege('authenticated', 'challenge_joins', 'INSERT') or not exists (select 1 from pg_policies where tablename = 'challenge_joins' and cmd = 'INSERT'), 'policy removed';
+
+-- As the same-school student: sees classmates in the directory, but masked stats for nobody else
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true);
+insert into rls_results select 'directory shows own school students', count(*) = 2, count(*)::text from public_profiles where role = 'STUDENT' and name like 'Rls%';
+
+-- Student approves the pending request? (other student, a2) — simulate a2 accepting
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}', true);
+select answer_parent_request(true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a5","role":"authenticated"}', true);
+insert into rls_results select 'after approval the parent sees the child', count(*) = 1, count(*)::text from scans where "userId" = '00000000-0000-0000-0000-0000000000a2';
 
 -- Anonymous (no session)
 reset role;

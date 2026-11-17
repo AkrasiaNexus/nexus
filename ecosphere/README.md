@@ -37,25 +37,41 @@ UI follows the supplied mockup screen-for-screen: splash, role select, login, Ho
 | Super Admin | platform analytics, manage users (enable/disable), audit logs, broadcast, export data |
 
 ## Security
-bcrypt passwords, signed httpOnly JWT cookie, route middleware + per-page role guards, zod validation on every input, login lockout (5 fails / 15 min), scan rate limit (60/hour), audit log, Super Admin cannot be self-registered, School Admin signup needs `ADMIN_SIGNUP_CODE`, Teacher/Health Monitor signup needs `STAFF_SIGNUP_CODE`, `ADMIN_LOGIN_CODE` (Admin Code admins type at login), CSV exports neutralise formula injection, peer-marketplace points/stock use conditional updates (no double-spend).
+- **Supabase Auth** (email or member-ID login, real reset-password emails, sessions via `@supabase/ssr`), Remember me, lockout after 5 failed logins / 15 min, Admin Code for admin roles.
+- **Row-level security on every table** (`supabase/migrations`): students see their own data, parents only children who **approved** the link, teachers/health monitors their class, school admins their school, super admins everything. Other people appear only through the `public_profiles` view (names; stats only within your school).
+- **Points and stock only change inside database functions** (`log_scan`, `redeem`, `claim_challenge`, `approve_task`): atomic and rate-limited.
+- Staff and school-admin signups start **disabled until approved**; disabling a user also bans their Supabase login.
+- zod validation on every input, audit log, CSV formula-injection guard. `supabase/tests/rls.sql` impersonates each role and must report all PASS.
 
 ## Stack
-Next.js 14 (App Router, server actions) · Tailwind · Prisma · PostgreSQL (Supabase) · TensorFlow.js · Vitest
+Next.js 14 (App Router, server actions) · Tailwind · Supabase (Postgres, Auth, RLS) · TensorFlow.js · Vitest
+
+## Supabase setup (once per project)
+1. **SQL Editor** → run `supabase/migrations/0001_init.sql`, then `0002_security_review.sql`.
+2. Optional check: run `supabase/tests/rls.sql`; every row must say PASS.
+3. **Authentication → URL Configuration**: Site URL = your app URL (`http://localhost:3000` locally, your Vercel URL live); add `http://localhost:3000/**` and `https://<your-app>.vercel.app/**` to Redirect URLs.
+4. **Authentication → Providers → Email**: turn on **Secure password change**.
 
 ## Run locally
+Create `.env`:
+```
+NEXT_PUBLIC_SUPABASE_URL="https://<project-id>.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="sb_publishable_…"
+SUPABASE_SECRET_KEY="sb_secret_…"          # server only, never commit
+SITE_URL="http://localhost:3000"
+ADMIN_SIGNUP_CODE="…"   STAFF_SIGNUP_CODE="…"   ADMIN_LOGIN_CODE="…"
+```
 ```bash
-cp .env.example .env   # point DATABASE_URL/DIRECT_URL at any Postgres
 npm install
-npx prisma migrate deploy && npm run seed
+npm run seed      # demo data (skips if users exist); SEED_ALLOW_RESET=1 npm run seed -- --reset to start over
 npm run dev
 ```
-Demo accounts (password `eco12345`, all `@eco.demo`; admins also enter Admin Code `ECO-ADMIN`): `ayaan@` student (or ID `STU-100001`), `sara@` parent, `rohan@` employee, `daniel@` teacher, `nurse@` health monitor, `priya@` school admin, `community@`, `admin@` super admin.
+Demo accounts (password `eco12345`, all `@eco.demo`; admins also enter the Admin Code): `ayaan@` student (or ID `STU-100001`), `sara@` parent, `rohan@` employee, `daniel@` teacher, `nurse@` health monitor, `priya@` school admin, `community@`, `admin@` super admin.
 
-## Deploy (Supabase + Vercel)
-1. Supabase → new project → **Connect** → copy the *Transaction pooler* URL (port 6543, add `?pgbouncer=true`) and the *Session pooler* URL (port 5432).
-2. Vercel → import the repo, **Root Directory = `ecosphere`**.
-3. Env vars: `DATABASE_URL` (6543), `DIRECT_URL` (5432), `SESSION_SECRET` (`openssl rand -base64 32`), `ADMIN_SIGNUP_CODE`, `STAFF_SIGNUP_CODE`, `ADMIN_LOGIN_CODE` (Admin Code admins type at login), optionally `SEED_ADMIN_PASSWORD` (overrides the demo super-admin password).
-4. Deploy. `vercel-build` runs migrations and seeds demo data once (skipped if users already exist).
+## Deploy (Vercel)
+1. Vercel → import the repo, **Root Directory = `ecosphere`**.
+2. Env vars: the `.env` values above with `SITE_URL=https://<your-app>.vercel.app` (and `SEED_ADMIN_PASSWORD` if you seed from your machine).
+3. Deploy, then add the Vercel URL to Supabase Redirect URLs (step 3 above).
 
 ## Tests
-`npm test`: unit tests (classifier mapping, impact, health alerts, SDG, heat map, CSV, validation, badges). A Playwright walkthrough covered every role × page plus task, health-alert, peer-marketplace, events, export, signup and delete-account flows.
+`npm test`: unit tests (classifier mapping, impact, health alerts, SDG, heat map, CSV, validation, badges). `supabase/tests/rls.sql`: row-level-security self-test against the live project.

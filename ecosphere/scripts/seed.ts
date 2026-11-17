@@ -61,7 +61,11 @@ async function reset() {
 }
 
 async function main() {
-  if (process.argv.includes("--reset")) await reset();
+  if (process.argv.includes("--reset")) {
+    // --reset deletes ALL listings, events, notifications, logs: demo projects only.
+    if (process.env.SEED_ALLOW_RESET !== "1") throw new Error("Refusing --reset: set SEED_ALLOW_RESET=1 (demo projects only).");
+    await reset();
+  }
   const { count } = await db.from("profiles").select("id", { count: "exact", head: true });
   if ((count ?? 0) > 0) return console.log("Seed skipped: data exists (use --reset).");
 

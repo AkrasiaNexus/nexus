@@ -3,16 +3,29 @@ import { Bell, ChevronRight, Lock } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { ActionForm } from "@/components/ActionForm";
 import { Header } from "@/components/ui";
-import { logout, setAvatar, updateSettings } from "../../actions";
+import { answerParentRequest, logout, setAvatar, updateSettings } from "../../actions";
+import { publicNames } from "@/lib/queries";
 
 const AVATARS = ["🌱", "🧑‍🎓", "👩‍🎓", "🧑‍💼", "👪", "🌍", "🦊", "🐢", "🌻", "🏫"];
 
 export default async function SettingsPage() {
   const user = await requireUser();
+  const pendingId = user.pendingParentId;
+  const pendingParent = pendingId ? (await publicNames([pendingId])).get(pendingId) ?? { name: "Someone" } : null;
   return (
     <>
       <Header title="Settings" back="/profile" />
       <div className="stagger flex flex-col gap-4 px-5">
+        {pendingParent && (
+          <section role="alert" className="card space-y-3 border-gold/40 p-4">
+            <p className="text-sm"><b>{pendingParent.name}</b> asked to link as your parent. They&apos;d see your scans, tasks and classroom health alerts.</p>
+            <p className="text-xs text-white/60">Only approve someone you know.</p>
+            <div className="flex gap-2">
+              <form action={answerParentRequest.bind(null, true)} className="flex-1"><button className="btn w-full py-2 text-sm">Approve</button></form>
+              <form action={answerParentRequest.bind(null, false)} className="flex-1"><button className="btn-ghost w-full py-2 text-sm">Decline</button></form>
+            </div>
+          </section>
+        )}
         <p className="text-center text-sm text-white/60">EcoSphere ID <span className="chip ml-1 font-mono">{user.memberId}</span></p>
         <section id="avatar" className="card p-4">
           <h2 className="mb-3 text-sm font-medium">Avatar</h2>

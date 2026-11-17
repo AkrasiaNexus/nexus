@@ -75,6 +75,7 @@ export function SignupForm({ schools }: { schools: { id: string; name: string }[
         {role === "COMMUNITY" && <input name="community" placeholder="Community name" className="input" aria-label="Community" />}
         {role === "SCHOOL_ADMIN" && <input name="adminCode" required placeholder="Admin code" className="input" aria-label="Admin code" />}
         {state?.error && <p role="alert" className="text-sm text-red-400">{state.error}</p>}
+        {state?.ok && <p role="status" className="text-sm text-leaf">{state.ok}</p>}
         <Submit />
       </form>
       <p className="text-center text-sm text-mute">Have an account? <Link href="/login" className="text-leaf">Log in</Link></p>
