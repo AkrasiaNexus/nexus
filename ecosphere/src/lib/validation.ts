@@ -94,3 +94,24 @@ export const eventSchema = z.object({
   location: text(80),
   startsAt: z.coerce.date(),
 });
+
+// ── Admin forms ──
+const optId = z.preprocess((v) => (v === "" ? undefined : v), z.string().uuid().optional());
+export const adminUserSchema = z.object({
+  role: z.enum(PUBLIC_ROLES), // SUPER_ADMIN can't be granted from the UI
+  schoolId: optId,
+  communityId: optId,
+  grade: z.string().trim().max(30).optional(),
+  department: z.string().trim().max(60).optional(),
+})
+  .refine((d) => !SCHOOL_ROLES.includes(d.role) || !!d.schoolId, { message: "This role needs a school." })
+  .refine((d) => !CLASS_ROLES.includes(d.role) || !!d.grade, { message: "This role needs a class." })
+  .refine((d) => !COMMUNITY_ROLES.includes(d.role) || !!d.communityId, { message: "This role needs a community." });
+
+export const adjustSchema = z.object({
+  delta: z.coerce.number().int().refine((n) => n !== 0 && Math.abs(n) <= 10000, "Enter a non-zero amount up to 10,000."),
+  reason: z.string().trim().min(3, "Give a reason.").max(120),
+});
+export const schoolSchema = z.object({ name: z.string().trim().min(2).max(80), city: z.string().trim().min(2).max(60) });
+export const communitySchema = z.object({ name: z.string().trim().min(2).max(80), city: z.string().trim().max(60).default(""), description: z.string().trim().max(200).default("") });
+export const moderationSchema = z.object({ note: z.string().trim().max(200).default("") });

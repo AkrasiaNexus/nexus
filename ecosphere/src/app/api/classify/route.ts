@@ -20,6 +20,8 @@ export async function POST(req: Request) {
   if (recent.length >= MAX_PER_WINDOW) return Response.json({ error: "Too many scans, wait a minute." }, { status: 429 });
   hits.set(user.id, [...recent, now]);
 
+  // Route handlers have no body limit: refuse oversized bodies before buffering them.
+  if (Number(req.headers.get("content-length") ?? Infinity) > MAX_IMAGE_BYTES + 64_000) return Response.json({ error: "Send one image up to 2 MB." }, { status: 413 });
   const photo = (await req.formData().catch(() => null))?.get("photo");
   if (!(photo instanceof File) || photo.size === 0 || photo.size > MAX_IMAGE_BYTES) return Response.json({ error: "Send one image up to 2 MB." }, { status: 400 });
   const bytes = new Uint8Array(await photo.arrayBuffer());

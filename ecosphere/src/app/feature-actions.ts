@@ -8,9 +8,11 @@ import { createClient } from "@/lib/supabase/server";
 import { notifyCommunity, notifySchool } from "@/lib/notify";
 import { healthAlerts } from "@/lib/health";
 import { classChallengeSchema, eventSchema, healthSchema, listingSchema, noticeSchema, reportSchema, taskSchema } from "@/lib/validation";
-import { IMAGE_TYPES, checkImage } from "@/lib/upload";
+import { IMAGE_TYPES, checkImage, stripMetadata } from "@/lib/upload";
 import { randomUUID } from "crypto";
 import type { FormState } from "./actions";
+
+const LISTINGS_PER_HOUR = 5;
 
 const formObject = (fd: FormData) =>
   Object.fromEntries(Array.from(fd.entries()).filter(([, v]) => typeof v === "string" && v !== ""));
@@ -21,16 +23,21 @@ export async function createListing(_: FormState, fd: FormData): Promise<FormSta
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const d = parsed.data;
   const db = admin();
+  const { count: recent } = await db.from("listings").select("id", { count: "exact", head: true }).eq("ownerId", user.id).gte("createdAt", new Date(Date.now() - 3_600_000).toISOString());
+  if ((recent ?? 0) >= LISTINGS_PER_HOUR) return { error: "You've posted a lot this hour. Try again later." };
 
   let imageUrl: string | null = null;
+  let path: string | null = null;
   const photo = fd.get("photo");
   if (photo instanceof File && photo.size > 0) {
     const bytes = new Uint8Array(await photo.arrayBuffer());
     const check = checkImage(bytes, photo.type);
     if ("error" in check) return { error: check.error };
+    const clean = stripMetadata(bytes, check.type); // public bucket: never publish EXIF/GPS
+    if (!clean) return { error: "That photo looks damaged. Try another." };
     // Server-chosen path: the user's folder + random name, never the uploaded filename.
-    const path = `${user.id}/${randomUUID()}.${IMAGE_TYPES[check.type]}`;
-    const { error: upErr } = await db.storage.from("listing-images").upload(path, bytes, { contentType: check.type });
+    path = `${user.id}/${randomUUID()}.${IMAGE_TYPES[check.type]}`;
+    const { error: upErr } = await db.storage.from("listing-images").upload(path, clean, { contentType: check.type });
     if (upErr) return { error: "Could not upload the photo. Try again." };
     imageUrl = db.storage.from("listing-images").getPublicUrl(path).data.publicUrl;
   }
@@ -41,7 +48,10 @@ export async function createListing(_: FormState, fd: FormData): Promise<FormSta
     ...d, imageUrl, pricePoints: d.kind === "SELL" ? d.pricePoints : 0, category: d.kind === "DONATE" ? "Donate" : d.category,
     stock: 1, ownerId: user.id, status: needsApproval ? "PENDING" : "APPROVED",
   });
-  if (error) return { error: "Could not publish the listing." };
+  if (error) {
+    if (path) await db.storage.from("listing-images").remove([path]);
+    return { error: "Could not publish the listing." };
+  }
   if (needsApproval) {
     const { data: admins } = await db.from("profiles").select("id").eq("role", "SUPER_ADMIN").eq("active", true);
     await db.from("notifications").insert((admins ?? []).map((a) => ({ userId: a.id, kind: "MARKETPLACE" as const, title: "Listing waiting for approval", body: `${user.name}: ${d.title}` })));
