@@ -26,9 +26,9 @@
 .cine-text { position: absolute; left: clamp(24px, 7vw, 120px); top: 50%; translate: 0 -50%; width: min(34vw, 460px); z-index: 4; pointer-events: none; }
 .cine-text-center { left: 50%; translate: -50% 0; top: auto; bottom: 6vh; width: min(90vw, 760px); text-align: center; }
 .cine-text[data-ch="9"] { bottom: auto; top: 19vh; }
-.cine-h { font-size: clamp(30px, 3.6vw, 56px); line-height: 1.04; letter-spacing: -0.035em; font-weight: 600; text-wrap: balance; }
-.cine-text-center .cine-h { font-size: clamp(26px, 3vw, 44px); }
-.cine-p { margin-top: 18px; max-width: 38ch; font-size: clamp(15px, 1.15vw, 18px); line-height: 1.55; color: rgba(255, 255, 255, 0.62); }
+.cine-h { font-size: clamp(1.9rem, 2.6vw + 0.9rem, 3.5rem); /* rem term keeps browser zoom working */ line-height: 1.04; letter-spacing: -0.035em; font-weight: 600; text-wrap: balance; }
+.cine-text-center .cine-h { font-size: clamp(1.65rem, 2vw + 0.9rem, 2.75rem); }
+.cine-p { margin-top: 18px; max-width: 38ch; font-size: clamp(0.95rem, 0.4vw + 0.8rem, 1.125rem); line-height: 1.55; color: rgba(255, 255, 255, 0.62); }
 
 .cine-chip { position: absolute; left: calc(50% + 15vw - 290px); top: 30%; z-index: 5; display: flex; flex-direction: column; gap: 2px;
   padding: 12px 16px; border-radius: 16px; background: rgba(23, 26, 25, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(8px); }
@@ -63,7 +63,7 @@
   .cine-text, .cine-text-center { left: 50%; translate: -50% 0; top: auto; bottom: 5vh; width: calc(100vw - 32px); text-align: center; }
   .cine-text[data-ch="9"] { top: auto; bottom: 16vh; }
   .cine-p { margin-inline: auto; font-size: 14px; }
-  .cine-h { font-size: clamp(24px, 7vw, 32px); }
+  .cine-h { font-size: clamp(1.5rem, 4vw + 0.6rem, 2rem); }
   .cine-chip { display: none; } /* fewer decorative layers on phones */
   .cine-bottle { left: 50%; top: 17vh; width: 24vw; }
   .cine-shadow { display: none; }
