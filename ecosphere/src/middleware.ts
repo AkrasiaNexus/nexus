@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-const PUBLIC = ["/", "/login", "/signup", "/forgot", "/auth/callback", "/auth/reset", "/auth/signout"];
+const PUBLIC = ["/", "/legal", "/login", "/signup", "/forgot", "/auth/callback", "/auth/reset", "/auth/signout"];
 const SESSION_ONLY_COOKIE = "eco_session_only";
 
 // Refreshes the Supabase session cookie on every request and guards signed-in routes.
