@@ -35,7 +35,7 @@ export default async function Rewards({ searchParams }: { searchParams: { all?: 
 
   return (
     <>
-      <Header title="Green Points & Rewards" />
+      <Header title="Eco Creds & Rewards" />
       <div className="flex flex-col gap-6 px-5">
         <section className="flex flex-col items-center gap-5 pt-6">
           <div className="relative grid h-40 w-40 place-items-center rounded-full border-2 border-leaf/50 bg-[radial-gradient(circle,#1f4a26,#0b1a0e)] shadow-[0_0_40px_rgba(134,214,126,.25)]">
@@ -76,7 +76,7 @@ export default async function Rewards({ searchParams }: { searchParams: { all?: 
 
         <section id="shop" className="scroll-mt-20">
           <h2 className="mb-1 text-lg font-semibold">Reward shop</h2>
-          <p className="mb-3 text-xs text-white/50">Spend green points on looks for your profile. Points are checked and charged on the server.</p>
+          <p className="mb-3 text-xs text-white/50">Spend Eco Creds on looks for your profile. Points are checked and charged on the server.</p>
           <div className="space-y-4">
             {SHOP.map(([kind, title]) => (
               <div key={kind}>

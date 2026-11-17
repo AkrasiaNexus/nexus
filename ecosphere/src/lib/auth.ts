@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient as createStatelessClient } from "@supabase/supabase-js";
 import { admin } from "./supabase/admin";
@@ -8,13 +9,14 @@ import type { Profile, Role } from "./types";
 export type CurrentUser = Profile & { school: { name: string } | null };
 
 // undefined = no session; null = signed in to Supabase but no active EcoSphere profile.
-async function loadUser(): Promise<CurrentUser | null | undefined> {
+// cache(): layout + page share one lookup per request instead of two round-trips each.
+const loadUser = cache(async (): Promise<CurrentUser | null | undefined> => {
   const sb = createClient();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return undefined;
   const { data } = await sb.from("profiles").select("*, school:schools(name)").eq("id", user.id).maybeSingle();
   return data?.active ? (data as CurrentUser) : null;
-}
+});
 
 export async function currentUser() {
   return (await loadUser()) ?? null;

@@ -123,7 +123,7 @@ async function RoleBody({ user }: { user: Me }) {
       <>
         <div className="grid grid-cols-2 gap-3">
           <Stat icon={<Trash2 size={24} className="text-gold" />} value={`${all.kg} kg`} label="Waste Reduced" />
-          <Stat icon={<Leaf size={24} className="text-leaf" />} value={`${user.points} pts`} label="Green Points" />
+          <Stat icon={<Leaf size={24} className="text-leaf" />} value={`${user.points} pts`} label="Eco Creds" />
         </div>
         <Menu items={[
           { href: "/department", icon: <Users size={ICON} />, label: "My Department" },

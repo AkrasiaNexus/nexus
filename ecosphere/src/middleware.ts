@@ -21,11 +21,14 @@ export async function middleware(req: NextRequest) {
       },
     },
   });
-  const { data: { user } } = await sb.auth.getUser();
+  // Local cookie read (refreshes only when expired): this is just a redirect guard. Every page and action
+  // re-verifies with the auth server in requireUser/currentUser, and RLS enforces access in the database.
+  const { data: { session } } = await sb.auth.getSession();
+  const signedIn = !!session; // don't read session.user here: unverified (Supabase warns)
   const { pathname } = req.nextUrl;
   const isPublic = PUBLIC.includes(pathname);
-  if (user && isPublic && !pathname.startsWith("/auth/")) return NextResponse.redirect(new URL("/home", req.url));
-  if (!user && !isPublic) return NextResponse.redirect(new URL("/login", req.url));
+  if (signedIn && isPublic && !pathname.startsWith("/auth/")) return NextResponse.redirect(new URL("/home", req.url));
+  if (!signedIn && !isPublic) return NextResponse.redirect(new URL("/login", req.url));
   return res;
 }
 

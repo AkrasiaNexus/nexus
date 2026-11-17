@@ -188,7 +188,7 @@ export default async function Stats({ searchParams: q }: { searchParams: Params 
 
         <section className="card p-4">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-medium">Green points leaderboard</h2>
+            <h2 className="text-sm font-medium">Eco Creds leaderboard</h2>
             <nav className="flex gap-1">{boards.map((b) => <Link key={b} href={href({ b })} className={`chip ${b === board ? "chip-on" : ""}`}>{b}</Link>)}</nav>
           </div>
           <ol className="space-y-2">

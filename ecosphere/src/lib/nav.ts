@@ -16,7 +16,7 @@ export const NAV: NavSection[] = [
       { href: "/scan", label: "AI Waste Scanner", icon: "ScanLine" },
       { href: "/guide", label: "Recycling Guide", icon: "BookOpen" },
       { href: "/marketplace", label: "Marketplace", icon: "Store" },
-      { href: "/rewards", label: "Green Points & Rewards", icon: "Gift" },
+      { href: "/rewards", label: "Eco Creds & Rewards", icon: "Gift" },
       { href: "/challenges", label: "Challenges", icon: "Trophy" },
     ],
   },
