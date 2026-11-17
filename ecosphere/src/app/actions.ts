@@ -11,6 +11,7 @@ import { CLASS_ROLES, COMMUNITY_ROLES, SCHOOL_ROLES, loginSchema, memberIdFor, s
 import { notifySchool } from "@/lib/notify";
 import { syncBadges } from "@/lib/queries";
 import type { NoticeKind } from "@/lib/types";
+import { AVATAR_RE } from "@/components/Critter";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -163,10 +164,9 @@ export async function claimChallenge(challengeId: string) {
   revalidatePath("/", "layout");
 }
 
-const AVATARS = ["🌱", "🧑‍🎓", "👩‍🎓", "🧑‍💼", "👪", "🌍", "🦊", "🐢", "🌻", "🏫"];
 export async function setAvatar(avatar: string) {
   const user = await requireUser();
-  if (!AVATARS.includes(avatar)) return;
+  if (!AVATAR_RE.test(String(avatar))) return;
   await admin().from("profiles").update({ avatar }).eq("id", user.id);
   revalidatePath("/", "layout");
 }

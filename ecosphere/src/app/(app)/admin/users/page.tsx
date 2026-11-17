@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PUBLIC_ROLES } from "@/lib/validation";
 import { BroadcastForm } from "@/components/BroadcastForm";
 import { Header } from "@/components/ui";
+import { Critter } from "@/components/Critter";
 
 const ROLES = [...PUBLIC_ROLES, "SUPER_ADMIN"] as const;
 const roleLabel = (r: string) => r.replace("_", " ").toLowerCase();
@@ -50,7 +51,7 @@ export default async function ManageUsers({ searchParams: sp }: { searchParams: 
           {users.map((u) => (
             <li key={u.id}>
               <Link href={`/admin/users/${u.id}`} className="flex items-center gap-3 border-b border-line p-3 text-sm hover:bg-panel">
-                <span className="text-xl" aria-hidden>{u.avatar}</span>
+                <Critter avatar={u.avatar} size={32} />
                 <div className="min-w-0 flex-1">
                   <p className={u.active ? "" : "text-mute line-through"}>{u.name}</p>
                   <p className="truncate text-[11px] text-mute">{u.memberId} · {roleLabel(u.role)}{u.school ? ` · ${u.school.name}` : ""}</p>

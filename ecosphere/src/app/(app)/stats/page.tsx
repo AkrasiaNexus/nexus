@@ -7,6 +7,8 @@ import { impactFiltered, impactFor, scanScope, startOf, type AdminFilters } from
 import { GUIDE, WASTE_TYPES, impact, round } from "@/lib/waste";
 import { WEEKDAYS, changePct, heatmapGrid, periodRange, seriesBetween, seriesFor, type Period } from "@/lib/charts";
 import { Header, Heatmap, LineChart, Ring } from "@/components/ui";
+import { Glyph, WASTE_GLYPH } from "@/components/Glyph";
+import { Critter } from "@/components/Critter";
 
 const PERIODS: Record<Period, string> = { day: "Today", week: "This Week", month: "This Month", year: "This Year" };
 const PREV: Record<Period, string> = { day: "yesterday", week: "last week", month: "last month", year: "last year" };
@@ -52,7 +54,7 @@ export default async function Stats({ searchParams: q }: { searchParams: Params 
   const schools = (schoolRes.data ?? []) as { id: string; name: string; points: number }[];
   const sum = (xs: { points: number }[]) => xs.reduce((t, x) => t + x.points, 0);
   const rows = board === "Students"
-    ? leaders.slice(0, 5).map((l) => ({ key: l.id, label: `${l.avatar} ${l.name}`, points: l.points, me: l.id === user.id }))
+    ? leaders.slice(0, 5).map((l) => ({ key: l.id, label: l.name, avatar: l.avatar, points: l.points, me: l.id === user.id }))
     : board === "Classes"
       ? Array.from(new Set(leaders.map((l) => l.grade ?? "—"))).map((g) => ({ key: g, label: `Class ${g}`, points: sum(leaders.filter((l) => (l.grade ?? "—") === g)), me: g === user.grade }))
         .sort((a, b) => b.points - a.points).slice(0, 5)
@@ -117,7 +119,7 @@ export default async function Stats({ searchParams: q }: { searchParams: Params 
 
         {type && (
           <section className="card flex items-center gap-3 p-4">
-            <span className="text-3xl">{GUIDE[type].emoji}</span>
+            <Glyph name={WASTE_GLYPH[type]} className="h-9 w-9 text-white/85" />
             <div className="flex-1">
               <p className="font-medium">{GUIDE[type].name} breakdown</p>
               <p className="text-xs text-white/55">{typeImpact!.kg} kg · {data.kg ? Math.round((typeImpact!.kg / data.kg) * 100) : 0}% of all waste · {typeImpact!.co2} kg CO₂ · {typeImpact!.water} L water</p>
@@ -157,7 +159,7 @@ export default async function Stats({ searchParams: q }: { searchParams: Params 
               <Link key={t} href={href({ t: t === type ? "" : t })} aria-current={t === type ? "true" : undefined}
                 className={`block rounded-lg px-1 py-0.5 text-xs transition-colors hover:bg-white/[.03] ${type && t !== type ? "opacity-50" : ""}`}>
                 <div className="flex items-center gap-2">
-                  <span className="w-24 shrink-0">{GUIDE[t].emoji} {GUIDE[t].name}</span>
+                  <span className="flex w-24 shrink-0 items-center gap-1.5"><Glyph name={WASTE_GLYPH[t]} className="h-4 w-4 shrink-0 text-white/70" />{GUIDE[t].name}</span>
                   <div className="flex-1 space-y-0.5">
                     <div className="h-2 rounded bg-panel"><div className="grow-x h-2 rounded" style={{ width: `${((nowBy[t] ?? 0) / maxType) * 100}%`, background: GUIDE[t].binColor }} /></div>
                     <div className="h-1 rounded bg-panel"><div className="grow-x h-1 rounded bg-white/25" style={{ width: `${((prevBy[t] ?? 0) / maxType) * 100}%` }} /></div>
@@ -194,7 +196,7 @@ export default async function Stats({ searchParams: q }: { searchParams: Params 
           <ol className="space-y-2">
             {rows.map((r, i) => (
               <li key={r.key} className={`flex items-center gap-3 text-sm ${r.me ? "text-leaf" : ""}`}>
-                <span className="w-5 text-mute">{i + 1}</span><span className="flex-1">{r.label}</span><span>{r.points} EC</span>
+                <span className="w-5 text-mute">{i + 1}</span><span className="flex flex-1 items-center gap-2">{"avatar" in r && typeof r.avatar === "string" && <Critter avatar={r.avatar} size={22} />}{r.label}</span><span>{r.points} EC</span>
               </li>
             ))}
             {rows.length === 0 && <li className="text-xs text-white/50">No rankings yet.</li>}

@@ -37,31 +37,73 @@ export function IconCircle({ children, tone = "green", size = 44 }: { children: 
   );
 }
 
-export function LineChart({ data, height = 150 }: { data: { label: string; value: number }[]; height?: number }) {
-  const max = Math.max(0.1, ...data.map((d) => d.value));
-  const w = 300, h = 100, step = w / Math.max(1, data.length - 1);
-  const pts = data.map((d, i) => [i * step, h - 8 - (d.value / max) * (h - 16)] as const);
-  const line = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+type Point = { label: string; value: number; future?: boolean };
+const W = 300, H = 120, TOP = 14, BOTTOM = 104, PAD = 10;
+
+// Catmull-Rom through the points, as cubic Béziers; control points clamped to the plot so the curve never dips below zero.
+function smooth(pts: (readonly [number, number])[]) {
+  const clampY = (y: number) => Math.min(BOTTOM, Math.max(TOP, y));
+  return pts.map(([x, y], i) => {
+    if (!i) return `M${x},${y}`;
+    const [x0, y0] = pts[i - 2] ?? pts[i - 1], [x1, y1] = pts[i - 1], [x3, y3] = pts[i + 1] ?? [x, y];
+    const c1 = [x1 + (x - x0) / 6, clampY(y1 + (y - y0) / 6)], c2 = [x - (x3 - x1) / 6, clampY(y - (y3 - y1) / 6)];
+    return `C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+}
+
+export function LineChart({ data, height = 170 }: { data: Point[]; height?: number }) {
+  const past = data.filter((d) => !d.future);
+  const max = Math.max(0.1, ...past.map((d) => d.value));
+  const xAt = (i: number) => PAD + (i / Math.max(1, data.length - 1)) * (W - PAD * 2);
+  const yAt = (v: number) => BOTTOM - (v / max) * (BOTTOM - TOP);
+  const pts = past.map((d, i) => [xAt(i), yAt(d.value)] as const);
+  const line = smooth(pts);
+  const last = pts[pts.length - 1];
+  const nice = (v: number) => (v >= 10 ? Math.round(v) : Math.round(v * 10) / 10);
   return (
-    <figure>
-      {/* Re-keyed on new data so every period switch redraws the line left-to-right (user preference over a crossfade). */}
-      <div key={`${data.length}:${data.map((d) => d.value).join()}`}>
-      <svg viewBox={`-6 0 ${w + 12} ${h}`} style={{ height }} className="w-full" role="img" aria-label="Trend chart">
-        <defs>
-          <linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#86d67e" stopOpacity=".45" /><stop offset="1" stopColor="#86d67e" stopOpacity="0" /></linearGradient>
-        </defs>
-        {pts.map(([x], i) => <line key={i} x1={x} x2={x} y1="0" y2={h} stroke="#86d67e" strokeOpacity=".12" />)}
-        <path d={`${line} L${w},${h} L0,${h} Z`} fill="url(#area)" className="chart-anim" style={{ animation: "fade-in 750ms 320ms var(--ease-out) both" }} />
-        <path d={line} fill="none" stroke="#9be292" strokeWidth="2" pathLength={1} strokeDasharray={1} className="line-anim" style={{ animation: "line-draw 1300ms var(--ease-out) both" }} />
-        {pts.map(([x, y], i) => (
-          <circle key={i} cx={x} cy={y} r="3.5" fill="#0b120d" stroke="#9be292" strokeWidth="2" className="chart-anim"
-            style={{ transformBox: "fill-box", transformOrigin: "center", animation: `pop-in 450ms ${190 + (i / Math.max(1, pts.length - 1)) * 1000}ms var(--ease-out) both` }}>
-            <title>{`${data[i].label}: ${data[i].value} kg`}</title>
-          </circle>
-        ))}
-      </svg>
+    <figure className="select-none">
+      {/* Re-keyed on new data so every period switch redraws the line left-to-right. */}
+      <div key={`${data.length}:${data.map((d) => d.value).join()}`} className="relative" style={{ height }}>
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible" role="img"
+          aria-label={`Trend: ${past.map((d) => `${d.label} ${d.value} kg`).join(", ")}`}>
+          <defs>
+            <linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#a2d47e" stopOpacity=".28" /><stop offset="1" stopColor="#a2d47e" stopOpacity="0" /></linearGradient>
+          </defs>
+          {[TOP, (TOP + BOTTOM) / 2, BOTTOM].map((y) => <line key={y} x1="0" x2={W} y1={y} y2={y} stroke="#fff" strokeOpacity={y === BOTTOM ? 0.14 : 0.06} vectorEffect="non-scaling-stroke" />)}
+          {last && last[0] < W - PAD && (
+            <line x1={last[0]} x2={W - PAD} y1={BOTTOM} y2={BOTTOM} stroke="#a2d47e" strokeOpacity=".35" strokeDasharray="2 5" vectorEffect="non-scaling-stroke" />
+          )}
+          {pts.length > 1 && <>
+            <path d={`${line} L${last[0]},${BOTTOM} L${pts[0][0]},${BOTTOM} Z`} fill="url(#area)" className="chart-anim" style={{ animation: "fade-in 750ms 320ms var(--ease-out) both" }} />
+            {/* Revealed left-to-right with a clip: dash tricks break under non-scaling strokes. */}
+            <path d={line} fill="none" stroke="#a2d47e" strokeWidth="2.2" strokeLinecap="round" vectorEffect="non-scaling-stroke"
+              className="line-anim" style={{ animation: "reveal-x 1300ms var(--ease-out) both" }} />
+          </>}
+        </svg>
+        {/* Dots and labels live in HTML so they stay round and crisp at any chart width. */}
+        <span className="pointer-events-none absolute -left-1 text-[10px] tabular-nums text-white/35" style={{ top: `${(TOP / H) * 100}%`, transform: "translateY(-120%)" }}>{nice(max)} kg</span>
+        {pts.map(([x, y], i) => {
+          const isLast = i === pts.length - 1;
+          return (
+            <span key={i} className="chart-anim absolute" title={`${past[i].label}: ${past[i].value} kg`}
+              style={{ left: `${(x / W) * 100}%`, top: `${(y / H) * 100}%`, transform: "translate(-50%,-50%)", animation: `pop-in 450ms ${190 + (i / Math.max(1, data.length - 1)) * 1000}ms var(--ease-out) both` }}>
+              {isLast ? (
+                <span className="relative grid place-items-center">
+                  <span className="pulse-soft absolute h-6 w-6 rounded-full bg-leaf/25" />
+                  <span className="h-3 w-3 rounded-full border-2 border-ink bg-leaf shadow-[0_0_0_1px_#a2d47e]" />
+                  <span className="absolute bottom-full mb-2 whitespace-nowrap rounded-md bg-leaf px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-ink">{past[i].value} kg</span>
+                </span>
+              ) : <span className="block h-1.5 w-1.5 rounded-full bg-leaf/80" />}
+            </span>
+          );
+        })}
       </div>
-      <figcaption className="flex justify-between px-0.5 text-[11px] text-white/50">{data.map((d) => <span key={d.label}>{d.label}</span>)}</figcaption>
+      <figcaption className="relative mt-2 h-4 text-[11px]">
+        {data.map((d, i) => (
+          <span key={d.label + i} className={`absolute -translate-x-1/2 ${d.future ? "text-white/25" : i === past.length - 1 ? "font-medium text-white" : "text-white/55"}`}
+            style={{ left: `${(xAt(i) / W) * 100}%` }}>{d.label}</span>
+        ))}
+      </figcaption>
     </figure>
   );
 }

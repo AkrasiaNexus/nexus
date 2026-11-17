@@ -6,6 +6,7 @@ import { impactFor, startOf, withDates } from "@/lib/queries";
 import { ActionForm } from "@/components/ActionForm";
 import { Header, Stat } from "@/components/ui";
 import { addCollectionPoint, announceToCommunity, toggleCollectionPoint, toggleCommunityMember } from "../../community-actions";
+import { Critter } from "@/components/Critter";
 
 const COMMUNITY_GOAL_KG = 100; // monthly collective target
 
@@ -91,7 +92,7 @@ export default async function Community() {
               <ul>
                 {list.map((m) => (
                   <li key={m.id} className="flex items-center gap-3 border-b border-line px-4 py-3 text-sm last:border-0">
-                    <span className="text-xl">{m.avatar}</span>
+                    <Critter avatar={m.avatar} size={28} />
                     <span className="min-w-0 flex-1"><span className={m.active ? "" : "text-white/40 line-through"}>{m.name}</span><span className="block text-xs text-white/50">{m.memberId} · {m.points} EC</span></span>
                     {m.role === "COMMUNITY" && <form action={toggleCommunityMember.bind(null, m.id)}><button className={`chip ${m.active ? "" : "chip-on"}`}>{m.active ? "Suspend" : "Reactivate"}</button></form>}
                   </li>

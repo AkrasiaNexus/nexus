@@ -5,6 +5,7 @@ import { useFormState } from "react-dom";
 import { Header } from "@/components/ui";
 import { createListing } from "../../../feature-actions";
 import { CONDITION_LABEL } from "@/lib/listing";
+import { ItemArt } from "@/components/ItemArt";
 
 const EMOJIS = ["📦", "📚", "👕", "🧸", "🪑", "🚲", "🔌", "🪴", "🎒", "🍳"];
 
@@ -35,11 +36,11 @@ export default function NewListing() {
         </label>
         {kind === "SELL" && <input name="pricePoints" type="number" min="1" max="1000" required placeholder="Price in points" aria-label="Price in points" className="input" />}
         <fieldset className="flex flex-wrap gap-2">
-          <legend className="mb-2 text-xs text-mute">Icon (shown if there&apos;s no photo)</legend>
+          <legend className="mb-2 text-xs text-mute">Cover art (shown if there&apos;s no photo)</legend>
           {EMOJIS.map((e, i) => (
             <label key={e} className="cursor-pointer">
               <input type="radio" name="emoji" value={e} defaultChecked={i === 0} className="peer sr-only" />
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-card text-xl peer-checked:ring-2 peer-checked:ring-leaf">{e}</span>
+              <span className="block h-12 w-12 overflow-hidden rounded-xl ring-leaf peer-checked:ring-2 peer-focus-visible:ring-2"><ItemArt emoji={e} size="h-12" /></span>
             </label>
           ))}
         </fieldset>

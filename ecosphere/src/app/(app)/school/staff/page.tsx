@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/ui";
 import { ResetButton } from "@/components/ResetButton";
 import { toggleStaffActive } from "../../../actions";
+import { Critter } from "@/components/Critter";
 
 export default async function ManageStaff() {
   const admin = await requireUser(["SCHOOL_ADMIN"]);
@@ -14,7 +15,7 @@ export default async function ManageStaff() {
         <ul className="card overflow-hidden">
           {staff.map((s) => (
             <li key={s.id} className="flex items-center gap-3 border-b border-line p-4 last:border-0">
-              <span className="text-2xl">{s.avatar}</span>
+              <Critter avatar={s.avatar} size={36} />
               <div className="min-w-0 flex-1">
                 <p className={s.active ? "text-sm" : "text-sm text-white/50 line-through"}>{s.name}</p>
                 <p className="truncate text-[11px] text-white/55">{s.role === "TEACHER" ? "Teacher" : "Health Monitor"} · {s.grade} · {s.memberId}</p>

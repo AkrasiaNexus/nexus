@@ -8,6 +8,7 @@ import { BroadcastForm } from "@/components/BroadcastForm";
 import { ExportLinks } from "@/components/ExportLinks";
 import { healthAlerts, healthStatus } from "@/lib/health";
 import { Header } from "@/components/ui";
+import { Critter } from "@/components/Critter";
 
 export default async function SchoolReports() {
   const admin = await requireUser(["SCHOOL_ADMIN"]);
@@ -60,7 +61,7 @@ export default async function SchoolReports() {
         <section className="card p-4">
           <h2 className="mb-2 text-sm font-medium">Top students</h2>
           <ol className="space-y-1 text-sm">
-            {students.slice(0, 8).map((s, i) => <li key={s.id} className="flex gap-2"><span className="w-5 text-mute">{i + 1}</span><span className="flex-1">{s.avatar} {s.name} <span className="text-mute">· {s.grade}</span></span><span>{s.points} EC</span></li>)}
+            {students.slice(0, 8).map((s, i) => <li key={s.id} className="flex gap-2"><span className="w-5 text-mute">{i + 1}</span><span className="flex flex-1 items-center gap-2"><Critter avatar={s.avatar} size={22} />{s.name} <span className="text-mute">· {s.grade}</span></span><span>{s.points} EC</span></li>)}
           </ol>
         </section>
         <ExportLinks />

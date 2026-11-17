@@ -85,6 +85,10 @@ describe("periods", () => {
     expect(s.map((x) => x.value)).toEqual([0, 1.5, 0, 0, 0, 0, 0]);
     expect(seriesFor("month", new Date(2026, 10, 1), [])).toHaveLength(5);
   });
+  it("flags buckets after now as future so the line stops at today", () => {
+    const s = seriesFor("week", new Date(2026, 10, 16), [], new Date(2026, 10, 18, 12));
+    expect(s.map((x) => x.future)).toEqual([false, false, false, true, true, true, true]);
+  });
 });
 
 import { changePct, seriesBetween } from "@/lib/charts";

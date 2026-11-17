@@ -3,12 +3,12 @@ import { Bell, ChevronRight, Lock } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { ActionForm } from "@/components/ActionForm";
 import { Header } from "@/components/ui";
-import { answerParentRequest, logout, setAvatar, updateSettings } from "../../actions";
+import { answerParentRequest, logout, updateSettings } from "../../actions";
 import { publicNames } from "@/lib/queries";
 import { MUTABLE_KINDS } from "@/lib/notices";
+import { AvatarPicker } from "@/components/AvatarPicker";
 import { setMutedKinds } from "../../notification-actions";
 
-const AVATARS = ["🌱", "🧑‍🎓", "👩‍🎓", "🧑‍💼", "👪", "🌍", "🦊", "🐢", "🌻", "🏫"];
 
 export default async function SettingsPage() {
   const user = await requireUser();
@@ -42,14 +42,8 @@ export default async function SettingsPage() {
         </ActionForm>
         <p className="text-center text-sm text-white/60">EcoSphere ID <span className="chip ml-1 font-mono">{user.memberId}</span></p>
         <section id="avatar" className="card p-4">
-          <h2 className="mb-3 text-sm font-medium">Avatar</h2>
-          <div className="grid grid-cols-5 gap-3">
-            {AVATARS.map((a) => (
-              <form key={a} action={setAvatar.bind(null, a)}>
-                <button aria-label={`Use avatar ${a}`} className={`grid aspect-square w-full place-items-center rounded-2xl bg-panel text-3xl ${a === user.avatar ? "ring-2 ring-leaf" : ""}`}>{a}</button>
-              </form>
-            ))}
-          </div>
+          <h2 className="mb-3 text-sm font-medium">Your character</h2>
+          <AvatarPicker current={user.avatar} />
         </section>
         <ActionForm action={updateSettings} submit="Save changes">
           <h2 className="text-sm font-medium">Profile & password</h2>

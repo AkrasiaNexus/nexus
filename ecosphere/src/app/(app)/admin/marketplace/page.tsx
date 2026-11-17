@@ -47,7 +47,7 @@ export default async function Moderation({ searchParams }: { searchParams: { tab
             {queue.map((l) => (
               <li key={l.id} className="card p-4">
                 <div className="flex gap-3">
-                  <div className="w-20 shrink-0"><ItemArt emoji={l.emoji} src={l.imageUrl} alt={l.title} size="h-20" text="text-4xl" /></div>
+                  <div className="w-20 shrink-0"><ItemArt emoji={l.emoji} src={l.imageUrl} alt={l.title} size="h-20" /></div>
                   <div className="min-w-0 flex-1 text-sm">
                     <p className="font-semibold">{l.title}</p>
                     <p className="text-xs text-mute">{l.kind.toLowerCase()} · {CONDITION_LABEL[l.condition]} · {l.pricePoints ? `${l.pricePoints} EC` : "free"} · by {names.get(l.ownerId)?.name ?? "member"} · {timeAgo(l.createdAt)}</p>
@@ -64,7 +64,7 @@ export default async function Moderation({ searchParams }: { searchParams: { tab
             {open.map((r) => (
               <li key={r.id} className="card p-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-14 shrink-0"><ItemArt emoji={r.listing.emoji} src={r.listing.imageUrl} size="h-14" text="text-2xl" /></div>
+                  <div className="w-14 shrink-0"><ItemArt emoji={r.listing.emoji} src={r.listing.imageUrl} size="h-14" /></div>
                   <div className="min-w-0 flex-1 text-sm">
                     <Link href={`/marketplace/${r.listing.id}`} className="font-semibold hover:text-leaf">{r.listing.title}</Link>
                     <p className="text-xs text-mute">Reported by {r.reporterId ? names.get(r.reporterId)?.name ?? "member" : "deleted user"} · {timeAgo(r.createdAt)} · listing {r.listing.status.toLowerCase()}</p>

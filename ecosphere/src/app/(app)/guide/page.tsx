@@ -3,6 +3,7 @@ import { Lightbulb, Search } from "lucide-react";
 import { Header, IconCircle } from "@/components/ui";
 import { mapsLink } from "@/lib/partners";
 import { EXAMPLES, REUSE, TOPICS, info, searchGuide, shortName, type Topic } from "@/lib/guide";
+import { Glyph, WASTE_GLYPH } from "@/components/Glyph";
 
 const DROP_OFF: Partial<Record<Topic, string>> = { ORGANIC: "composting site", FOOD: "food bank", EWASTE: "e-waste recycling", TEXTILE: "clothing donation bank" };
 
@@ -27,7 +28,7 @@ export default function Guide({ searchParams }: { searchParams: { type?: string;
                 {results.map((r) => (
                   <li key={r.topic}>
                     <Link href={`/guide?type=${r.topic}`} className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm hover:bg-panel">
-                      <span className="text-xl" aria-hidden>{info(r.topic).emoji}</span>
+                      <Glyph name={WASTE_GLYPH[r.topic]} className="h-6 w-6 shrink-0 text-white/80" />
                       <span className="flex-1">{info(r.topic).name}{r.hit && <span className="text-mute"> · {r.hit}</span>}</span>
                       <span className="text-xs" style={{ color: info(r.topic).binColor }}>{info(r.topic).bin}</span>
                     </Link>
@@ -43,7 +44,9 @@ export default function Guide({ searchParams }: { searchParams: { type?: string;
           ))}
         </nav>
         <section className="card overflow-hidden">
-          <div className="grid h-48 place-items-center bg-[radial-gradient(circle_at_60%_40%,#24342a,#0b120d_70%)] text-8xl"><span key={type} className="blur-in drop-shadow-[0_10px_14px_rgba(0,0,0,.7)]">{g.emoji}</span></div>
+          <div className="relative grid h-48 place-items-center overflow-hidden text-[#e4efe2]" style={{ backgroundColor: "#16231a", backgroundImage: "radial-gradient(#e4efe21c 1px, transparent 1.2px)", backgroundSize: "14px 14px" }}>
+            <span key={type} className="blur-in"><Glyph name={WASTE_GLYPH[type]} accent={g.binColor} className="h-28 w-28 drop-shadow-[0_10px_14px_rgba(0,0,0,.5)]" /></span>
+          </div>
           <div className="space-y-1 p-5">
             <h2 className="text-2xl font-semibold">{g.name}</h2>
             <p className="text-white/75">{g.summary}</p>

@@ -1,3 +1,5 @@
+import { Critter } from "./Critter";
+
 // Profile avatar with the user's equipped cosmetics (background, border ring, sticker badge).
 const BACKGROUNDS: Record<string, string> = {
   forest: "linear-gradient(140deg,#1e3a28,#3f7a4c)",
@@ -11,12 +13,8 @@ export type Cosmetics = { background?: string | null; border?: string | null; st
 export function Avatar({ emoji, size = 112, cosmetics = {} }: { emoji: string; size?: number; cosmetics?: Cosmetics }) {
   const ring = cosmetics.border ? BORDERS[cosmetics.border] : "rgba(162,212,126,.4)";
   return (
-    <span className="relative inline-grid place-items-center rounded-full" style={{
-      width: size, height: size, fontSize: size * 0.5,
-      background: (cosmetics.background && BACKGROUNDS[cosmetics.background]) || "#cfd8d2",
-      boxShadow: `0 0 0 ${Math.max(3, size / 28)}px ${ring}`,
-    }}>
-      {emoji}
+    <span className="relative inline-grid place-items-center rounded-full" style={{ width: size, height: size, boxShadow: `0 0 0 ${Math.max(3, size / 28)}px ${ring}` }}>
+      <Critter avatar={emoji} size={size} background={cosmetics.background ? BACKGROUNDS[cosmetics.background] : undefined} />
       {cosmetics.sticker && (
         <span className="absolute -bottom-1 -right-1 grid place-items-center rounded-full bg-ink" style={{ width: size * 0.36, height: size * 0.36, fontSize: size * 0.2 }}>
           {cosmetics.sticker}

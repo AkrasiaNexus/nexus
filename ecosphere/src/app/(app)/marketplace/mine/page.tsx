@@ -52,7 +52,7 @@ export default async function Mine({ searchParams }: { searchParams: { tab?: str
               return (
                 <li key={l.id}>
                   <Link href={`/marketplace/${l.id}`} className="card flex items-center gap-3 p-3 hover:border-leaf">
-                    <div className="w-14 shrink-0"><ItemArt emoji={l.emoji} src={l.imageUrl} size="h-14" text="text-2xl" /></div>
+                    <div className="w-14 shrink-0"><ItemArt emoji={l.emoji} src={l.imageUrl} size="h-14" /></div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{l.title}</p>
                       <p className={`text-xs ${s.tone}`}>{s.label}{l.moderationNote && l.status !== "APPROVED" ? ` · ${l.moderationNote}` : ""}</p>
@@ -74,7 +74,7 @@ export default async function Mine({ searchParams }: { searchParams: { tab?: str
               const bought = p.userId === user.id;
               return (
                 <li key={p.id} className="card flex items-center gap-3 p-3">
-                  <span className="text-2xl" aria-hidden>{item.get(p.listingId)?.emoji ?? "📦"}</span>
+                  <div className="w-10 shrink-0"><ItemArt emoji={item.get(p.listingId)?.emoji ?? "📦"} size="h-10" /></div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{item.get(p.listingId)?.title ?? "Removed item"}</p>
                     <p className="text-xs text-mute">{bought ? "You got this" : `Claimed by ${names.get(p.userId)?.name ?? "a member"}`} · {timeAgo(new Date(p.createdAt))}</p>

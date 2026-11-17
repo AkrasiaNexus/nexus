@@ -8,6 +8,7 @@ import { impactForUser, startOf } from "@/lib/queries";
 import { goalPercent } from "@/lib/rewards";
 import { Header, timeAgo } from "@/components/ui";
 import { LinkChildForm } from "../profile/LinkChildForm";
+import { Critter } from "@/components/Critter";
 
 export default async function ChildProgress() {
   const parent = await requireUser(["PARENT"]);
@@ -29,7 +30,7 @@ export default async function ChildProgress() {
         {children.map((c, i) => (
           <section key={c.id} className="card space-y-3 p-4">
             <div className="flex items-center gap-3">
-              <span className="grid h-12 w-12 place-items-center rounded-full bg-[#cfd8d2] text-2xl">{c.avatar}</span>
+              <Critter avatar={c.avatar} size={48} />
               <div className="flex-1"><p className="font-medium">{c.name}</p><p className="text-xs text-white/60">{c.grade} · {c.points} EC</p></div>
             </div>
             <div className="h-2 rounded bg-panel"><div className="grow-x h-2 rounded bg-leaf" style={{ width: `${goalPercent(month[i].kg)}%` }} /></div>

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Circle, BarChart3, Bell, BookOpen, Building2, CalendarDays, ClipboardCheck, Download, FileBarChart, Gift, Globe2, Handshake, HeartPulse, History, Home, Leaf, ScanLine, School, ScrollText, Settings, ShieldCheck, SlidersHorizontal, Store, Target, Trophy, User, Users, UsersRound, type LucideIcon } from "lucide-react";
 import type { NavSection } from "@/lib/nav";
 import { LeafLogo } from "./art";
+import { Critter } from "./Critter";
 
 // Explicit map keeps the bundle to the icons the nav actually uses.
 const ICONS: Record<string, LucideIcon> = { BarChart3, Bell, BookOpen, Building2, CalendarDays, ClipboardCheck, Download, FileBarChart, Gift, Globe2, Handshake, HeartPulse, History, Home, Leaf, ScanLine, School, ScrollText, Settings, ShieldCheck, SlidersHorizontal, Store, Target, Trophy, User, Users, UsersRound };
@@ -43,7 +44,7 @@ export function Sidebar({ sections, user }: { sections: NavSection[]; user: { na
         ))}
       </nav>
       <Link href="/profile" className="mx-3 mt-4 flex items-center justify-center gap-3 rounded-xl px-3 py-2 hover:bg-white/[.04] lg:justify-start">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-card text-lg">{user.avatar}</span>
+        <Critter avatar={user.avatar} size={36} />
         <span className="hidden min-w-0 lg:block">
           <span className="block truncate text-sm">{user.name}</span>
           <span className="block truncate text-xs text-white/45">{user.place}</span>

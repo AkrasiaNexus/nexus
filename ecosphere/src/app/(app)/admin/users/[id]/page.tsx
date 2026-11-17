@@ -8,6 +8,7 @@ import { ResetButton } from "@/components/ResetButton";
 import { Header, timeAgo } from "@/components/ui";
 import { toggleUserActive } from "../../../../actions";
 import { adjustPoints, updateUser } from "../../../../admin-actions";
+import { Critter } from "@/components/Critter";
 
 const roleLabel = (r: string) => r.replace("_", " ").toLowerCase();
 
@@ -28,7 +29,7 @@ export default async function UserDetail({ params }: { params: { id: string } })
       <Header title={u.name} back="/admin/users" />
       <div className="stagger flex flex-col gap-4 px-5">
         <section className="card flex items-center gap-4 p-4">
-          <span className="text-4xl" aria-hidden>{u.avatar}</span>
+          <Critter avatar={u.avatar} size={56} />
           <div className="min-w-0 flex-1 text-sm">
             <p className="font-semibold">{u.name} {!u.active && <span className="chip ml-1 text-[11px] text-gold">Suspended</span>}</p>
             <p className="truncate text-xs text-mute">{u.email} · <span className="font-mono">{u.memberId}</span></p>

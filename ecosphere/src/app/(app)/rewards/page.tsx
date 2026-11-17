@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Plus } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { syncBadges, withDates } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
@@ -9,11 +9,10 @@ import { timeAgo } from "@/components/ui";
 import { BADGES } from "@/lib/rewards";
 import { LeafLogo } from "@/components/art";
 import { CountUp } from "@/components/Motion";
+import { AvatarPicker } from "@/components/AvatarPicker";
 import { Header, IconCircle, type Tone } from "@/components/ui";
-import { setAvatar } from "../../actions";
 import { ChallengeList } from "@/components/ChallengeList";
 
-const QUICK_AVATARS = ["🧑‍🎓", "👩‍🎓", "🦊"];
 
 export default async function Rewards({ searchParams }: { searchParams: { all?: string } }) {
   const user = await requireUser();
@@ -31,7 +30,6 @@ export default async function Rewards({ searchParams }: { searchParams: { all?: 
   const ledger = withDates(ledgerRes.data, "createdAt");
   const SHOP: [string, string][] = [["STICKER", "Stickers"], ["BACKGROUND", "Profile backgrounds"], ["BORDER", "Borders"], ["TOKEN", "Eco tokens"]];
   const badges = showAll ? BADGES : BADGES.filter((b) => earned.has(b.id)).concat(BADGES.filter((b) => !earned.has(b.id))).slice(0, 4);
-  const avatars = Array.from(new Set([...QUICK_AVATARS, user.avatar]));
 
   return (
     <>
@@ -64,14 +62,8 @@ export default async function Rewards({ searchParams }: { searchParams: { all?: 
 
         <section>
           <h2 className="mb-3 text-lg font-semibold">Customise Your Profile</h2>
-          <div className="flex justify-between">
-            {avatars.slice(0, 3).map((a) => (
-              <form key={a} action={setAvatar.bind(null, a)}>
-                <button aria-label={`Use avatar ${a}`} className={`grid h-16 w-16 place-items-center rounded-2xl bg-card text-4xl ${a === user.avatar ? "ring-2 ring-leaf" : ""}`}>{a}</button>
-              </form>
-            ))}
-            <Link href="/settings#avatar" aria-label="More avatars" className="grid h-16 w-16 place-items-center rounded-2xl bg-card text-leaf"><Plus size={28} /></Link>
-          </div>
+          <AvatarPicker current={user.avatar} limit={3} />
+          <Link href="/settings#avatar" className="mt-3 inline-block text-xs text-leaf">More characters →</Link>
         </section>
 
         <section id="shop" className="scroll-mt-20">

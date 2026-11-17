@@ -10,6 +10,7 @@ import { HealthStatus } from "@/components/HealthStatus";
 import { Header, Stat } from "@/components/ui";
 import { announceToClass, approveTask, createClassChallenge, createEvent, createTask } from "../../feature-actions";
 import { GUIDE, WASTE_TYPES } from "@/lib/waste";
+import { Critter } from "@/components/Critter";
 
 export default async function TeacherDashboard() {
   const t = await requireUser(["TEACHER"]);
@@ -44,7 +45,7 @@ export default async function TeacherDashboard() {
             <thead className="text-mute"><tr><th className="text-left">Student</th><th>Items</th><th>kg</th><th>Recycled</th><th>Tasks</th><th>Pts</th></tr></thead>
             <tbody>
               {students.map((s) => { const i = impact(s.scans); return (
-                <tr key={s.id} className="border-t border-line text-center"><td className="py-2 text-left">{s.avatar} {s.name}</td><td>{s.scans.length}</td><td>{i.kg}</td><td>{i.recyclingRate}%</td><td>{s.taskDones.filter((d: { approved: boolean }) => d.approved).length}</td><td>{s.points}</td></tr>
+                <tr key={s.id} className="border-t border-line text-center"><td className="py-2 text-left"><span className="flex items-center gap-2"><Critter avatar={s.avatar} size={22} />{s.name}</span></td><td>{s.scans.length}</td><td>{i.kg}</td><td>{i.recyclingRate}%</td><td>{s.taskDones.filter((d: { approved: boolean }) => d.approved).length}</td><td>{s.points}</td></tr>
               ); })}
             </tbody>
           </table>

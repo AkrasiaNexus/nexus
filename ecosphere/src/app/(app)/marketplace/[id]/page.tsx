@@ -22,7 +22,7 @@ export default async function Item({ params }: { params: { id: string } }) {
     <>
       <Header title={it.title} back="/marketplace" />
       <div className="stagger flex flex-col gap-4 px-5">
-        <div className="blur-in"><ItemArt emoji={it.emoji} src={it.imageUrl} alt={it.title} size="h-64" text="text-9xl" /></div>
+        <div className="blur-in"><ItemArt emoji={it.emoji} src={it.imageUrl} alt={it.title} size="h-64" /></div>
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold">{it.title}</h2>

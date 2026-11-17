@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { impactFor, startOf } from "@/lib/queries";
 import { Header, Stat } from "@/components/ui";
+import { Critter } from "@/components/Critter";
 
 export default async function Department() {
   const me = await requireUser(["EMPLOYEE"]);
@@ -20,7 +21,7 @@ export default async function Department() {
         <section className="card p-4">
           <h3 className="mb-2 text-sm font-medium">Department leaderboard</h3>
           <ol className="space-y-2 text-sm">
-            {colleagues.map((c, i) => <li key={c.id} className={`flex gap-2 ${c.id === me.id ? "text-leaf" : ""}`}><span className="w-5 text-white/50">{i + 1}</span><span className="flex-1">{c.avatar} {c.name}</span><span>{c.points} EC</span></li>)}
+            {colleagues.map((c, i) => <li key={c.id} className={`flex gap-2 ${c.id === me.id ? "text-leaf" : ""}`}><span className="w-5 text-white/50">{i + 1}</span><span className="flex flex-1 items-center gap-2"><Critter avatar={c.avatar} size={22} />{c.name}</span><span>{c.points} EC</span></li>)}
           </ol>
         </section>
       </div>

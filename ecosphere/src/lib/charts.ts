@@ -39,14 +39,20 @@ export function periodLabel(period: Period, offset: number, start: Date) {
 }
 
 // Chart points for a range: days for a week, weeks for a month, months for a year.
-export function seriesFor(period: Period, start: Date, items: { weightKg: number; createdAt: Date }[]) {
-  const sum = (from: Date, to: Date) => Math.round(items.filter((i) => i.createdAt >= from && i.createdAt < to).reduce((t, i) => t + i.weightKg, 0) * 10) / 10;
+// Buckets that haven't started yet are flagged `future` so charts can stop the line at "now" instead of drawing fake zeros.
+export function seriesFor(period: Period, start: Date, items: { weightKg: number; createdAt: Date }[], now = new Date()) {
   const y = start.getFullYear(), m = start.getMonth(), d = start.getDate();
-  if (period === "day") return Array.from({ length: 6 }, (_, i) => ({ label: `${i * 4}h`, value: sum(new Date(y, m, d, i * 4), new Date(y, m, d, i * 4 + 4)) }));
-  if (period === "week") return WEEKDAYS.map((label, i) => ({ label, value: sum(new Date(y, m, d + i), new Date(y, m, d + i + 1)) }));
-  if (period === "year") return Array.from({ length: 12 }, (_, i) => ({ label: new Date(y, i, 1).toLocaleDateString("en", { month: "narrow" }), value: sum(new Date(y, i, 1), new Date(y, i + 1, 1)) }));
   const days = new Date(y, m + 1, 0).getDate();
-  return Array.from({ length: Math.ceil(days / 7) }, (_, i) => ({ label: `W${i + 1}`, value: sum(new Date(y, m, 1 + i * 7), new Date(y, m, Math.min(days, 7 + i * 7) + 1)) }));
+  const buckets: [string, Date, Date][] =
+    period === "day" ? Array.from({ length: 6 }, (_, i) => [`${i * 4}h`, new Date(y, m, d, i * 4), new Date(y, m, d, i * 4 + 4)])
+    : period === "week" ? WEEKDAYS.map((label, i) => [label, new Date(y, m, d + i), new Date(y, m, d + i + 1)])
+    : period === "year" ? Array.from({ length: 12 }, (_, i) => [new Date(y, i, 1).toLocaleDateString("en", { month: "narrow" }), new Date(y, i, 1), new Date(y, i + 1, 1)])
+    : Array.from({ length: Math.ceil(days / 7) }, (_, i) => [`W${i + 1}`, new Date(y, m, 1 + i * 7), new Date(y, m, Math.min(days, 7 + i * 7) + 1)]);
+  return buckets.map(([label, from, to]) => ({
+    label,
+    value: Math.round(items.filter((i) => i.createdAt >= from && i.createdAt < to).reduce((t, i) => t + i.weightKg, 0) * 10) / 10,
+    future: from > now,
+  }));
 }
 
 // Custom date range: daily points up to ~5 weeks, weekly up to ~6 months, monthly beyond.

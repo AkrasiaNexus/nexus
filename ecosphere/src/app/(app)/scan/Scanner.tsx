@@ -8,6 +8,7 @@ import type { WasteType } from "@/lib/types";
 import { GUIDE, WASTE_TYPES } from "@/lib/waste";
 import { CLIP_MODEL, TRANSFORMERS_CDN, classifyEmbedding } from "@/lib/clip";
 import { saveScan } from "../../actions";
+import { Glyph, WASTE_GLYPH } from "@/components/Glyph";
 
 // Runs the on-device model on an image URL (blob: preview) and returns the best waste type.
 type Model = (url: string) => Promise<{ wasteType: WasteType; label: string; confidence: number }>;
@@ -267,13 +268,13 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
             {result.confidence < LOW_CONFIDENCE && (
               <p className="rounded-lg bg-yellow-500/10 p-2 text-xs text-yellow-300">Not sure about this one. Please check the category below. You know your item best.</p>
             )}
-            <p className="text-sm"><span style={{ color: g.binColor }}>●</span> {g.emoji} {g.name} → {g.bin}</p>
+            <p className="text-sm"><span style={{ color: g.binColor }}>●</span> {g.name} → {g.bin}</p>
             <ol className="list-decimal space-y-1 pl-5 text-sm text-white/65">{g.steps.map((s) => <li key={s}>{s}</li>)}</ol>
             <fieldset className="flex flex-wrap gap-2">
               <legend className="mb-2 text-xs text-white/50">Correct the category if the AI got it wrong</legend>
               {WASTE_TYPES.map((t) => (
                 <button key={t} type="button" onClick={() => pickType(t)} aria-pressed={t === type}
-                  className={`chip ${t === type ? "chip-on" : ""}`}>{GUIDE[t].emoji} {GUIDE[t].name}</button>
+                  className={`chip ${t === type ? "chip-on" : ""}`}><Glyph name={WASTE_GLYPH[t]} className="-ml-0.5 mr-1 inline h-4 w-4 align-[-3px]" />{GUIDE[t].name}</button>
               ))}
             </fieldset>
             <label className="flex items-center gap-3 text-sm">

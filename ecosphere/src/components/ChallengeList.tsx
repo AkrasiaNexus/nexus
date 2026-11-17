@@ -2,7 +2,8 @@ import Link from "next/link";
 import { claimChallenge, joinChallenge } from "@/app/actions";
 import { createClient } from "@/lib/supabase/server";
 import type { WasteType } from "@/lib/types";
-import { GUIDE, round } from "@/lib/waste";
+import { round } from "@/lib/waste";
+import { Glyph, WASTE_GLYPH } from "@/components/Glyph";
 
 // Active challenges with join / progress / claim. Used by /challenges (all) and /rewards (preview).
 export async function ChallengeList({ userId, limit }: { userId: string; limit?: number }) {
@@ -24,7 +25,7 @@ export async function ChallengeList({ userId, limit }: { userId: string; limit?:
         return (
           <article key={c.id} className="card space-y-2 p-4">
             <div className="flex items-start gap-3">
-              <span className="text-2xl">{GUIDE[c.wasteType as WasteType].emoji}</span>
+              <Glyph name={WASTE_GLYPH[c.wasteType]} className="h-7 w-7 shrink-0 text-white/85" />
               <div className="flex-1">
                 <p className="font-medium">{c.title}</p>
                 <p className="text-xs text-white/60">{c.description}</p>

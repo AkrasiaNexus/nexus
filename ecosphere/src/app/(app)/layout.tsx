@@ -1,6 +1,7 @@
 import { BottomNav } from "@/components/BottomNav";
 import { ScreenTransition } from "@/components/Motion";
 import { Sidebar } from "@/components/Sidebar";
+import { Spotlight } from "@/components/Spotlight";
 import { requireUser } from "@/lib/auth";
 import { navFor } from "@/lib/nav";
 
@@ -16,9 +17,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const place = user.school?.name ?? user.community ?? user.department ?? ROLE_LABEL[user.role];
   return (
     <div className="md:flex">
+      <Spotlight />
       <Sidebar sections={navFor(user.role)} user={{ name: user.name, avatar: user.avatar, place }} />
       {/* Phone: app column. Tablet/desktop: same screens, given room to breathe next to the sidebar. */}
-      <div className="mx-auto w-full max-w-md pb-28 md:max-w-2xl md:px-6 md:pb-12 lg:max-w-3xl">
+      <div className="relative z-[1] mx-auto w-full max-w-md pb-28 md:max-w-2xl md:px-6 md:pb-12 lg:max-w-3xl">
         <ScreenTransition>{children}</ScreenTransition>
       </div>
       <BottomNav />
