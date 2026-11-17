@@ -39,3 +39,9 @@ authorised server-side or inside an RLS/RPC; no placeholder buttons; demo data l
 - Sandbox only: delete the "Supabase secret key (EcoSphere)" network secret so signed-in requests keep the user JWT.
 - Supabase dashboard: Auth URL config (Site URL + Redirect URLs) and "Secure password change" (user to set).
 - Optional server AI: `CLASSIFIER_URL` (+ `CLASSIFIER_API_KEY`) for a hosted model; on-device MobileNet works without it.
+
+## Status (2026-11-17)
+Phases 2–7 shipped. Phase 8: RLS self-test 32/32 PASS (adds moderation, reports, notification reads, storage);
+unit tests, lint, build green; security reviews done (Phase 6 + admin) with fixes in 0009 and app code.
+Signed-in E2E per role still blocked in the sandbox by the injected network secret (see Known external needs).
+Phase 9: impeccable detector 0 findings.
