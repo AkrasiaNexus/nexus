@@ -29,7 +29,7 @@ async function ins(table: string, rows: Row | Row[]) {
   return data as Row[];
 }
 
-type NewUser = { email: string; name: string; role: Role; memberId?: string; grade?: string; schoolId?: string; parentId?: string; department?: string; community?: string; avatar: string; password?: string };
+type NewUser = { email: string; name: string; role: Role; memberId?: string; grade?: string; schoolId?: string; parentId?: string; department?: string; community?: string; communityId?: string; avatar: string; password?: string };
 async function user(u: NewUser) {
   const { data, error } = await db.auth.admin.createUser({ email: u.email, password: u.password ?? DEMO_PASSWORD, email_confirm: true });
   if (error || !data.user) throw new Error(`auth ${u.email}: ${error?.message}`);
@@ -51,12 +51,13 @@ async function reset() {
     for (const u of demo) await db.auth.admin.deleteUser(u.id); // profiles + personal rows cascade
     if ((data?.users.length ?? 0) < 200) break;
   }
-  for (const t of ["listings", "notifications", "challenges", "events", "audit_logs", "settings"]) {
+  for (const t of ["listings", "notifications", "challenges", "events", "collection_points", "audit_logs", "settings"]) {
     await db.from(t).delete().not(t === "settings" ? "key" : "id", "is", null);
   }
   await db.from("health_reports").delete().not("id", "is", null);
   await db.from("tasks").delete().not("id", "is", null);
   await db.from("schools").delete().not("id", "is", null);
+  await db.from("communities").delete().not("id", "is", null);
   console.log("Demo data wiped.");
 }
 
@@ -70,12 +71,22 @@ async function main() {
   if ((count ?? 0) > 0) return console.log("Seed skipped: data exists (use --reset).");
 
   const [sunrise, valley] = await ins("schools", [{ name: "Sunrise High School", city: "Dubai" }, { name: "Green Valley Academy", city: "Sharjah" }]);
+  const [dubaiGreen] = await ins("communities", [
+    { name: "Dubai Green Community", city: "Dubai", description: "Neighbours sorting, swapping and composting together." },
+    { name: "Sharjah Eco Collective", city: "Sharjah", description: "Beach clean-ups and repair cafés." },
+  ]);
   const sara = await user({ email: "sara@eco.demo", name: "Sara Ahmed", role: "PARENT", avatar: "👩" });
   const ayaan = await user({ email: "ayaan@eco.demo", name: "Ayaan Sharma", role: "STUDENT", memberId: "STU-100001", grade: "Class 10", schoolId: sunrise.id, avatar: "🧑‍🎓" });
   const zara = await user({ email: "zara@eco.demo", name: "Zara Ahmed", role: "STUDENT", grade: "Grade 7", schoolId: sunrise.id, parentId: sara.id, avatar: "👩‍🎓" });
   const rohan = await user({ email: "rohan@eco.demo", name: "Rohan Mehta", role: "EMPLOYEE", memberId: "EMP-100003", department: "Facilities", avatar: "🧑‍💼" });
   const priya = await user({ email: "priya@eco.demo", name: "Ms. Priya Nair", role: "SCHOOL_ADMIN", schoolId: sunrise.id, avatar: "🏫" });
-  const community = await user({ email: "community@eco.demo", name: "Dubai Green Community", role: "COMMUNITY", community: "Dubai Green Community", avatar: "🌍" });
+  const community = await user({ email: "community@eco.demo", name: "Layla Hassan", role: "COMMUNITY", community: dubaiGreen.name, communityId: dubaiGreen.id, avatar: "🌍" });
+  await user({ email: "cadmin@eco.demo", name: "Omar Farouk", role: "COMMUNITY_ADMIN", community: dubaiGreen.name, communityId: dubaiGreen.id, avatar: "🌿" });
+  await ins("collection_points", [
+    { communityId: dubaiGreen.id, name: "Al Barsha Park Gate Bins", address: "Al Barsha Pond Park, Gate 2", accepts: "Plastic, cans, glass" },
+    { communityId: dubaiGreen.id, name: "Community Centre E-waste Box", address: "Al Barsha Community Centre", accepts: "Phones, batteries, cables" },
+    { communityId: dubaiGreen.id, name: "Textile Bank", address: "Mall car park, Level P1", accepts: "Clean clothes and shoes" },
+  ]);
   await user({ email: "admin@eco.demo", name: "Admin Master", role: "SUPER_ADMIN", avatar: "👑", password: process.env.SEED_ADMIN_PASSWORD || DEMO_PASSWORD });
   const teacher = await user({ email: "daniel@eco.demo", name: "Daniel Brooks", role: "TEACHER", memberId: "STF-100008", grade: "Class 10", schoolId: sunrise.id, avatar: "🧑‍🏫" });
   const nurse = await user({ email: "nurse@eco.demo", name: "Nurse Fatima Ali", role: "HEALTH_MONITOR", grade: "Class 10", schoolId: sunrise.id, avatar: "🩺" });

@@ -15,6 +15,7 @@ export function scanScope(user: Pick<Profile, "role">): Scope {
     case "TEACHER":
     case "HEALTH_MONITOR": return "class";
     case "SUPER_ADMIN": return "platform";
+    case "COMMUNITY_ADMIN": return "community";
     default: return "me";
   }
 }

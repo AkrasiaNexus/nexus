@@ -36,6 +36,7 @@ export const NAV: NavSection[] = [
       { href: "/teacher", label: "My Class", icon: "School", roles: ["TEACHER"] },
       { href: "/department", label: "My Department", icon: "Building2", roles: ["EMPLOYEE"] },
       { href: "/health", label: "Health & Safety", icon: "HeartPulse", roles: SCHOOL },
+      { href: "/community", label: "My Community", icon: "UsersRound", roles: ["COMMUNITY", "COMMUNITY_ADMIN"] },
       { href: "/events", label: "Events & Campaigns", icon: "CalendarDays" },
       { href: "/impact", label: "SDG Impact", icon: "Globe2" },
       { href: "/partners", label: "Recycling Partners", icon: "Handshake" },

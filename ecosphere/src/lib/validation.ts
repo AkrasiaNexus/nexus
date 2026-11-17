@@ -2,11 +2,12 @@ import { randomInt } from "crypto";
 import { z } from "zod";
 import { WASTE_TYPES } from "./waste";
 
-export const PUBLIC_ROLES = ["STUDENT", "PARENT", "EMPLOYEE", "TEACHER", "HEALTH_MONITOR", "SCHOOL_ADMIN", "COMMUNITY"] as const;
+export const PUBLIC_ROLES = ["STUDENT", "PARENT", "EMPLOYEE", "TEACHER", "HEALTH_MONITOR", "SCHOOL_ADMIN", "COMMUNITY", "COMMUNITY_ADMIN"] as const;
+export const COMMUNITY_ROLES = ["COMMUNITY", "COMMUNITY_ADMIN"];
 export const SCHOOL_ROLES = ["STUDENT", "TEACHER", "HEALTH_MONITOR", "SCHOOL_ADMIN"];
 export const CLASS_ROLES = ["STUDENT", "TEACHER", "HEALTH_MONITOR"];
 
-const ID_PREFIX: Record<string, string> = { STUDENT: "STU", PARENT: "PAR", EMPLOYEE: "EMP", TEACHER: "STF", HEALTH_MONITOR: "HLT", SCHOOL_ADMIN: "ADM", COMMUNITY: "COM", SUPER_ADMIN: "SUP" };
+const ID_PREFIX: Record<string, string> = { STUDENT: "STU", PARENT: "PAR", EMPLOYEE: "EMP", TEACHER: "STF", HEALTH_MONITOR: "HLT", SCHOOL_ADMIN: "ADM", COMMUNITY: "COM", COMMUNITY_ADMIN: "CAD", SUPER_ADMIN: "SUP" };
 export const memberIdFor = (role: string) => `${ID_PREFIX[role]}-${randomInt(100000, 999999)}`;
 
 const email = z.string().trim().toLowerCase().email().max(120);
@@ -24,11 +25,13 @@ export const signupSchema = z
     grade: z.string().trim().max(20).optional(),
     department: z.string().trim().max(60).optional(),
     community: z.string().trim().max(60).optional(),
+    communityId: z.string().uuid().optional(),
     childEmail: z.string().trim().toLowerCase().email().max(120).optional().or(z.literal("")),
     adminCode: z.string().max(60).optional(),
   })
   .refine((d) => !SCHOOL_ROLES.includes(d.role) || !!d.schoolId, { message: "Please choose a school", path: ["schoolId"] })
-  .refine((d) => !CLASS_ROLES.includes(d.role) || !!d.grade, { message: "Please enter your class", path: ["grade"] });
+  .refine((d) => !CLASS_ROLES.includes(d.role) || !!d.grade, { message: "Please enter your class", path: ["grade"] })
+  .refine((d) => !COMMUNITY_ROLES.includes(d.role) || !!d.communityId, { message: "Please choose your community", path: ["communityId"] });
 
 export const scanSchema = z.object({
   label: z.string().trim().min(1).max(80),
@@ -69,6 +72,17 @@ export const healthSchema = z.object({
   total: z.coerce.number().int().min(1).max(500),
   incident: z.string().trim().max(280).default(""),
 }).refine((d) => d.present <= d.total, { message: "Present can't exceed total", path: ["present"] });
+
+export const classChallengeSchema = z.object({
+  title: text(80),
+  description: text(280),
+  wasteType: z.enum(WASTE_TYPES),
+  targetKg: z.coerce.number().min(0.1).max(100),
+  rewardPoints: z.coerce.number().int().min(0).max(200),
+  endsAt: z.coerce.date(),
+});
+
+export const noticeSchema = z.object({ title: text(80), body: text(280) });
 
 export const eventSchema = z.object({
   kind: z.enum(["EVENT", "WORKSHOP", "CAMPAIGN", "PROGRAM"]),

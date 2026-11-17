@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { audit, requireUser, verifyPassword } from "@/lib/auth";
 import { admin } from "@/lib/supabase/admin";
 import { RECOVERY_COOKIE, SESSION_ONLY_COOKIE, createClient } from "@/lib/supabase/server";
-import { CLASS_ROLES, SCHOOL_ROLES, loginSchema, memberIdFor, scanSchema, signupSchema, MAX_LOGIN_FAILS } from "@/lib/validation";
+import { CLASS_ROLES, COMMUNITY_ROLES, SCHOOL_ROLES, loginSchema, memberIdFor, scanSchema, signupSchema, MAX_LOGIN_FAILS } from "@/lib/validation";
 import { notifySchool } from "@/lib/notify";
 import { syncBadges } from "@/lib/queries";
 import type { NoticeKind } from "@/lib/types";
@@ -33,7 +33,8 @@ const siteUrl = () => {
   return `http://${headers().get("host")}`;
 };
 
-const STAFF_ROLES = ["TEACHER", "HEALTH_MONITOR", "SCHOOL_ADMIN"];
+const STAFF_ROLES = ["TEACHER", "HEALTH_MONITOR", "SCHOOL_ADMIN", "COMMUNITY_ADMIN"];
+const PLATFORM_APPROVED = ["SCHOOL_ADMIN", "COMMUNITY_ADMIN"]; // approved by a super admin, not a school admin
 const LINK_SENT = "If that student has an account, they've been asked to approve the link in their Settings.";
 
 // HIGH 1: a parent link is only a request until the student approves it (answerParentRequest).
@@ -77,11 +78,14 @@ export async function signup(_: FormState, fd: FormData): Promise<FormState> {
 
   const { data: closed } = await db.from("settings").select("value").eq("key", "signupsOpen").maybeSingle();
   if (closed?.value === "false") return { error: "New sign-ups are paused right now. Please try again later." };
-  if (d.role === "SCHOOL_ADMIN" && (!process.env.ADMIN_SIGNUP_CODE || d.adminCode !== process.env.ADMIN_SIGNUP_CODE))
-    return { error: "A valid admin code is required for School Administrators." };
+  if (PLATFORM_APPROVED.includes(d.role) && (!process.env.ADMIN_SIGNUP_CODE || d.adminCode !== process.env.ADMIN_SIGNUP_CODE))
+    return { error: "A valid admin code is required for administrator accounts." };
   if (["TEACHER", "HEALTH_MONITOR"].includes(d.role) && (!process.env.STAFF_SIGNUP_CODE || d.adminCode !== process.env.STAFF_SIGNUP_CODE))
     return { error: "A valid staff code from your school is required." };
   if (d.schoolId && !(await db.from("schools").select("id").eq("id", d.schoolId).maybeSingle()).data) return { error: "Unknown school." };
+  const community = COMMUNITY_ROLES.includes(d.role) && d.communityId
+    ? (await db.from("communities").select("id, name").eq("id", d.communityId).maybeSingle()).data : null;
+  if (COMMUNITY_ROLES.includes(d.role) && !community) return { error: "Please choose your community." };
 
   // MEDIUM 6: staff and school admins start disabled until their school admin (or a super admin) enables them.
   const needsApproval = STAFF_ROLES.includes(d.role);
@@ -93,8 +97,9 @@ export async function signup(_: FormState, fd: FormData): Promise<FormState> {
     schoolId: SCHOOL_ROLES.includes(d.role) ? d.schoolId : null,
     grade: CLASS_ROLES.includes(d.role) ? d.grade : null,
     department: d.role === "EMPLOYEE" ? d.department : null,
-    community: d.role === "COMMUNITY" ? d.community : null,
-    avatar: { STUDENT: "🧑‍🎓", PARENT: "👪", EMPLOYEE: "🧑‍💼", TEACHER: "🧑‍🏫", HEALTH_MONITOR: "🩺", SCHOOL_ADMIN: "🏫", COMMUNITY: "🌍" }[d.role],
+    communityId: community?.id ?? null,
+    community: community?.name ?? null,
+    avatar: { STUDENT: "🧑‍🎓", PARENT: "👪", EMPLOYEE: "🧑‍💼", TEACHER: "🧑‍🏫", HEALTH_MONITOR: "🩺", SCHOOL_ADMIN: "🏫", COMMUNITY: "🌍", COMMUNITY_ADMIN: "🌿" }[d.role],
     active: !needsApproval,
   });
   if (profileError) {
@@ -105,10 +110,10 @@ export async function signup(_: FormState, fd: FormData): Promise<FormState> {
   await audit(created.user.id, "SIGNUP", d.role);
   if (needsApproval) {
     let approvers = db.from("profiles").select("id").eq("active", true);
-    approvers = d.role === "SCHOOL_ADMIN" ? approvers.eq("role", "SUPER_ADMIN") : approvers.eq("role", "SCHOOL_ADMIN").eq("schoolId", d.schoolId ?? "");
+    approvers = PLATFORM_APPROVED.includes(d.role) ? approvers.eq("role", "SUPER_ADMIN") : approvers.eq("role", "SCHOOL_ADMIN").eq("schoolId", d.schoolId ?? "");
     const { data: list } = await approvers;
     await db.from("notifications").insert((list ?? []).map((a) => ({ userId: a.id, kind: "ANNOUNCEMENT" as const, title: "New staff account to approve", body: `${d.name} (${memberId}) signed up as ${d.role.replace("_", " ").toLowerCase()}. Enable them in Manage Staff / Manage Users.` })));
-    return { ok: `Account created (ID ${memberId}). It will work once ${d.role === "SCHOOL_ADMIN" ? "the EcoSphere team" : "your school admin"} approves it.` };
+    return { ok: `Account created (ID ${memberId}). It will work once ${PLATFORM_APPROVED.includes(d.role) ? "the EcoSphere team" : "your school admin"} approves it.` };
   }
   if (d.role === "PARENT" && d.childEmail) await requestParentLink(created.user.id, d.name, d.childEmail);
   setRemember(true);

@@ -5,9 +5,9 @@ import { revalidatePath } from "next/cache";
 import { audit, requireUser, verifyPassword } from "@/lib/auth";
 import { admin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { notifySchool } from "@/lib/notify";
+import { notifyCommunity, notifySchool } from "@/lib/notify";
 import { healthAlerts } from "@/lib/health";
-import { eventSchema, healthSchema, listingSchema, taskSchema } from "@/lib/validation";
+import { classChallengeSchema, eventSchema, healthSchema, listingSchema, noticeSchema, taskSchema } from "@/lib/validation";
 import type { FormState } from "./actions";
 
 const formObject = (fd: FormData) =>
@@ -79,17 +79,19 @@ export async function submitHealthReport(_: FormState, fd: FormData): Promise<Fo
 }
 
 export async function createEvent(_: FormState, fd: FormData): Promise<FormState> {
-  const user = await requireUser(["TEACHER", "SCHOOL_ADMIN", "COMMUNITY", "SUPER_ADMIN"]);
+  const user = await requireUser(["TEACHER", "SCHOOL_ADMIN", "COMMUNITY", "COMMUNITY_ADMIN", "SUPER_ADMIN"]);
   const parsed = eventSchema.safeParse(formObject(fd));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   if (parsed.data.startsAt < new Date()) return { error: "Pick a future date." };
   const schoolScoped = user.role === "TEACHER" || user.role === "SCHOOL_ADMIN";
+  const communityScoped = user.role === "COMMUNITY_ADMIN" && !!user.communityId;
   const { data: ev, error } = await admin().from("events")
-    .insert({ ...parsed.data, startsAt: parsed.data.startsAt.toISOString(), organizerId: user.id, schoolId: schoolScoped ? user.schoolId : null })
+    .insert({ ...parsed.data, startsAt: parsed.data.startsAt.toISOString(), organizerId: user.id, schoolId: schoolScoped ? user.schoolId : null, communityId: communityScoped ? user.communityId : null })
     .select().single();
   if (error) return { error: "Could not publish the event." };
   const body = `${new Date(ev.startsAt).toLocaleString()} · ${ev.location}`;
   if (schoolScoped && user.schoolId) await notifySchool(user.schoolId, { kind: "EVENT", title: ev.title, body });
+  else if (communityScoped) await notifyCommunity(user.communityId!, { kind: "EVENT", title: ev.title, body });
   else await admin().from("notifications").insert({ kind: "EVENT", title: ev.title, body });
   revalidatePath("/events");
   return { ok: "Event published!" };
@@ -115,4 +117,32 @@ export async function deleteAccount(_: FormState, fd: FormData): Promise<FormSta
   await createClient().auth.signOut();
   await db.auth.admin.deleteUser(user.id); // profile and personal rows cascade
   redirect("/");
+}
+
+// Teacher: a challenge only their class sees (RLS: challenges visible via can_see_class).
+export async function createClassChallenge(_: FormState, fd: FormData): Promise<FormState> {
+  const teacher = await requireUser(["TEACHER"]);
+  const parsed = classChallengeSchema.safeParse(formObject(fd));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!teacher.schoolId || !teacher.grade) return { error: "Your account has no class assigned." };
+  if (parsed.data.endsAt <= new Date()) return { error: "Pick an end date in the future." };
+  const { error } = await admin().from("challenges").insert({
+    ...parsed.data, endsAt: parsed.data.endsAt.toISOString(), schoolId: teacher.schoolId, className: teacher.grade, creatorId: teacher.id,
+  });
+  if (error) return { error: "Could not create the challenge." };
+  await notifySchool(teacher.schoolId, { kind: "CHALLENGE", title: `New class challenge: ${parsed.data.title}`, body: `+${parsed.data.rewardPoints} pts · ends ${parsed.data.endsAt.toLocaleDateString()}` }, teacher.grade);
+  await audit(teacher.id, "CHALLENGE_CREATED", parsed.data.title);
+  revalidatePath("/rewards");
+  return { ok: "Challenge published to your class." };
+}
+
+// Teacher: announcement to their class and its parents.
+export async function announceToClass(_: FormState, fd: FormData): Promise<FormState> {
+  const teacher = await requireUser(["TEACHER"]);
+  const parsed = noticeSchema.safeParse(formObject(fd));
+  if (!parsed.success) return { error: "Fill in title and message." };
+  if (!teacher.schoolId || !teacher.grade) return { error: "Your account has no class assigned." };
+  await notifySchool(teacher.schoolId, { kind: "ANNOUNCEMENT", ...parsed.data }, teacher.grade);
+  await audit(teacher.id, "BROADCAST", parsed.data.title);
+  return { ok: "Sent to your class and their parents." };
 }

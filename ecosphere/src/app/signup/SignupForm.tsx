@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
-import { Briefcase, ChevronLeft, Crown, GraduationCap, HeartPulse, Presentation, School, Users, UsersRound } from "lucide-react";
+import { Briefcase, ChevronLeft, Crown, GraduationCap, HeartPulse, Presentation, School, Users, UsersRound, Sprout } from "lucide-react";
 import { signup } from "../actions";
 
 const ROLES = [
@@ -15,6 +15,7 @@ const ROLES = [
   { id: "HEALTH_MONITOR", name: "Health Monitor", hint: "Classroom health, safety & attendance", icon: HeartPulse },
   { id: "SCHOOL_ADMIN", name: "School Administrator", hint: "Manage your school", icon: School },
   { id: "COMMUNITY", name: "Community Member", hint: "Join the green community", icon: UsersRound },
+  { id: "COMMUNITY_ADMIN", name: "Community Admin", hint: "Run your community's campaigns", icon: Sprout },
   { id: "SUPER_ADMIN", name: "Super Administrator", hint: "Full platform access", icon: Crown },
 ] as const;
 
@@ -23,7 +24,9 @@ function Submit() {
   return <button className="btn w-full" disabled={pending}>{pending ? "Creating…" : "Create account"}</button>;
 }
 
-export function SignupForm({ schools }: { schools: { id: string; name: string }[] }) {
+type Option = { id: string; name: string };
+
+export function SignupForm({ schools, communities }: { schools: Option[]; communities: Option[] }) {
   const [role, setRole] = useState<string>("STUDENT");
   const [step, setStep] = useState(1);
   const [state, action] = useFormState(signup, undefined);
@@ -72,7 +75,13 @@ export function SignupForm({ schools }: { schools: { id: string; name: string }[
         {isStaff && <input name="adminCode" required placeholder="Staff code from your school" className="input" aria-label="Staff code" />}
         {role === "PARENT" && <input name="childEmail" type="email" placeholder="Your child's EcoSphere email (optional)" className="input" aria-label="Child email" />}
         {role === "EMPLOYEE" && <input name="department" placeholder="Department (e.g. Facilities)" className="input" aria-label="Department" />}
-        {role === "COMMUNITY" && <input name="community" placeholder="Community name" className="input" aria-label="Community" />}
+        {(role === "COMMUNITY" || role === "COMMUNITY_ADMIN") && (
+          <select name="communityId" required className="input" aria-label="Community" defaultValue="">
+            <option value="" disabled>Choose your community</option>
+            {communities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        )}
+        {role === "COMMUNITY_ADMIN" && <input name="adminCode" required placeholder="Admin code" className="input" aria-label="Admin code" />}
         {role === "SCHOOL_ADMIN" && <input name="adminCode" required placeholder="Admin code" className="input" aria-label="Admin code" />}
         {state?.error && <p role="alert" className="text-sm text-red-400">{state.error}</p>}
         {state?.ok && <p role="status" className="text-sm text-leaf">{state.ok}</p>}

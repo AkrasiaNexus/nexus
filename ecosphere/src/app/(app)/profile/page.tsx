@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, Award, Bell, Building2, CalendarDays, ChevronRight, ClipboardCheck, ClipboardList, Crown, FileBarChart, HeartPulse, Leaf, MapPin, School, ScrollText, Settings, SlidersHorizontal, Star, Trash2, Trophy, Users, UsersRound } from "lucide-react";
+import { Activity, Award, Bell, Building2, CalendarDays, ChevronRight, ClipboardCheck, ClipboardList, Crown, FileBarChart, HeartPulse, Leaf, MapPin, School, ScrollText, Settings, SlidersHorizontal, Star, Trash2, Trophy, Users, UsersRound, Megaphone, Sprout, Store } from "lucide-react";
 import type { Role } from "@/lib/types";
 import type { CurrentUser } from "@/lib/auth";
 import { requireUser } from "@/lib/auth";
@@ -11,11 +11,11 @@ import { Bars, Header, IconCircle, MenuRow, Stat } from "@/components/ui";
 
 const ROLE_NAME: Record<Role, string> = {
   STUDENT: "Student", PARENT: "Parent", EMPLOYEE: "Employee", SCHOOL_ADMIN: "School Administrator", COMMUNITY: "Community Member",
-  SUPER_ADMIN: "Super Administrator", TEACHER: "Teacher", HEALTH_MONITOR: "Health Monitor",
+  SUPER_ADMIN: "Super Administrator", TEACHER: "Teacher", HEALTH_MONITOR: "Health Monitor", COMMUNITY_ADMIN: "Community Admin",
 };
 const TITLE: Record<Role, string> = {
   STUDENT: "Student Profile", PARENT: "Parent Profile", EMPLOYEE: "Employee Profile", SCHOOL_ADMIN: "School Admin Profile", COMMUNITY: "Community Profile",
-  SUPER_ADMIN: "Super Admin Profile", TEACHER: "Teacher Profile", HEALTH_MONITOR: "Health Monitor Profile",
+  SUPER_ADMIN: "Super Admin Profile", TEACHER: "Teacher Profile", HEALTH_MONITOR: "Health Monitor Profile", COMMUNITY_ADMIN: "Community Admin Profile",
 };
 const COMMUNITY_GOAL_KG = 100; // monthly target for a community's collective sorting
 const ICON = 20;
@@ -28,8 +28,9 @@ export default async function Profile() {
     user.role === "STUDENT" ? [user.grade, user.school?.name].filter(Boolean).join(" • ")
     : user.role === "EMPLOYEE" ? ["Employee", user.department].filter(Boolean).join(" • ")
     : ["TEACHER", "HEALTH_MONITOR"].includes(user.role) ? [ROLE_NAME[user.role], user.grade, user.school?.name].filter(Boolean).join(" • ")
+    : ["COMMUNITY", "COMMUNITY_ADMIN"].includes(user.role) ? [ROLE_NAME[user.role], user.community].filter(Boolean).join(" • ")
     : ROLE_NAME[user.role];
-  const emblem = { SCHOOL_ADMIN: <School size={56} className="text-leaf" />, COMMUNITY: <UsersRound size={56} className="text-leaf" />, SUPER_ADMIN: <Crown size={56} className="text-gold" fill="currentColor" /> }[user.role as string];
+  const emblem = { SCHOOL_ADMIN: <School size={56} className="text-leaf" />, COMMUNITY: <UsersRound size={56} className="text-leaf" />, COMMUNITY_ADMIN: <Sprout size={56} className="text-leaf" />, SUPER_ADMIN: <Crown size={56} className="text-gold" fill="currentColor" /> }[user.role as string];
 
   return (
     <div className="relative isolate">
@@ -40,6 +41,7 @@ export default async function Profile() {
           <span className="pop-in">{emblem ?? <span className="grid h-28 w-28 place-items-center rounded-full border-4 border-leaf/40 bg-[#cfd8d2] text-6xl">{user.avatar}</span>}</span>
           <h2 className="mt-2 text-2xl font-semibold" style={{ animation: "rise-in 600ms 200ms var(--ease-out) both" }}>{user.name}</h2>
           <p className="text-white/65" style={{ animation: "rise-in 600ms 300ms var(--ease-out) both" }}>{subtitle}</p>
+          <p className="font-mono text-xs text-white/40" style={{ animation: "rise-in 600ms 380ms var(--ease-out) both" }}>ID {user.memberId}</p>
         </section>
         <RoleBody user={user} />
       </div>
@@ -69,9 +71,11 @@ async function RoleBody({ user }: { user: Me }) {
           <Bars data={dailySeries(week.scans)} />
         </section>
         <Menu items={[
-          { href: "/stats", icon: <FileBarChart size={ICON} />, label: "Class Reports" },
+          { href: "/stats", icon: <FileBarChart size={ICON} />, label: "My Class Reports" },
+          { href: "/home?s=school", icon: <School size={ICON} />, label: "School Environmental Progress" },
           { href: "/rewards?all=1", icon: <Award size={ICON} />, label: "Achievements" },
-          { href: "/rewards", icon: <SlidersHorizontal size={ICON} />, label: "Customisation" },
+          { href: "/history?t=Rewards", icon: <Trophy size={ICON} />, label: "Completed Challenges" },
+          { href: "/rewards", icon: <SlidersHorizontal size={ICON} />, label: "Rewards & Customisation" },
           { href: "/tasks", icon: <ClipboardCheck size={ICON} />, label: "Class Tasks" },
           { href: "/history", icon: <Activity size={ICON} />, label: "Activity History" },
           settings,
@@ -95,8 +99,9 @@ async function RoleBody({ user }: { user: Me }) {
             <ChevronRight size={16} className="text-white/50" />
           </Link>
           <MenuRow href="/stats" icon={<FileBarChart size={ICON} />} label="Child's Reports" />
+          <MenuRow href="/notifications?t=ANNOUNCEMENT" icon={<Megaphone size={ICON} />} label="Teacher & School Announcements" />
+          <MenuRow href="/events" icon={<CalendarDays size={ICON} />} label="Upcoming Activities" />
           <MenuRow href="/notifications" icon={<Bell size={ICON} />} label="Notifications" />
-          <MenuRow href="/events" icon={<CalendarDays size={ICON} />} label="Upcoming Events" />
           <MenuRow {...settings} />
         </nav>
         <section className="card p-4">
@@ -166,9 +171,32 @@ async function RoleBody({ user }: { user: Me }) {
           <p className="mt-1 text-xs text-white/50">{community.kg} of {COMMUNITY_GOAL_KG} kg monthly community goal</p>
         </section>
         <Menu items={[
+          { href: "/community", icon: <UsersRound size={ICON} />, label: "My Community" },
+          { href: "/events", icon: <CalendarDays size={ICON} />, label: "Local Campaigns & Events" },
           { href: "/partners", icon: <MapPin size={ICON} />, label: "Nearby Recycling Centres" },
-          { href: "/events", icon: <CalendarDays size={ICON} />, label: "Community Events" },
+          { href: "/history?t=Marketplace", icon: <Store size={ICON} />, label: "Marketplace Activity & Donations" },
+          { href: "/rewards", icon: <Trophy size={ICON} />, label: "My Challenges" },
           { href: "/history", icon: <Activity size={ICON} />, label: "My Activities" },
+          settings,
+        ]} />
+      </>
+    );
+  }
+
+  if (user.role === "COMMUNITY_ADMIN") {
+    const [{ count: members }, month] = await Promise.all([
+      admin().from("profiles").select("id", { count: "exact", head: true }).eq("communityId", user.communityId ?? ""),
+      impactFor("community", startOf("month")),
+    ]);
+    return (
+      <>
+        <div className="grid grid-cols-3 gap-3"><Stat value={members ?? 0} label="Members" /><Stat value={`${month.kg} kg`} label="Collected this month" /><Stat value={`${month.recyclingRate}%`} label="Recycling rate" /></div>
+        <Menu items={[
+          { href: "/community", icon: <UsersRound size={ICON} />, label: "Manage Community & Members" },
+          { href: "/events", icon: <CalendarDays size={ICON} />, label: "Create Campaigns & Events" },
+          { href: "/community#points", icon: <MapPin size={ICON} />, label: "Collection Points" },
+          { href: "/stats", icon: <FileBarChart size={ICON} />, label: "Community Reports" },
+          { href: "/community#announce", icon: <Megaphone size={ICON} />, label: "Send Announcements" },
           settings,
         ]} />
       </>
@@ -197,7 +225,9 @@ async function RoleBody({ user }: { user: Me }) {
     <>
       <div className="grid grid-cols-3 gap-3"><Stat value={user.grade ?? "—"} label="Class" /><Stat value={students ?? 0} label="Students" /><Stat value={`${all.kg} kg`} label="Class Waste" /></div>
       <Menu items={user.role === "TEACHER" ? [
-        { href: "/teacher", icon: <Building2 size={ICON} />, label: "My Class & Tasks" },
+        { href: "/teacher", icon: <Building2 size={ICON} />, label: "Manage My Class & Tasks" },
+        { href: "/teacher#challenge", icon: <Trophy size={ICON} />, label: "Create Class Challenge" },
+        { href: "/teacher#announce", icon: <Megaphone size={ICON} />, label: "Send Class Announcement" },
         { href: "/health", icon: <HeartPulse size={ICON} />, label: "Classroom Health & Safety" },
         { href: "/stats", icon: <FileBarChart size={ICON} />, label: "Class Reports" },
         settings,

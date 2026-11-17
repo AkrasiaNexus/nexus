@@ -23,7 +23,7 @@ export default async function Events({ searchParams }: { searchParams: { k?: str
     publicNames(rows.map((e) => e.organizerId)),
   ]);
   const events = rows.map((e) => ({ ...e, rsvps: (rsvps ?? []).filter((r) => r.eventId === e.id), organizer: organizers.get(e.organizerId) ?? null }));
-  const canCreate = ["TEACHER", "SCHOOL_ADMIN", "COMMUNITY", "SUPER_ADMIN"].includes(user.role);
+  const canCreate = ["TEACHER", "SCHOOL_ADMIN", "COMMUNITY", "COMMUNITY_ADMIN", "SUPER_ADMIN"].includes(user.role);
   return (
     <>
       <Header title="Events & Campaigns" />

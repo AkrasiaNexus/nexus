@@ -8,7 +8,8 @@ import { impact } from "@/lib/waste";
 import { ActionForm } from "@/components/ActionForm";
 import { HealthStatus } from "@/components/HealthStatus";
 import { Header, Stat } from "@/components/ui";
-import { approveTask, createEvent, createTask } from "../../feature-actions";
+import { announceToClass, approveTask, createClassChallenge, createEvent, createTask } from "../../feature-actions";
+import { GUIDE, WASTE_TYPES } from "@/lib/waste";
 
 export default async function TeacherDashboard() {
   const t = await requireUser(["TEACHER"]);
@@ -73,6 +74,24 @@ export default async function TeacherDashboard() {
             </div>
           </ActionForm>
         </section>
+
+        <ActionForm id="challenge" action={createClassChallenge} submit="Publish class challenge">
+          <h3 className="text-sm font-medium">Create a class challenge</h3>
+          <input name="title" required maxLength={80} placeholder="e.g. Class 10 Can Collection" aria-label="Challenge title" className="input" />
+          <textarea name="description" required maxLength={280} rows={2} placeholder="What should students do?" aria-label="Challenge description" className="input" />
+          <div className="grid grid-cols-2 gap-2">
+            <select name="wasteType" aria-label="Waste type" className="input">{WASTE_TYPES.map((t) => <option key={t} value={t}>{GUIDE[t].name}</option>)}</select>
+            <input name="targetKg" type="number" step="0.1" min="0.1" max="100" defaultValue="1" aria-label="Target kg" className="input" />
+            <input name="rewardPoints" type="number" min="0" max="200" defaultValue="50" aria-label="Reward points" className="input" />
+            <input name="endsAt" type="date" required aria-label="End date" className="input" />
+          </div>
+        </ActionForm>
+
+        <ActionForm id="announce" action={announceToClass} submit="Send to class & parents">
+          <h3 className="text-sm font-medium">Class announcement</h3>
+          <input name="title" required maxLength={80} placeholder="Title" aria-label="Announcement title" className="input" />
+          <textarea name="body" required maxLength={280} rows={2} placeholder="Message" aria-label="Announcement message" className="input" />
+        </ActionForm>
 
         <ActionForm action={createEvent} submit="Publish event">
           <h3 className="text-sm font-medium">Organise an event or workshop</h3>
