@@ -31,6 +31,11 @@ insert into scans ("userId", label, "wasteType", confidence, "weightKg", points)
   ('00000000-0000-0000-0000-0000000000a2', 'can', 'METAL', 0.9, 1, 10);
 insert into listings (id, title, description, category, emoji, "pricePoints", stock) values
   ('00000000-0000-0000-0000-0000000000c1', 'RLS Bottle', 'x', 'Reuse', '🧴', 15, 1);
+-- Pending peer listing (awaiting moderation), a report on c1 by a2, a private notice for a1.
+insert into listings (id, title, description, category, emoji, "pricePoints", stock, "ownerId", status) values
+  ('00000000-0000-0000-0000-0000000000c2', 'RLS Pending', 'x', 'Reuse', '📦', 0, 1, '00000000-0000-0000-0000-0000000000a2', 'PENDING');
+insert into listing_reports ("listingId", "reporterId", reason) values ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000a2', 'rls test');
+insert into notifications (id, "userId", kind, title, body) values ('00000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000a1', 'ANNOUNCEMENT', 'RLS private', 'x');
 
 -- As the student
 set local role authenticated;
@@ -79,6 +84,22 @@ insert into rls_results select 'adjust_points refused for non-admin', false, 'pe
 do $$ begin perform adjust_points('00000000-0000-0000-0000-0000000000a1', 500, 'self gift'); exception when others then update rls_results set ok = true, got = 'refused' where test = 'adjust_points refused for non-admin'; end $$;
 insert into rls_results select 'audit log rows cannot be edited', false, 'pending';
 
+-- Marketplace moderation, reports, notification reads, storage
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true);
+insert into rls_results select 'others cannot see a pending listing', count(*) = 0, count(*)::text from listings where id = '00000000-0000-0000-0000-0000000000c2';
+insert into rls_results select 'reports hidden from non-reporters', count(*) = 0, count(*)::text from listing_reports where "listingId" = '00000000-0000-0000-0000-0000000000c1';
+insert into rls_results select 'cannot mark read for someone else', false, 'pending';
+do $$ begin insert into notification_reads ("userId", "notificationId") values ('00000000-0000-0000-0000-0000000000a2', '00000000-0000-0000-0000-0000000000e1'); exception when others then update rls_results set ok = true, got = 'refused' where test = 'cannot mark read for someone else'; end $$;
+insert into notification_reads ("userId", "notificationId") values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000e1');
+insert into rls_results select 'can mark own notice read', count(*) = 1, count(*)::text from notification_reads where "notificationId" = '00000000-0000-0000-0000-0000000000e1';
+insert into rls_results select 'users cannot write to the photo bucket directly', false, 'pending';
+do $$ begin insert into storage.objects (bucket_id, name, owner) values ('listing-images', 'rls/evil.svg', '00000000-0000-0000-0000-0000000000a1'); exception when others then update rls_results set ok = true, got = 'refused' where test = 'users cannot write to the photo bucket directly'; end $$;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}', true);
+insert into rls_results select 'owner sees own pending listing', count(*) = 1, count(*)::text from listings where id = '00000000-0000-0000-0000-0000000000c2';
+insert into rls_results select 'reporter sees own report', count(*) = 1, count(*)::text from listing_reports where "listingId" = '00000000-0000-0000-0000-0000000000c1';
+insert into rls_results select 'cannot read another user''s private notice', count(*) = 0, count(*)::text from notifications where id = '00000000-0000-0000-0000-0000000000e1';
+insert into rls_results select 'cannot see another user''s read receipts', count(*) = 0, count(*)::text from notification_reads where "notificationId" = '00000000-0000-0000-0000-0000000000e1';
+
 -- Filtered analytics: only admins get rows
 insert into rls_results select 'non-admin gets no filtered analytics', count(*) = 0, count(*)::text from scans_filtered();
 
@@ -96,7 +117,8 @@ do $$ begin update audit_logs set detail = 'tampered' where action = 'RLS_TEST';
 delete from audit_logs where action = 'RLS_TEST';
 
 -- Cleanup fixtures
-delete from listings where id = '00000000-0000-0000-0000-0000000000c1';
+delete from listings where id in ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000c2');
+delete from notifications where id = '00000000-0000-0000-0000-0000000000e1';
 delete from auth.users where email like 'rls-%@eco.test';
 delete from communities where id in ('00000000-0000-0000-0000-0000000000d1','00000000-0000-0000-0000-0000000000d2');
 delete from schools where id = '00000000-0000-0000-0000-0000000000b1';

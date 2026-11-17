@@ -11,6 +11,8 @@ import type { FormState } from "./actions";
 const superAdmin = () => requireUser(["SUPER_ADMIN"]);
 const formObject = (fd: FormData) => Object.fromEntries(Array.from(fd.entries()).filter(([, v]) => typeof v === "string" && v !== ""));
 const SETTINGS = ["signupsOpen", "marketplace.requireApproval"] as const;
+// Only paths createListing generates: <user uuid>/<random uuid>.<ext>
+const PHOTO_PATH = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(jpg|png|webp)$/;
 
 export async function updateUser(userId: string, _: FormState, fd: FormData): Promise<FormState> {
   const me = await superAdmin();
@@ -32,9 +34,11 @@ export async function updateUser(userId: string, _: FormState, fd: FormData): Pr
 }
 
 export async function adjustPoints(userId: string, _: FormState, fd: FormData): Promise<FormState> {
-  await superAdmin();
+  const me = await superAdmin();
   const parsed = adjustSchema.safeParse(formObject(fd));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { data: target } = await admin().from("profiles").select("id, role").eq("id", String(userId)).maybeSingle();
+  if (!target || target.id === me.id || target.role === "SUPER_ADMIN") return { error: "Admin accounts' points can't be adjusted." };
   // RPC re-checks the role, writes the ledger, notifies the user and audits.
   const { error } = await createClient().rpc("adjust_points", { p_user: String(userId), p_delta: parsed.data.delta, p_reason: parsed.data.reason });
   if (error) return { error: error.message.includes("Not enough") ? "That would take their balance below zero." : "Could not adjust points." };
@@ -54,15 +58,17 @@ export async function moderateListing(listingId: string, _: FormState, fd: FormD
   const me = await superAdmin();
   const status = String(fd.get("decision"));
   if (!["APPROVED", "REJECTED", "REMOVED"].includes(status)) return { error: "Pick a decision." };
-  const note = moderationSchema.parse(formObject(fd)).note;
+  const parsedNote = moderationSchema.safeParse(formObject(fd));
+  if (!parsedNote.success) return { error: "Keep the note under 200 characters." };
+  const note = parsedNote.data.note;
   if (status !== "APPROVED" && !note) return { error: "Tell the owner why." };
   const db = admin();
   const { data: l } = await db.from("listings").update({ status, moderationNote: note || null }).eq("id", String(listingId)).select("id, title, ownerId, imageUrl").maybeSingle();
   if (!l) return { error: "Listing not found." };
   // Rejected/removed photos shouldn't stay publicly reachable in the bucket.
-  const photoPath = l.imageUrl?.split("/listing-images/")[1];
-  if (status !== "APPROVED" && photoPath) {
-    await db.storage.from("listing-images").remove([decodeURIComponent(photoPath)]);
+  const photoPath = decodeURIComponent(l.imageUrl?.split("/listing-images/")[1] ?? "");
+  if (status !== "APPROVED" && PHOTO_PATH.test(photoPath)) {
+    await db.storage.from("listing-images").remove([photoPath]);
     await db.from("listings").update({ imageUrl: null }).eq("id", l.id);
   }
   if (l.ownerId) {
@@ -81,8 +87,8 @@ export async function moderateListing(listingId: string, _: FormState, fd: FormD
 
 export async function dismissReport(reportId: string) {
   const me = await superAdmin();
-  await admin().from("listing_reports").update({ status: "DISMISSED" }).eq("id", String(reportId));
-  await audit(me.id, "REPORT_DISMISSED", String(reportId));
+  const { data } = await admin().from("listing_reports").update({ status: "DISMISSED" }).eq("id", String(reportId)).eq("status", "OPEN").select("id").maybeSingle();
+  if (data) await audit(me.id, "REPORT_DISMISSED", data.id);
   revalidatePath("/admin/marketplace");
 }
 
