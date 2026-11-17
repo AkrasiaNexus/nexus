@@ -67,6 +67,17 @@ export async function visibleNotifications(userId: string, take = 30) {
   return withDates(data as { id: string; kind: string; title: string; body: string; createdAt: string; userId: string | null }[] | null, "createdAt");
 }
 
+// Feed minus muted kinds, each flagged read/unread.
+export async function notificationFeed(user: { id: string; mutedKinds?: string[] | null }, take = 50) {
+  const muted = new Set(user.mutedKinds ?? []);
+  const items = (await visibleNotifications(user.id, take)).filter((n) => !muted.has(n.kind));
+  const { data: reads } = items.length
+    ? await createClient().from("notification_reads").select("notificationId").eq("userId", user.id).in("notificationId", items.map((n) => n.id))
+    : { data: [] };
+  const read = new Set((reads ?? []).map((r) => r.notificationId as string));
+  return items.map((n) => ({ ...n, read: read.has(n.id) }));
+}
+
 export async function syncBadges(userId: string) {
   const db = admin();
   const [user, scans, purchases, challenges, have] = await Promise.all([

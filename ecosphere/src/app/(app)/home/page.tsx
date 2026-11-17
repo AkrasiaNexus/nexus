@@ -3,7 +3,7 @@ import { BarChart3, Bell, BookOpen, CalendarDays, ChevronLeft, ChevronRight, Cli
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PERIOD_GOAL_KG, periodLabel, periodRange, type Period } from "@/lib/charts";
-import { cosmeticsFor, impactFor, scanScope, withDates, type Scope } from "@/lib/queries";
+import { cosmeticsFor, impactFor, scanScope, withDates, type Scope, notificationFeed } from "@/lib/queries";
 import { Avatar } from "@/components/Avatar";
 import { goalPercent } from "@/lib/rewards";
 import { LeafGoal } from "@/components/LeafGoal";
@@ -44,7 +44,7 @@ export default async function Home({ searchParams }: { searchParams: Params }) {
 
   const [data, unread, taskRes, doneRes, rsvpRes, challengeRes, myScans] = await Promise.all([
     impactFor(scope, start, end),
-    sb.from("notifications").select("id", { count: "exact", head: true }).or(`userId.eq.${user.id},userId.is.null`).gte("createdAt", new Date(Date.now() - 2 * 86_400_000).toISOString()),
+    notificationFeed(user),
     isStudent ? sb.from("tasks").select("id, title, dueAt").eq("schoolId", user.schoolId ?? "").eq("className", user.grade ?? "").gte("dueAt", now.toISOString()).order("dueAt").limit(10) : null,
     sb.from("task_dones").select("taskId").eq("userId", user.id),
     sb.from("event_rsvps").select("event:events(id, title, startsAt)").eq("userId", user.id),
@@ -68,7 +68,7 @@ export default async function Home({ searchParams }: { searchParams: Params }) {
   const challenge = challengeRes.data ? { ...challengeRes.data, endsAt: new Date(challengeRes.data.endsAt) } : null;
   const totals = (myScans.data ?? []).reduce<Record<string, number>>((acc, x) => ({ ...acc, [x.wasteType]: (acc[x.wasteType] ?? 0) + x.weightKg }), {});
   const top = Object.entries(totals).sort((x, y) => y[1] - x[1]).slice(0, 1).map(([wasteType]) => ({ wasteType }));
-  const unreadCount = unread.count ?? 0;
+  const unreadCount = unread.filter((n) => !n.read).length;
   const percent = personalGoal ? goalPercent(data.kg, PERIOD_GOAL_KG[period]) : data.recyclingRate;
 
   // First three match the mockup; the rest scroll sideways.

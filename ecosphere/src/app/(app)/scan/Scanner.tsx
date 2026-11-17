@@ -8,12 +8,13 @@ import { GUIDE, WASTE_TYPES, classify } from "@/lib/waste";
 import { saveScan } from "../../actions";
 
 type Model = { classify: (img: HTMLImageElement, k?: number) => Promise<{ className: string; probability: number }[]> };
-type Result = { wasteType: WasteType; label: string; confidence: number };
+type Result = { wasteType: WasteType; label: string; confidence: number; source?: "server" | "device" };
 
 const LOW_CONFIDENCE = 0.5; // below this the user is asked to confirm the category
 
-export function Scanner() {
+export function Scanner({ serverAI }: { serverAI: boolean }) {
   const model = useRef<Model | null>(null);
+  const picked = useRef<File | null>(null);
   const img = useRef<HTMLImageElement>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
   const [preview, setPreview] = useState<string | null>(null);
@@ -50,11 +51,28 @@ export function Scanner() {
     if (!file || !file.type.startsWith("image/")) return;
     setResult(null);
     setMessage(null);
+    picked.current = file;
     setPreview(URL.createObjectURL(file));
+  }
+
+  // Hosted classifier first when configured; any failure falls back to the on-device model.
+  async function serverClassify(): Promise<Result | null> {
+    if (!serverAI || !picked.current) return null;
+    const body = new FormData();
+    body.append("photo", picked.current);
+    const res = await fetch("/api/classify", { method: "POST", body }).catch(() => null);
+    return res?.ok ? { ...(await res.json()), source: "server" } : null;
   }
 
   async function analyse() {
     if (!img.current) return;
+    setBusy(true);
+    const remote = await serverClassify();
+    setBusy(false);
+    if (remote) {
+      setResult(remote);
+      return pickType(remote.wasteType);
+    }
     if (!model.current) {
       setResult({ wasteType: "OTHER", label: "Manual entry", confidence: 0 });
       return pickType("OTHER");
@@ -64,7 +82,7 @@ export function Scanner() {
     const source = new Image();
     source.src = img.current.src;
     await source.decode();
-    const r = classify(await model.current.classify(source, 5));
+    const r = { ...classify(await model.current.classify(source, 5)), source: "device" as const };
     setResult(r);
     pickType(r.wasteType);
     setBusy(false);
@@ -122,7 +140,7 @@ export function Scanner() {
       <p className="flex items-center justify-center gap-1 text-xs text-white/50">
         <ShieldCheck size={14} className="text-leaf" />
         {status === "loading" && "Loading on-device AI model…"}
-        {status === "ready" && "On-device AI. Your photo never leaves this phone."}
+        {status === "ready" && (serverAI ? "Server AI enabled: photos go to the school's configured classifier, with on-device AI as backup." : "On-device AI. Your photo never leaves this phone.")}
         {status === "failed" && "AI model unavailable offline. You can still log items manually."}
       </p>
 
@@ -135,6 +153,7 @@ export function Scanner() {
             <div className="flex-1">
               <p className="text-lg font-semibold capitalize">{result.label}</p>
               <p className="font-semibold text-leaf">{g.action}</p>
+              {result.source && <p className="text-[11px] text-mute">{result.source === "server" ? "Server AI" : "On-device AI"}</p>}
             </div>
             {result.confidence > 0 && <span className="chip">{Math.round(result.confidence * 100)}%</span>}
           </section>

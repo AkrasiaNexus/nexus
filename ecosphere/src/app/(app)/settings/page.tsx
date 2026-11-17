@@ -5,6 +5,8 @@ import { ActionForm } from "@/components/ActionForm";
 import { Header } from "@/components/ui";
 import { answerParentRequest, logout, setAvatar, updateSettings } from "../../actions";
 import { publicNames } from "@/lib/queries";
+import { MUTABLE_KINDS } from "@/lib/notices";
+import { setMutedKinds } from "../../notification-actions";
 
 const AVATARS = ["🌱", "🧑‍🎓", "👩‍🎓", "🧑‍💼", "👪", "🌍", "🦊", "🐢", "🌻", "🏫"];
 
@@ -26,6 +28,18 @@ export default async function SettingsPage() {
             </div>
           </section>
         )}
+        <ActionForm id="notifications" action={setMutedKinds} submit="Save notification preferences">
+          <h2 className="font-semibold">Notification preferences</h2>
+          <p className="text-xs text-mute">Muted categories are hidden from your feed and badge. Health &amp; safety alerts can&apos;t be muted.</p>
+          <fieldset className="grid grid-cols-2 gap-2">
+            <legend className="sr-only">Mute these categories</legend>
+            {Object.entries(MUTABLE_KINDS).map(([k, v]) => (
+              <label key={k} className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="muted" value={k} defaultChecked={user.mutedKinds?.includes(k)} className="accent-[#a2d47e]" /> Mute {v.toLowerCase()}
+              </label>
+            ))}
+          </fieldset>
+        </ActionForm>
         <p className="text-center text-sm text-white/60">EcoSphere ID <span className="chip ml-1 font-mono">{user.memberId}</span></p>
         <section id="avatar" className="card p-4">
           <h2 className="mb-3 text-sm font-medium">Avatar</h2>

@@ -103,6 +103,7 @@ async function main() {
   }
 
   const points = new Map<string, number>();
+  const ledger: { userId: string; delta: number; reason: string; refType: string; createdAt: string }[] = [];
   for (const u of [ayaan, zara, rohan, community, anita, karim, ...extras]) {
     const n = u.email === "ayaan@eco.demo" ? 60 : 8 + Math.floor(rand() * 30);
     const scans = Array.from({ length: n }, () => {
@@ -111,6 +112,7 @@ async function main() {
       return { userId: u.id, label, wasteType, confidence: 0.6 + rand() * 0.39, weightKg: Math.round(g.defaultKg * (0.5 + rand() * 4) * 100) / 100 + 0.1, points: g.points, createdAt: new Date(Date.now() - rand() * 30 * DAY).toISOString() };
     });
     await ins("scans", scans);
+    ledger.push(...scans.map((x) => ({ userId: u.id, delta: x.points, reason: `Scanned ${x.label}`, refType: "scan", createdAt: x.createdAt })));
     points.set(u.id, scans.reduce((s, x) => s + x.points, 0));
   }
 
@@ -138,6 +140,12 @@ async function main() {
   // A past purchase, like the mockup's "Purchased: Eco Tote Bag"; Ayaan's points reflect challenge + purchase.
   await ins("purchases", { userId: ayaan.id, listingId: tote.id, points: tote.pricePoints, createdAt: ago(2) });
   points.set(ayaan.id, points.get(ayaan.id)! + foodChallenge.rewardPoints - tote.pricePoints);
+  ledger.push(
+    { userId: ayaan.id, delta: foodChallenge.rewardPoints, reason: `Challenge: ${foodChallenge.title}`, refType: "challenge", createdAt: ago(1) },
+    { userId: ayaan.id, delta: -tote.pricePoints, reason: `Redeemed ${tote.title}`, refType: "purchase", createdAt: ago(2) },
+  );
+  // Ledger rows mirror the balances below, so points history adds up to each profile's points.
+  await ins("point_events", ledger);
   for (const [id, p] of points) await db.from("profiles").update({ points: p }).eq("id", id);
 
   const classes = Array.from(new Set(extras.map((e) => e.grade as string).concat("Class 10", "Grade 7")));
