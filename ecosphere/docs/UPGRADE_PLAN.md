@@ -5,7 +5,7 @@ Decisions (user, 2026-11-17): mockup look refined toward Opal · food waste = gu
 keep all 8 roles + add COMMUNITY_ADMIN · run phases autonomously.
 
 ## Baseline (Phase 1 inspection)
-Next.js 14 App Router + Tailwind · Supabase (Postgres, Auth via @supabase/ssr, RLS, RPCs) · TF.js MobileNet on-device ·
+Next.js 14 App Router + Tailwind · Supabase (Postgres, Auth via @supabase/ssr, RLS, RPCs) · on-device CLIP (transformers.js; was TF.js MobileNet) ·
 16 tables (`supabase/migrations`) · 33 pages · roles: STUDENT, PARENT, EMPLOYEE, TEACHER, HEALTH_MONITOR, SCHOOL_ADMIN,
 COMMUNITY, SUPER_ADMIN · RLS self-test `supabase/tests/rls.sql` (must be all PASS).
 
@@ -38,7 +38,7 @@ authorised server-side or inside an RLS/RPC; no placeholder buttons; demo data l
 ## Known external needs
 - Sandbox only: delete the "Supabase secret key (EcoSphere)" network secret so signed-in requests keep the user JWT.
 - Supabase dashboard: Auth URL config (Site URL + Redirect URLs) and "Secure password change" (user to set).
-- Optional server AI: `CLASSIFIER_URL` (+ `CLASSIFIER_API_KEY`) for a hosted model; on-device MobileNet works without it.
+- Optional server AI: `CLASSIFIER_URL` (+ `CLASSIFIER_API_KEY`) for a hosted model; the on-device CLIP model works without it.
 
 ## Status (2026-11-17)
 Phases 2–7 shipped. Phase 8: RLS self-test 32/32 PASS (adds moderation, reports, notification reads, storage);

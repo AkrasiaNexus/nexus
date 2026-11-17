@@ -5,10 +5,12 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Camera, CameraOff, ChevronDown, ImagePlus, Loader2, Recycle, ShieldCheck } from "lucide-react";
 import type { WasteType } from "@/lib/types";
-import { GUIDE, WASTE_TYPES, classify } from "@/lib/waste";
+import { GUIDE, WASTE_TYPES } from "@/lib/waste";
+import { CLIP_MODEL, TRANSFORMERS_CDN, classifyEmbedding } from "@/lib/clip";
 import { saveScan } from "../../actions";
 
-type Model = { classify: (img: HTMLImageElement, k?: number) => Promise<{ className: string; probability: number }[]> };
+// Runs the on-device model on an image URL (blob: preview) and returns the best waste type.
+type Model = (url: string) => Promise<{ wasteType: WasteType; label: string; confidence: number }>;
 type Result = { wasteType: WasteType; label: string; confidence: number; source?: "server" | "device" };
 
 const LOW_CONFIDENCE = 0.5; // below this the user is asked to confirm the category
@@ -29,6 +31,7 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
   const [resultInView, setResultInView] = useState(true);
   const img = useRef<HTMLImageElement>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
+  const [loadPct, setLoadPct] = useState(0);
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
@@ -38,15 +41,25 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
   const [earned, setEarned] = useState<{ points: number; key: number } | null>(null);
 
   useEffect(() => {
-    // Model runs fully in the browser; photos never leave the device.
+    // CLIP image model runs fully in the browser; photos never leave the device. ~64 MB, downloaded once then cached.
     (async () => {
       try {
-        await import("@tensorflow/tfjs");
-        const mobilenet = await import("@tensorflow-models/mobilenet");
-        // Self-hosted weights: no third-party model host, works for offline/school networks.
-        model.current = await mobilenet.load({ version: 2, alpha: 1.0, modelUrl: "/models/mobilenet/model.json", inputRange: [-1, 1] });
+        // Loaded from the CDN at a pinned version, not bundled: Next 14's bundler can't parse onnxruntime-web.
+        const { AutoProcessor, CLIPVisionModelWithProjection, RawImage } = (await import(/* webpackIgnore: true */ TRANSFORMERS_CDN)) as typeof import("@huggingface/transformers");
+        const progress = (p: { status: string; file?: string; progress?: number }) => {
+          if (p.status === "progress" && p.file?.endsWith(".onnx")) setLoadPct(Math.round(p.progress ?? 0));
+        };
+        const [processor, vision] = await Promise.all([
+          AutoProcessor.from_pretrained(CLIP_MODEL),
+          CLIPVisionModelWithProjection.from_pretrained(CLIP_MODEL, { dtype: "q4", progress_callback: progress }),
+        ]);
+        model.current = async (url) => {
+          const { image_embeds } = await vision(await processor(await RawImage.fromURL(url)));
+          return classifyEmbedding(image_embeds.data as Float32Array);
+        };
         setStatus("ready");
-      } catch {
+      } catch (e) {
+        console.error("Scanner AI model failed to load", e);
         setStatus("failed");
       }
     })();
@@ -152,11 +165,7 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
       return pickType("OTHER");
     }
     setBusy(true);
-    // fromPixels reads the element at its rendered box, which distorts a cropped preview; use the source pixels.
-    const source = new Image();
-    source.src = img.current.src;
-    await source.decode();
-    const r = { ...classify(await model.current.classify(source, 5)), source: "device" as const };
+    const r = { ...(await model.current(img.current.src)), source: "device" as const };
     setResult(r);
     pickType(r.wasteType);
     setBusy(false);
@@ -224,7 +233,7 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
 
       <p className="flex items-center justify-center gap-1 text-xs text-white/50">
         <ShieldCheck size={14} className="text-leaf" />
-        {status === "loading" && "Loading on-device AI model…"}
+        {status === "loading" && (loadPct > 0 && loadPct < 100 ? `Downloading AI model… ${loadPct}% (one time only)` : "Loading on-device AI model…")}
         {status === "ready" && (serverAI ? "Server AI enabled: photos go to the school's configured classifier, with on-device AI as backup." : "On-device AI. Your photo never leaves this phone.")}
         {status === "failed" && "AI model unavailable offline. You can still log items manually."}
       </p>

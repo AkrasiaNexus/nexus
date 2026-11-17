@@ -6,7 +6,7 @@ AI-powered web app for waste sorting, recycling guidance and circular-economy re
 
 | Brief item | Where |
 |---|---|
-| AI classification (upload/scan → waste type + disposal guidance) | `/scan`: MobileNet **in the browser** (photos stay on the device), user confirms/corrects, low-confidence flag. Optional hosted model via `CLASSIFIER_URL`; the scanner labels which model answered |
+| AI classification (upload/scan → waste type + disposal guidance) | `/scan`: live camera (asks permission) or upload; free **on-device CLIP** model compares the photo with plain-English waste descriptions (`src/lib/wasteLabels.ts`), photos stay on the device, user confirms/corrects. Optional hosted model via `CLASSIFIER_URL` |
 | Smart recycling guide (where & how to recycle, reuse, compost) | `/guide`: search by item, examples, steps, avoid list, reuse ideas, Food waste topic (guide only, not tracked), "drop it off nearby", `/partners` |
 | Circular economy marketplace (buy/sell/donate/exchange) | `/marketplace`: reward items + peer listings with photo (metadata stripped) and condition, moderator approval, report a listing, `/marketplace/mine` (My listings + transactions) |
 | Green points & rewards | points ledger (every change has a reason), admin-editable point rules, badges, challenges, cosmetics shop (stickers, backgrounds, borders) |
@@ -46,7 +46,7 @@ UI follows the supplied mockup screen-for-screen: splash, role select, login, Ho
 - zod validation on every input, audit log, CSV formula-injection guard. `supabase/tests/rls.sql` impersonates each role and must report all PASS.
 
 ## Stack
-Next.js 14 (App Router, server actions) · Tailwind · Supabase (Postgres, Auth, RLS) · TensorFlow.js · Vitest
+Next.js 14 (App Router, server actions) · Tailwind · Supabase (Postgres, Auth, RLS) · transformers.js (CLIP, on-device) · Vitest
 
 ## Supabase setup (once per project)
 1. **SQL Editor** → run every file in `supabase/migrations` in order (`0001` … `0009`).
@@ -78,4 +78,6 @@ Demo accounts (password `eco12345`, all `@eco.demo`; admins also enter the Admin
 3. Deploy, then add the Vercel URL to Supabase Redirect URLs (step 3 above).
 
 ## Tests
-`npm test`: unit tests (classifier mapping, impact, health alerts, SDG, heat map, CSV, validation, badges, uploads + metadata stripping, guide search). `supabase/tests/rls.sql`: row-level-security self-test against the live project.
+`npm test`: unit tests (classifier mapping, impact, health alerts, SDG, heat map, CSV, validation, badges, uploads + metadata stripping, guide search, CLIP label matching).
+
+**Scanner labels:** edit `src/lib/wasteLabels.ts`, then run `npx tsx scripts/build-clip-labels.mts` to refresh `src/lib/clipLabels.json` (the test fails if they drift apart). The ~64 MB image model downloads from Hugging Face on a device's first scan, then stays cached. `supabase/tests/rls.sql`: row-level-security self-test against the live project.
