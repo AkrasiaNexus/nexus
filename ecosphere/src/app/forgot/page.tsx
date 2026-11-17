@@ -9,7 +9,7 @@ import { LeafLogo } from "@/components/art";
 export default function Forgot() {
   const [state, action] = useFormState(requestReset, undefined);
   return (
-    <div className="flex min-h-screen flex-col gap-6 px-6 py-8">
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col gap-6 px-6 py-8">
       <Link href="/login" aria-label="Back" className="-ml-2 w-fit rounded-full p-2 hover:bg-card"><ChevronLeft /></Link>
       <div className="flex flex-col items-center gap-3 text-center">
         <LeafLogo size={64} />

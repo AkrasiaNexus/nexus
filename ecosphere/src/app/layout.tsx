@@ -8,13 +8,13 @@ export const metadata: Metadata = {
   title: "EcoSphere AI",
   description: "AI-powered waste sorting, recycling guidance and circular-economy rewards for schools, homes and communities (SDG 12).",
 };
-export const viewport: Viewport = { themeColor: "#040b06", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#0b0d0c", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={`${geist.variable} font-sans antialiased`}>
-        <main className="mx-auto min-h-screen max-w-md">{children}</main>
+        <main className="min-h-screen">{children}</main>
       </body>
     </html>
   );

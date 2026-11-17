@@ -22,7 +22,7 @@ export default function Login() {
   const [state, action] = useFormState(login, undefined);
   const [show, setShow] = useState(false);
   return (
-    <div className="flex min-h-screen flex-col gap-8 px-6 pb-10 pt-20">
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col gap-8 px-6 pb-10 pt-20">
       <div className="flex flex-col items-center gap-3 text-center">
         <span className="blur-in"><LeafLogo size={84} /></span>
         <h1 className="text-3xl font-semibold">EcoSphere AI</h1>

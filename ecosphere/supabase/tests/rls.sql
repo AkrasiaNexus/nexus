@@ -9,7 +9,10 @@ insert into auth.users (id, email, aud, role) values
   ('00000000-0000-0000-0000-0000000000a2', 'rls-other@eco.test',   'authenticated', 'authenticated'),
   ('00000000-0000-0000-0000-0000000000a3', 'rls-parent@eco.test',  'authenticated', 'authenticated'),
   ('00000000-0000-0000-0000-0000000000a4', 'rls-teacher@eco.test', 'authenticated', 'authenticated'),
-  ('00000000-0000-0000-0000-0000000000a5', 'rls-stranger@eco.test', 'authenticated', 'authenticated');
+  ('00000000-0000-0000-0000-0000000000a5', 'rls-stranger@eco.test', 'authenticated', 'authenticated'),
+  ('00000000-0000-0000-0000-0000000000a6', 'rls-cadmin@eco.test', 'authenticated', 'authenticated'),
+  ('00000000-0000-0000-0000-0000000000a7', 'rls-member2@eco.test', 'authenticated', 'authenticated');
+insert into communities (id, name) values ('00000000-0000-0000-0000-0000000000d1', 'RLS Community A'), ('00000000-0000-0000-0000-0000000000d2', 'RLS Community B');
 insert into schools (id, name, city) values ('00000000-0000-0000-0000-0000000000b1', 'RLS Test School', 'Test');
 insert into profiles (id, "memberId", email, name, role, grade, "schoolId", "parentId") values
   ('00000000-0000-0000-0000-0000000000a3', 'RLS-P', 'rls-parent@eco.test',  'Rls Parent',  'PARENT',  null, null, null),
@@ -17,6 +20,10 @@ insert into profiles (id, "memberId", email, name, role, grade, "schoolId", "par
   ('00000000-0000-0000-0000-0000000000a2', 'RLS-O', 'rls-other@eco.test',   'Rls Other',   'STUDENT', 'C2', '00000000-0000-0000-0000-0000000000b1', null),
   ('00000000-0000-0000-0000-0000000000a4', 'RLS-T', 'rls-teacher@eco.test', 'Rls Teacher', 'TEACHER', 'C1', '00000000-0000-0000-0000-0000000000b1', null),
   ('00000000-0000-0000-0000-0000000000a5', 'RLS-X', 'rls-stranger@eco.test', 'Rls Stranger', 'COMMUNITY', null, null, null);
+update profiles set "communityId" = '00000000-0000-0000-0000-0000000000d1' where id = '00000000-0000-0000-0000-0000000000a5';
+insert into profiles (id, "memberId", email, name, role, "communityId") values
+  ('00000000-0000-0000-0000-0000000000a6', 'RLS-CA', 'rls-cadmin@eco.test', 'Rls Cadmin', 'COMMUNITY_ADMIN', '00000000-0000-0000-0000-0000000000d1'),
+  ('00000000-0000-0000-0000-0000000000a7', 'RLS-M2', 'rls-member2@eco.test', 'Rls Member2', 'COMMUNITY', '00000000-0000-0000-0000-0000000000d2');
 -- The stranger has *requested* to be the other student's parent; it must grant nothing until approved.
 update profiles set "pendingParentId" = '00000000-0000-0000-0000-0000000000a5' where id = '00000000-0000-0000-0000-0000000000a2';
 insert into scans ("userId", label, "wasteType", confidence, "weightKg", points) values
@@ -61,6 +68,11 @@ select answer_parent_request(true);
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a5","role":"authenticated"}', true);
 insert into rls_results select 'after approval the parent sees the child', count(*) = 1, count(*)::text from scans where "userId" = '00000000-0000-0000-0000-0000000000a2';
 
+-- As the admin of community A
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a6","role":"authenticated"}', true);
+insert into rls_results select 'community admin sees own community only', count(*) = 2, string_agg("memberId", ',') from profiles where "memberId" in ('RLS-X','RLS-M2','RLS-CA');
+insert into rls_results select 'community admin cannot see school students', count(*) = 0, count(*)::text from profiles where "memberId" in ('RLS-S','RLS-O');
+
 -- Anonymous (no session)
 reset role;
 set local role anon;
@@ -73,6 +85,7 @@ insert into rls_results select 'points not 9999 after direct update attempt', po
 -- Cleanup fixtures
 delete from listings where id = '00000000-0000-0000-0000-0000000000c1';
 delete from auth.users where email like 'rls-%@eco.test';
+delete from communities where id in ('00000000-0000-0000-0000-0000000000d1','00000000-0000-0000-0000-0000000000d2');
 delete from schools where id = '00000000-0000-0000-0000-0000000000b1';
 
 commit;

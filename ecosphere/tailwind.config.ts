@@ -5,14 +5,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#050806",
-        panel: "#0b120d",
-        card: "#111a14",
-        line: "#1f2b23",
-        leaf: "#86d67e",
-        gold: "#f5b83d",
-        leafDark: "#4caf50",
-        mute: "#8aa391",
+        // Opal-refined palette: charcoal surfaces, forest accents, muted lime for actions.
+        ink: "#0b0d0c",
+        panel: "#121514",
+        card: "#171a19",
+        line: "#232826",
+        forest: "#1e3a28",
+        leaf: "#a2d47e",
+        gold: "#e9b44c",
+        leafDark: "#5f9e4f",
+        mute: "#8e9792",
       },
       fontFamily: { sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"] },
     },

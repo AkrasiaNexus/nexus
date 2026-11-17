@@ -34,7 +34,7 @@ export function SignupForm({ schools }: { schools: { id: string; name: string }[
 
   if (step === 1)
     return (
-      <div className="flex min-h-screen flex-col gap-4 px-6 py-8">
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col gap-4 px-6 py-8">
         <Link href="/" aria-label="Back" className="-ml-2 w-fit rounded-full p-2 hover:bg-card"><ChevronLeft /></Link>
         <h1 className="text-2xl font-semibold">Select Your Role</h1>
         <p className="-mt-2 text-white/70">Choose how you&apos;ll use EcoSphere</p>
@@ -53,7 +53,7 @@ export function SignupForm({ schools }: { schools: { id: string; name: string }[
     );
 
   return (
-    <div className="flex min-h-screen flex-col gap-4 px-6 py-8">
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col gap-4 px-6 py-8">
       <button aria-label="Back" onClick={() => setStep(1)} className="-ml-2 w-fit rounded-full p-2 hover:bg-card"><ChevronLeft /></button>
       <h1 className="text-2xl font-semibold">Create your account</h1>
       <p className="-mt-2 text-mute">{ROLES.find((r) => r.id === role)?.name}</p>

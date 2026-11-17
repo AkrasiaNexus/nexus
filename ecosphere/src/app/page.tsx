@@ -3,7 +3,7 @@ import { LeafLogo, PlanetGlow } from "@/components/art";
 
 export default function Splash() {
   return (
-    <div className="relative isolate flex min-h-screen flex-col items-center justify-between overflow-hidden px-8 pb-14 pt-40 text-center">
+    <div className="relative isolate mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-between overflow-hidden px-8 pb-14 pt-40 text-center">
       <PlanetGlow />
       <div className="flex flex-col items-center gap-5">
         {/* Brand entrance: the leaf comes into focus, then the name and promise follow it. */}

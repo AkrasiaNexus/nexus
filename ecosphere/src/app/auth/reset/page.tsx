@@ -7,7 +7,7 @@ import { setNewPassword } from "../../actions";
 export default function ResetPassword() {
   const [state, action] = useFormState(setNewPassword, undefined);
   return (
-    <div className="flex min-h-screen flex-col gap-6 px-6 pb-10 pt-20">
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col gap-6 px-6 pb-10 pt-20">
       <div className="flex flex-col items-center gap-3 text-center">
         <span className="blur-in"><LeafLogo size={64} /></span>
         <h1 className="text-2xl font-semibold">Choose a new password</h1>
