@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Volume2, VolumeX } from "lucide-react";
 import Link from "next/link";
 import { createAnimatable, createScope } from "animejs";
 import { LeafLogo } from "@/components/art";
@@ -10,6 +11,7 @@ import { Phone } from "./Phone";
 import { HomeScreen, MarketScreen, RewardsScreen, ROLES, RoleScreens, ScannerScreen, StatsScreen, WelcomeScreen } from "./Screens";
 import { CHAPTERS } from "./chapters";
 import { buildTimeline } from "./timeline";
+import { createAmbient, type Ambient } from "./ambient";
 import "./phone.css";
 import "./cinematic.css";
 
@@ -20,6 +22,14 @@ function Words({ text, hl }: { text: string; hl: readonly string[] }) {
 
 export function Cinematic() {
   const root = useRef<HTMLElement>(null);
+  const ambient = useRef<Ambient | null>(null);
+  const [sound, setSound] = useState(false);
+  const toggleSound = async () => {
+    ambient.current ??= createAmbient();
+    if (ambient.current.on) ambient.current.stop(); else await ambient.current.start();
+    setSound(ambient.current.on);
+  };
+  useEffect(() => () => ambient.current?.stop(), []);
 
   useEffect(() => {
     // Responsive animation scope: the timeline is rebuilt (and the old one reverted) when these queries flip.
@@ -34,7 +44,7 @@ export function Cinematic() {
       .add((self) => {
         if (window.innerWidth !== stableWidth && resume > 0 && resume < 1) window.scrollTo(0, track.offsetTop + resume * (track.offsetHeight - window.innerHeight));
         stableWidth = window.innerWidth;
-        const tl = buildTimeline(root.current!, { mobile: !!self?.matches.mobile, reduce: !!self?.matches.reduce });
+        const tl = buildTimeline(root.current!, { mobile: !!self?.matches.mobile, reduce: !!self?.matches.reduce, onChapter: (i) => ambient.current?.chime(i) });
         // The hook reacts in the first second: on a mouse/trackpad the phone leans toward the cursor,
         // layered on top of (not fighting) the scroll timeline, which owns the outer rig.
         let off = () => {};
@@ -70,6 +80,11 @@ export function Cinematic() {
       <nav className="cine-nav" aria-label="Main">
         <a href="#top" onClick={jump(0)} className="flex items-center gap-2 font-semibold"><LeafLogo size={22} />EcoSphere <span className="text-leaf">AI</span></a>
         <div className="flex items-center gap-1 text-sm">
+          <button type="button" onClick={toggleSound} aria-pressed={sound} aria-label={sound ? "Turn sound off" : "Turn sound on"}
+            className="flex items-center gap-1.5 rounded-full px-3 py-2 text-white/70 hover:text-white">
+            {sound ? <Volume2 size={16} /> : <VolumeX size={16} />}<span className="hidden sm:inline">Sound</span>
+            {sound && <span className="cine-eq" aria-hidden><i /><i /><i /></span>}
+          </button>
           <a href="#features" onClick={jump(2)} className="hidden rounded-full px-3 py-2 text-white/70 hover:text-white sm:inline">Features</a>
           <Link href="/login" className="rounded-full px-3 py-2 text-white/70 hover:text-white">Log in</Link>
           <Link href="/signup" className="rounded-full bg-leaf px-4 py-2 font-semibold text-ink hover:brightness-105">Get started</Link>

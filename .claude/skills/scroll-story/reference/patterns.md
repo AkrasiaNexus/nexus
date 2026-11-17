@@ -30,7 +30,7 @@ Pick patterns that serve the storyboard. Use 4–6 per site, plus the one signat
 - **Light that follows the cursor.** A page-level radial glow at the pointer plus a card sheen and edge catch (mask-composite border). Fine pointers only.
 - **Depth of field.** Background shapes at mixed blur/opacity, so 2D layers feel spatial.
 - **Particles with purpose.** A few motes drifting off the signature at an emotional beat; never ambient confetti.
-- **Sound gate (optional).** "Enter / Enter without audio"; respect the answer. *(Unseen, Igloo)*
+- **Sound (opt-in).** Either a gate ("Enter / Enter without audio", as on Unseen and Igloo) or a nav toggle, off by default. No asset budget? Synthesize it with WebAudio: a breathing low pad (2–3 detuned sines through a lowpass with a 0.07Hz LFO on cutoff, gain ~0.05, 2.5s fade-in) plus a soft triangle chime per chapter from a pentatonic scale, fired from the timeline's chapter-change callback. *(EcoSphere `landing/ambient.ts`)*
 
 ## Easing language
 - Default `inOut(2)`; reveals `out(3)`; counters `out(3)`; nothing linear except scanning beams.

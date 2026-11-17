@@ -4,10 +4,10 @@ import { veinFill } from "@/lib/leaf";
 const C = 1000; // one chapter of timeline time
 const at = (chapter: number, frac = 0) => chapter * C + frac * C;
 
-type Opts = { mobile: boolean; reduce: boolean };
+type Opts = { mobile: boolean; reduce: boolean; onChapter?: (chapter: number) => void };
 
 // One master timeline for the whole story, scrubbed by scroll (both directions) through Anime's ScrollObserver.
-export function buildTimeline(root: HTMLElement, { mobile, reduce }: Opts): Timeline {
+export function buildTimeline(root: HTMLElement, { mobile, reduce, onChapter }: Opts): Timeline {
   const $ = (sel: string) => root.querySelector<HTMLElement>(sel)!;
   const $$ = (sel: string) => Array.from(root.querySelectorAll<HTMLElement>(sel));
   const track = $("[data-track]");
@@ -15,6 +15,7 @@ export function buildTimeline(root: HTMLElement, { mobile, reduce }: Opts): Time
   const screenRoot = $("[data-screen-root]");
   const cta = $("[data-cta]");
 
+  let chapterNow = -1;
   const tl = createTimeline({
     defaults: { ease: "inOut(2)", duration: C * 0.4 },
     autoplay: onScroll({ target: track, enter: "top top", leave: "bottom bottom", sync: 0.5 }),
@@ -23,6 +24,8 @@ export function buildTimeline(root: HTMLElement, { mobile, reduce }: Opts): Time
       const live = self.progress > 0.93;
       cta.style.pointerEvents = live ? "auto" : "none";
       cta.toggleAttribute("inert", !live);
+      const chapter = Math.min(9, Math.floor(self.progress * 10));
+      if (chapter !== chapterNow) { if (chapterNow !== -1) onChapter?.(chapter); chapterNow = chapter; }
     },
   });
 

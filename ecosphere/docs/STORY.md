@@ -26,4 +26,5 @@
 - Creativity 7.5: the flip-to-scan is original for the category.
 - Content 7: real app UI and labelled demo data; no real photography.
 - **Done after review:** cursor-reactive phone tilt (createAnimatable layer over the scroll rig), flush edge slabs, softened scan beam.
-- **Next fixes for a higher score:** sound gate, real product photography in the marketplace screen.
+- **Also done:** generative sound (opt-in nav toggle: breathing pad + pentatonic chapter chimes, WebAudio, no files).
+- **Next fixes for a higher score:** real product photography in the marketplace screen.
