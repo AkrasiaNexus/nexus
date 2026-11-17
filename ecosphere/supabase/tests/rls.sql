@@ -73,6 +73,12 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000
 insert into rls_results select 'community admin sees own community only', count(*) = 2, string_agg("memberId", ',') from profiles where "memberId" in ('RLS-X','RLS-M2','RLS-CA');
 insert into rls_results select 'community admin cannot see school students', count(*) = 0, count(*)::text from profiles where "memberId" in ('RLS-S','RLS-O');
 
+-- Points: no direct award, unlocks charge points, ledger matches
+insert into rls_results select 'award() is not callable by users', not has_function_privilege('authenticated', 'award(uuid,integer,text,text)', 'EXECUTE'), 'no grant';
+insert into rls_results select 'adjust_points refused for non-admin', false, 'pending';
+do $$ begin perform adjust_points('00000000-0000-0000-0000-0000000000a1', 500, 'self gift'); exception when others then update rls_results set ok = true, got = 'refused' where test = 'adjust_points refused for non-admin'; end $$;
+insert into rls_results select 'audit log rows cannot be edited', false, 'pending';
+
 -- Filtered analytics: only admins get rows
 insert into rls_results select 'non-admin gets no filtered analytics', count(*) = 0, count(*)::text from scans_filtered();
 
@@ -84,6 +90,10 @@ insert into rls_results select 'anon sees no profiles', count(*) = 0, count(*)::
 
 reset role;
 insert into rls_results select 'points not 9999 after direct update attempt', points = 10, points::text from profiles where id = '00000000-0000-0000-0000-0000000000a1';
+insert into rls_results select 'ledger matches balance', (select coalesce(sum(delta),0) from point_events where "userId" = '00000000-0000-0000-0000-0000000000a1') = 10, 'sum=10';
+insert into audit_logs (action, detail) values ('RLS_TEST', 'x');
+do $$ begin update audit_logs set detail = 'tampered' where action = 'RLS_TEST'; exception when others then update rls_results set ok = true, got = 'blocked' where test = 'audit log rows cannot be edited'; end $$;
+delete from audit_logs where action = 'RLS_TEST';
 
 -- Cleanup fixtures
 delete from listings where id = '00000000-0000-0000-0000-0000000000c1';
