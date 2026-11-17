@@ -1,57 +1,78 @@
 "use client";
 
-import { useId, useRef } from "react";
+import { useId, useMemo, useRef } from "react";
+import { buildLeaf, veinFill } from "@/lib/leaf";
 import { useTween } from "./Motion";
 
-const LEAF = "M178 14C96 10 30 46 22 116c-4 34 10 60 26 72 4-40 30-84 78-118-40 36-62 76-66 120 78 4 128-60 118-176z";
-// The clip frame is rotated 45° so "up" runs along the midrib: y=217 at the stem, y=-16 at the tip.
-const STEM_Y = 217;
-const SPAN = 233;
-
-// Focal moment: the leaf fills with chlorophyll from stem to tip up to the goal, and refills on period change.
-export function LeafGoal({ percent, label, size = 250 }: { percent: number; label: string; size?: number }) {
+// Focal moment: sap climbs the petiole, up the midrib and out along each vein, lighting the
+// network only as far as the goal percent. At 100% the margin lights too: the whole leaf is alive.
+export function LeafGoal({ percent, label, size = 212 }: { percent: number; label: string; size?: number }) {
   const id = useId().replace(/:/g, "");
-  const rect = useRef<SVGRectElement>(null);
+  const { blade, veins } = useMemo(buildLeaf, []);
+  const lit = useRef<(SVGPathElement | null)[]>([]);
+  const front = useRef<SVGCircleElement>(null);
   const num = useRef<HTMLSpanElement>(null);
-  // Fill level and printed percent share one tween frame.
+  const midrib = veins.findIndex((v) => v.kind === "midrib");
+
+  // Veins, sap front and printed percent all read the same tween frame.
   useTween(percent, (p) => {
-    const h = (p / 100) * SPAN;
-    rect.current?.setAttribute("y", String(STEM_Y - h));
-    rect.current?.setAttribute("height", String(h + 40));
+    const g = p / 100;
+    veins.forEach((v, i) => {
+      const el = lit.current[i];
+      if (!el) return;
+      const f = veinFill(g, v);
+      el.style.strokeDashoffset = String(1 - f);
+      el.style.opacity = f > 0 ? "1" : "0"; // no stray round-cap dot on unlit veins
+    });
+    const rib = lit.current[midrib];
+    const f = veinFill(g, veins[midrib]);
+    if (rib && front.current) {
+      const pt = rib.getPointAtLength(f * rib.getTotalLength());
+      front.current.setAttribute("cx", String(pt.x));
+      front.current.setAttribute("cy", String(pt.y));
+      front.current.style.opacity = f > 0 && f < 1 ? "1" : "0";
+    }
     if (num.current) num.current.textContent = `${Math.round(p)}%`;
   });
 
   return (
-    <div className="relative mx-auto" style={{ width: size, height: size }} role="img" aria-label={`${percent}% ${label}`}>
-      <svg viewBox="0 0 200 200" className="absolute inset-0 drop-shadow-[0_10px_30px_rgba(60,150,70,.35)]" aria-hidden>
+    <div className="relative mx-auto" style={{ width: size, height: size * 1.35 }} role="img" aria-label={`${percent}% ${label}`}>
+      <svg viewBox="0 0 200 270" className="absolute inset-0 h-full w-full overflow-visible" aria-hidden>
         <defs>
-          <linearGradient id={`${id}f`} x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0" stopColor="#1f5a2a" />
-            <stop offset=".55" stopColor="#3f9a48" />
-            <stop offset="1" stopColor="#9be292" />
+          <linearGradient id={`${id}b`} x1="0" y1="1" x2="0.4" y2="0">
+            <stop offset="0" stopColor="#0f2615" />
+            <stop offset="1" stopColor="#1b3d22" />
           </linearGradient>
-          <radialGradient id={`${id}s`} cx=".7" cy=".25" r=".6">
-            <stop offset="0" stopColor="#fff" stopOpacity=".35" />
-            <stop offset="1" stopColor="#fff" stopOpacity="0" />
-          </radialGradient>
-          <clipPath id={`${id}c`} transform="rotate(45 100 100)">
-            <rect ref={rect} x="-80" y={STEM_Y} width="360" height="0" />
-          </clipPath>
+          <clipPath id={`${id}k`}><path d={blade} /></clipPath>
+          <filter id={`${id}g`} x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2.2" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
         </defs>
-        {/* Unfilled leaf: the goal still to reach. */}
-        <path d={LEAF} fill="#16301c" stroke="#86d67e" strokeOpacity=".25" strokeWidth="1" />
-        <g clipPath={`url(#${id}c)`}>
-          <path d={LEAF} fill={`url(#${id}f)`} />
-          <path d={LEAF} fill={`url(#${id}s)`} />
+
+        {/* Lamina and the dormant vein network: what's still to grow. */}
+        <path d={blade} fill={`url(#${id}b)`} />
+        <g fill="none" stroke="#2c5233" strokeLinecap="round" strokeLinejoin="round" clipPath={`url(#${id}k)`}>
+          {veins.filter((v) => v.kind !== "margin" && v.kind !== "petiole").map((v, i) => <path key={i} d={v.d} strokeWidth={v.width} />)}
         </g>
-        <g stroke="#c8f5c0" strokeOpacity=".25" strokeWidth="1.2" fill="none">
-          <path d="M60 190C80 120 120 70 170 22" />
-          <path d="M95 120c-20-6-36-4-50 4M112 96c-16-10-34-12-50-8M130 74c-12-12-26-18-42-18M120 110c18 4 34 2 48-6M138 86c14 0 28-6 38-16" />
+        <path d={veins[0].d} fill="none" stroke="#2c5233" strokeWidth={veins[0].width} strokeLinecap="round" />
+        <path d={blade} fill="none" stroke="#86d67e" strokeOpacity=".22" strokeWidth="1" />
+
+        {/* Sap layer: each path is drawn up to its share of the goal. */}
+        <g fill="none" stroke="#b6f2a8" strokeLinecap="round" strokeLinejoin="round" filter={`url(#${id}g)`}>
+          {veins.map((v, i) => (
+            <path key={i} ref={(el) => { lit.current[i] = el; }} d={v.d} strokeWidth={v.width} pathLength={1}
+              strokeDasharray="1 1" strokeDashoffset={1} style={{ opacity: 0 }} />
+          ))}
+          <circle ref={front} r="3.6" fill="#e6ffdf" stroke="none" style={{ opacity: 0 }} />
         </g>
+
+        {/* Soft plate so the number stays legible over lit veins. */}
+        <ellipse cx="100" cy="128" rx="50" ry="30" fill="#07120a" opacity=".72" style={{ filter: "blur(8px)" }} />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center pl-6 pt-4 text-center">
-        <span ref={num} className="text-4xl font-bold tabular-nums drop-shadow" aria-hidden>0%</span>
-        <span className="text-sm text-white/90" aria-hidden>{label}</span>
+      <div className="absolute inset-x-0 flex flex-col items-center text-center" style={{ top: `${(128 / 270) * 100}%`, transform: "translateY(-50%)" }}>
+        <span ref={num} className="text-4xl font-bold tabular-nums" aria-hidden>0%</span>
+        <span className="text-sm text-white/85" aria-hidden>{label}</span>
       </div>
     </div>
   );
