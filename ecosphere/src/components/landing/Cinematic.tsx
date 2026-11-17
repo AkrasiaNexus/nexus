@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { createScope } from "animejs";
+import { createAnimatable, createScope } from "animejs";
 import { LeafLogo } from "@/components/art";
 import { Critter } from "@/components/Critter";
 import { Glyph } from "@/components/Glyph";
@@ -35,7 +35,16 @@ export function Cinematic() {
         if (window.innerWidth !== stableWidth && resume > 0 && resume < 1) window.scrollTo(0, track.offsetTop + resume * (track.offsetHeight - window.innerHeight));
         stableWidth = window.innerWidth;
         const tl = buildTimeline(root.current!, { mobile: !!self?.matches.mobile, reduce: !!self?.matches.reduce });
-        return () => tl.revert();
+        // The hook reacts in the first second: on a mouse/trackpad the phone leans toward the cursor,
+        // layered on top of (not fighting) the scroll timeline, which owns the outer rig.
+        let off = () => {};
+        if (!self?.matches.reduce && window.matchMedia("(pointer: fine)").matches) {
+          const tilt = createAnimatable(root.current!.querySelector<HTMLElement>("[data-tilt]")!, { rotateX: 900, rotateY: 900, ease: "out(3)" });
+          const lean = (e: PointerEvent) => { tilt.rotateY((e.clientX / window.innerWidth - 0.5) * 14); tilt.rotateX(-(e.clientY / window.innerHeight - 0.5) * 9); };
+          window.addEventListener("pointermove", lean, { passive: true });
+          off = () => window.removeEventListener("pointermove", lean);
+        }
+        return () => { off(); tl.revert(); };
       });
     // A resize that stays within one layout just re-baselines; crossing the breakpoint is handled by the scope rebuild above.
     let lastMobile = window.matchMedia("(max-width: 767px)").matches;
@@ -133,7 +142,9 @@ export function Cinematic() {
 
           <div data-shadow className="cine-shadow" aria-hidden />
           <div data-rig className="cine-rig">
-            <Phone screen={<><WelcomeScreen /><HomeScreen /><ScannerScreen /><StatsScreen /><MarketScreen /><RewardsScreen /><RoleScreens /></>} />
+            <div data-tilt className="cine-tilt">
+              <Phone screen={<><WelcomeScreen /><HomeScreen /><ScannerScreen /><StatsScreen /><MarketScreen /><RewardsScreen /><RoleScreens /></>} />
+            </div>
           </div>
 
           <div data-final-logo className="cine-final-logo" style={{ opacity: 0 }}><LeafLogo size={40} /><span className="text-xl font-semibold">EcoSphere <span className="text-leaf">AI</span></span></div>

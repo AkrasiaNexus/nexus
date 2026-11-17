@@ -23,11 +23,11 @@
 /* Thickness: four slabs folded 90° off the body. */
 .phone-edge { position: absolute; display: block; background: linear-gradient(90deg, #2b2f2d, #5b615e 45%, #3a3f3d 55%, #1f2221); }
 .edge-l, .edge-r { top: var(--r); bottom: var(--r); width: var(--pd); }
-.edge-l { left: 0; transform-origin: left; transform: translateX(calc(var(--pd) / -2)) rotateY(90deg) translateX(calc(var(--pd) / -2)); }
-.edge-r { right: 0; transform-origin: right; transform: translateX(calc(var(--pd) / 2)) rotateY(-90deg) translateX(calc(var(--pd) / 2)); }
+.edge-l { left: 0; transform-origin: left; transform: rotateY(90deg) translateX(calc(var(--pd) / -2)); }
+.edge-r { right: 0; transform-origin: right; transform: rotateY(-90deg) translateX(calc(var(--pd) / 2)); }
 .edge-t, .edge-b { left: var(--r); right: var(--r); height: var(--pd); background: linear-gradient(0deg, #2b2f2d, #5b615e 45%, #3a3f3d 55%, #1f2221); }
-.edge-t { top: 0; transform-origin: top; transform: translateY(calc(var(--pd) / -2)) rotateX(-90deg) translateY(calc(var(--pd) / -2)); }
-.edge-b { bottom: 0; transform-origin: bottom; transform: translateY(calc(var(--pd) / 2)) rotateX(90deg) translateY(calc(var(--pd) / 2)); }
+.edge-t { top: 0; transform-origin: top; transform: rotateX(-90deg) translateY(calc(var(--pd) / -2)); }
+.edge-b { bottom: 0; transform-origin: bottom; transform: rotateX(90deg) translateY(calc(var(--pd) / 2)); }
 .phone-edge i { position: absolute; left: 25%; right: 25%; border-radius: 3px; background: linear-gradient(90deg, #6b716e, #3a3f3d); }
 .btn-action { top: 4%; height: 5%; } .btn-vol { top: 14%; height: 10%; } .btn-vol2 { top: 27%; height: 10%; }
 .btn-power { top: 18%; height: 14%; }

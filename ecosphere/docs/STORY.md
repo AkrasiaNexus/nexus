@@ -25,4 +25,5 @@
 - Usability 8: mobile layout designed; reduced motion complete; CTA clear.
 - Creativity 7.5: the flip-to-scan is original for the category.
 - Content 7: real app UI and labelled demo data; no real photography.
-- **Next fixes for a higher score:** sound gate, cursor-reactive phone tilt in the intro (the hook "reacts in the first second"), real product photography in the marketplace screen.
+- **Done after review:** cursor-reactive phone tilt (createAnimatable layer over the scroll rig), flush edge slabs, softened scan beam.
+- **Next fixes for a higher score:** sound gate, real product photography in the marketplace screen.
