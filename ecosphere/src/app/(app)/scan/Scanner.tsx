@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
-import { Camera, CameraOff, ImagePlus, Loader2, Recycle, ShieldCheck } from "lucide-react";
+import { Camera, CameraOff, ChevronDown, ImagePlus, Loader2, Recycle, ShieldCheck } from "lucide-react";
 import type { WasteType } from "@/lib/types";
 import { GUIDE, WASTE_TYPES, classify } from "@/lib/waste";
 import { saveScan } from "../../actions";
@@ -24,6 +25,8 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
   const stream = useRef<MediaStream | null>(null);
   const fallbackInput = useRef<HTMLInputElement>(null);
   const [cam, setCam] = useState<Cam>("off");
+  const resultRef = useRef<HTMLElement>(null);
+  const [resultInView, setResultInView] = useState(true);
   const img = useRef<HTMLImageElement>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
   const [preview, setPreview] = useState<string | null>(null);
@@ -76,6 +79,18 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
       setCam(["NotAllowedError", "PermissionDeniedError", "SecurityError"].includes((e as DOMException).name) ? "denied" : "unavailable");
     }
   }
+
+  // The result lands below the camera frame: bring it into view, and keep a "see result" cue while it's off-screen.
+  useEffect(() => {
+    const el = resultRef.current;
+    if (!result || !el) return;
+    // rootMargin: ignore the strip hidden under the mobile bottom nav.
+    const io = new IntersectionObserver(([e]) => setResultInView(e.isIntersecting), { threshold: 0.6, rootMargin: "0px 0px -96px 0px" });
+    io.observe(el);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const t = setTimeout(() => el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" }), 350);
+    return () => { io.disconnect(); clearTimeout(t); };
+  }, [result]);
 
   // Attach the stream once the <video> is on screen.
   useEffect(() => {
@@ -216,9 +231,20 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
 
       {message && <p key={message} role="status" className="sheet-up card p-3 text-center text-sm text-leaf">{message}</p>}
 
+      {/* Portal: the page's transition wrapper keeps a transform, which would pin `fixed` to the page instead of the screen. */}
+      {result && !resultInView && createPortal(
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-30 flex justify-center md:bottom-8">
+          <button type="button" onClick={() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+            className="sheet-up pointer-events-auto flex items-center gap-2 rounded-full bg-leaf py-2.5 pl-4 pr-3 text-sm font-semibold text-ink shadow-[0_8px_24px_-6px_rgba(0,0,0,.7)]">
+            See your result <ChevronDown size={18} className="nudge" aria-hidden />
+          </button>
+        </div>,
+        document.body,
+      )}
+
       {result && (
         <>
-          <section key={result.label} className="sheet-up card flex items-center gap-4 p-4" aria-live="polite">
+          <section ref={resultRef} key={result.label} className="sheet-up card flex scroll-mt-24 items-center gap-4 p-4" aria-live="polite">
             <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#2f6b34] to-[#163a1b] text-[#9be292]"><Recycle size={28} className="spin-once" /></span>
             <div className="flex-1">
               <p className="text-lg font-semibold capitalize">{result.label}</p>

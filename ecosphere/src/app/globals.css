@@ -43,6 +43,7 @@ body {
 @keyframes spin-once { from { transform: rotate(-200deg); } }
 @keyframes float-up { 0% { opacity: 0; transform: translateY(6px); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-40px); } }
 @keyframes scan-sweep { from { transform: translateY(-100%); } to { transform: translateY(100%); } }
+@keyframes nudge { 0%, 100% { transform: translateY(-1px); } 50% { transform: translateY(3px); } }
 @keyframes blur-in { from { opacity: 0; filter: blur(12px); transform: translateY(14px) scale(0.92); } }
 
 /* Screen changes: tab roots crossfade, sub-screens push in from the right like a native stack. */
@@ -77,6 +78,7 @@ body {
 .spin-once { animation: spin-once 900ms var(--ease-out) both; }
 .float-up { animation: float-up 1400ms var(--ease-out) forwards; }
 .blur-in { animation: blur-in 1000ms var(--ease-out) both; }
+.nudge { animation: nudge 1.4s ease-in-out infinite; }
 
 /* Press feedback on anything tappable that looks like a surface. */
 a.card, button.card, .press { transition: transform var(--t-fast) var(--ease-out), border-color var(--t-base); }
@@ -86,7 +88,7 @@ a.card:active, button.card:active, .press:active { transform: scale(0.97); }
 @media (prefers-reduced-motion: reduce) {
   .view-push, .stagger > *, .stagger-slow > *, .sheet-up, .pop-in, .blur-in { animation-name: fade-in !important; }
   .grow-x { animation: none !important; }
-  .spin-once, .scan-line { animation: none !important; }
+  .spin-once, .scan-line, .nudge { animation: none !important; }
   .float-up { animation: fade-in var(--t-base) both reverse !important; }
   .bar-anim, .line-anim, .chart-anim { animation: none !important; transition: none !important; }
   .slide-anim { transition: none !important; }
