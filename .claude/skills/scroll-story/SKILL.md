@@ -41,6 +41,7 @@ The user can redirect early, and the next session can resume from it.
 - Tall track (`~110vh` per chapter desktop, `~80vh` mobile) → sticky stage `height:100svh`.
 - Anime.js v4: `createTimeline({ autoplay: onScroll({ target: track, enter: 'top top', leave: 'bottom bottom', sync: 0.5 }) })`; 1000 units per chapter; `createScope({ mediaQueries })` rebuilds it for mobile and reduced motion.
 - The working reference implementation is in this repo: `ecosphere/src/components/landing/` (10 chapters, CSS-3D phone, flip-to-camera scan). Read it before writing a new one. Copy its structure, not its concept.
+- **No framework / plain HTML project?** Start from `templates/coin-jars.html`: the same architecture in one file (anime.js from a pinned CDN, 5 chapters, 3D coins → jars, scope for mobile/reduced motion, cursor-reactive hook). It passed consistency (all consistent) and perf (~60fps, 0 long tasks).
 
 ## Before you say "done"
 
