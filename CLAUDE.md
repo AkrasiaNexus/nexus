@@ -80,6 +80,12 @@ This file is the user's standing preferences. Load and follow it every session. 
 - **Load the `impeccable` skill before ANY UI work** (new screens, styling, layout, copy, motion, review) in every project in this repo; use its commands (`animate`, `polish`, `critique`, `audit`, `delight`, `overdrive`...) by name.
 - Triage every detector finding: fix real problems; never add ignores to dodge a fix.
 
+## 12c. Scroll-story websites (always ON for websites)
+- Any new website, landing/product/portfolio/campaign page → load the `scroll-story` skill (`.claude/skills/scroll-story`) together with `impeccable`.
+- The user won't supply the concept: invent the thesis, signature object/material/verb and chapter storyboard yourself (write `docs/STORY.md` first), then build a continuous scroll-driven experience at the animejs.com / Apple-launch / Awwwards bar.
+- Finish with the skill's QA scripts (fast/slow consistency, functional, perf), a jury self-score, and a scroll-through recording sent to the user.
+- Reference build: `ecosphere/src/components/landing/` (copy the structure, never the concept).
+
 ## 13. Graphify
 - For codebase questions: `graphify query` / `path` / `explain` first.
 - Use `graphify-out/wiki/index.md` for navigation.
