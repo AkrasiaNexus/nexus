@@ -18,7 +18,7 @@ Load `impeccable` too (project rule). This skill decides the story and motion; i
 | 1 | **Strategist** | Inspect the product: what it does, who it's for, the one action we want. Read the codebase/brand first. | — |
 | 2 | **Creative Director** | One-sentence thesis + the **signature** (object, material or verb) + 2 rejected alternatives. | [concept.md](reference/concept.md) |
 | 3 | **Story Architect** | Chapter storyboard: arc, scroll %, what the signature does per chapter, copy. | [concept.md](reference/concept.md) |
-| 4 | **Art Director** | World: palette from the brand, type, light, texture, negative space. No new brand. | impeccable + [patterns.md](reference/patterns.md) |
+| 4 | **Art Director** | World: palette from the brand, type, light, texture, negative space. No new brand. | impeccable + [art-direction.md](reference/art-direction.md) |
 | 5 | **Motion Director** | Choreography per chapter from the pattern catalogue; one signature moment; easing language. | [patterns.md](reference/patterns.md) |
 | 6 | **Creative Technologist** | Engine choice, the master timeline, responsive scopes, reduced motion. | [engineering.md](reference/engineering.md) |
 | 7 | **QA + Jury** | Scripted tests (fast/slow consistency, functional, perf), visual frames, self-score vs the Awwwards rubric, recording. | [qa.md](reference/qa.md) |
