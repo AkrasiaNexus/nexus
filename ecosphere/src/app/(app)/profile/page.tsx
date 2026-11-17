@@ -5,7 +5,8 @@ import type { CurrentUser } from "@/lib/auth";
 import { requireUser } from "@/lib/auth";
 import { admin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { dailySeries, impactFor, scanScope, startOf } from "@/lib/queries";
+import { cosmeticsFor, dailySeries, impactFor, scanScope, startOf } from "@/lib/queries";
+import { Avatar } from "@/components/Avatar";
 import { LeafDecor } from "@/components/art";
 import { Bars, Header, IconCircle, MenuRow, Stat } from "@/components/ui";
 
@@ -24,6 +25,7 @@ type Me = CurrentUser;
 
 export default async function Profile() {
   const user = await requireUser();
+  const cosmetics = await cosmeticsFor(user);
   const subtitle =
     user.role === "STUDENT" ? [user.grade, user.school?.name].filter(Boolean).join(" • ")
     : user.role === "EMPLOYEE" ? ["Employee", user.department].filter(Boolean).join(" • ")
@@ -38,7 +40,7 @@ export default async function Profile() {
       <Header title={TITLE[user.role]} />
       <div className="stagger flex flex-col gap-4 px-5">
         <section className="flex flex-col items-center gap-1 text-center">
-          <span className="pop-in">{emblem ?? <span className="grid h-28 w-28 place-items-center rounded-full border-4 border-leaf/40 bg-[#cfd8d2] text-6xl">{user.avatar}</span>}</span>
+          <span className="pop-in">{emblem ?? <Avatar emoji={user.avatar} size={112} cosmetics={cosmetics} />}</span>
           <h2 className="mt-2 text-2xl font-semibold" style={{ animation: "rise-in 600ms 200ms var(--ease-out) both" }}>{user.name}</h2>
           <p className="text-white/65" style={{ animation: "rise-in 600ms 300ms var(--ease-out) both" }}>{subtitle}</p>
           <p className="font-mono text-xs text-white/40" style={{ animation: "rise-in 600ms 380ms var(--ease-out) both" }}>ID {user.memberId}</p>
@@ -174,7 +176,7 @@ async function RoleBody({ user }: { user: Me }) {
           { href: "/community", icon: <UsersRound size={ICON} />, label: "My Community" },
           { href: "/events", icon: <CalendarDays size={ICON} />, label: "Local Campaigns & Events" },
           { href: "/partners", icon: <MapPin size={ICON} />, label: "Nearby Recycling Centres" },
-          { href: "/history?t=Marketplace", icon: <Store size={ICON} />, label: "Marketplace Activity & Donations" },
+          { href: "/marketplace/mine", icon: <Store size={ICON} />, label: "Marketplace Activity & Donations" },
           { href: "/rewards", icon: <Trophy size={ICON} />, label: "My Challenges" },
           { href: "/history", icon: <Activity size={ICON} />, label: "My Activities" },
           settings,

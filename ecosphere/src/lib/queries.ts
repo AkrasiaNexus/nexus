@@ -103,3 +103,12 @@ export async function impactFiltered(f: AdminFilters, since?: Date, until?: Date
   const scans = withDates(data as ScanRow[] | null, "createdAt");
   return { scans, ...impact(scans) };
 }
+
+// Equipped cosmetics for an avatar, resolved from the user's equipped item ids.
+export async function cosmeticsFor(p: { equippedBackground?: string | null; equippedBorder?: string | null; equippedSticker?: string | null }) {
+  const ids = [p.equippedBackground, p.equippedBorder, p.equippedSticker].filter(Boolean) as string[];
+  if (!ids.length) return {};
+  const { data } = await createClient().from("reward_items").select("id, value").in("id", ids);
+  const v = (id?: string | null) => (data ?? []).find((i) => i.id === id)?.value ?? null;
+  return { background: v(p.equippedBackground), border: v(p.equippedBorder), sticker: v(p.equippedSticker) };
+}

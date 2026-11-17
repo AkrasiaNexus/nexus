@@ -3,7 +3,8 @@ import { BarChart3, Bell, BookOpen, CalendarDays, ChevronLeft, ChevronRight, Cli
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PERIOD_GOAL_KG, periodLabel, periodRange, type Period } from "@/lib/charts";
-import { impactFor, scanScope, withDates, type Scope } from "@/lib/queries";
+import { cosmeticsFor, impactFor, scanScope, withDates, type Scope } from "@/lib/queries";
+import { Avatar } from "@/components/Avatar";
 import { goalPercent } from "@/lib/rewards";
 import { LeafGoal } from "@/components/LeafGoal";
 import { PillMenu, Stat } from "@/components/ui";
@@ -39,6 +40,7 @@ export default async function Home({ searchParams }: { searchParams: Params }) {
   const now = new Date();
   const inAWeek = new Date(Date.now() + 7 * 86_400_000);
   const sb = createClient();
+  const cosmetics = await cosmeticsFor(user);
 
   const [data, unread, taskRes, doneRes, rsvpRes, challengeRes, myScans] = await Promise.all([
     impactFor(scope, start, end),
@@ -98,7 +100,7 @@ export default async function Home({ searchParams }: { searchParams: Params }) {
     <div className="px-5 pt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
     <div className="flex flex-col gap-5">
       <div className="flex items-center gap-4">
-        <span className="grid h-14 w-14 place-items-center rounded-full border-2 border-white/15 bg-card text-3xl">{user.avatar}</span>
+        <Avatar emoji={user.avatar} size={56} cosmetics={cosmetics} />
         <p className="flex-1 text-lg leading-tight">Welcome back,<br /><b className="font-semibold">{user.name.split(" ")[0]}!</b></p>
         <Link href="/notifications" aria-label={`Notifications${unreadCount ? ` (${unreadCount} new)` : ""}`} className="relative rounded-full p-2 hover:bg-card">
           <Bell size={24} />

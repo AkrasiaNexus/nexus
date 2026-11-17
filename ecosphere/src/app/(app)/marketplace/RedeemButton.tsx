@@ -13,8 +13,8 @@ export function RedeemButton({ id, disabled, label = "Redeem" }: { id: string; d
       <button className="btn w-full py-3.5" disabled={disabled || pending}
         onClick={() => start(async () => {
           const r = await redeem(id);
-          // Claimed peer items disappear from the grid, so confirm on the history page instead.
-          if (r?.ok) router.push(`/history?t=Marketplace&msg=${encodeURIComponent(r.ok)}`);
+          // Claimed peer items disappear from the grid, so confirm on My transactions instead.
+          if (r?.ok) router.push(`/marketplace/mine?tab=tx&msg=${encodeURIComponent(r.ok)}`);
           else setError(r?.error);
         })}>
         {pending ? "…" : label}

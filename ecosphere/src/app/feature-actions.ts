@@ -7,7 +7,9 @@ import { admin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { notifyCommunity, notifySchool } from "@/lib/notify";
 import { healthAlerts } from "@/lib/health";
-import { classChallengeSchema, eventSchema, healthSchema, listingSchema, noticeSchema, taskSchema } from "@/lib/validation";
+import { classChallengeSchema, eventSchema, healthSchema, listingSchema, noticeSchema, reportSchema, taskSchema } from "@/lib/validation";
+import { IMAGE_TYPES, checkImage } from "@/lib/upload";
+import { randomUUID } from "crypto";
 import type { FormState } from "./actions";
 
 const formObject = (fd: FormData) =>
@@ -18,13 +20,51 @@ export async function createListing(_: FormState, fd: FormData): Promise<FormSta
   const parsed = listingSchema.safeParse(formObject(fd));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const d = parsed.data;
-  const { error } = await admin().from("listings").insert({
-    ...d, pricePoints: d.kind === "SELL" ? d.pricePoints : 0, category: d.kind === "DONATE" ? "Donate" : d.category, stock: 1, ownerId: user.id,
+  const db = admin();
+
+  let imageUrl: string | null = null;
+  const photo = fd.get("photo");
+  if (photo instanceof File && photo.size > 0) {
+    const bytes = new Uint8Array(await photo.arrayBuffer());
+    const check = checkImage(bytes, photo.type);
+    if ("error" in check) return { error: check.error };
+    // Server-chosen path: the user's folder + random name, never the uploaded filename.
+    const path = `${user.id}/${randomUUID()}.${IMAGE_TYPES[check.type]}`;
+    const { error: upErr } = await db.storage.from("listing-images").upload(path, bytes, { contentType: check.type });
+    if (upErr) return { error: "Could not upload the photo. Try again." };
+    imageUrl = db.storage.from("listing-images").getPublicUrl(path).data.publicUrl;
+  }
+
+  const { data: setting } = await db.from("settings").select("value").eq("key", "marketplace.requireApproval").maybeSingle();
+  const needsApproval = setting?.value !== "false"; // on by default
+  const { error } = await db.from("listings").insert({
+    ...d, imageUrl, pricePoints: d.kind === "SELL" ? d.pricePoints : 0, category: d.kind === "DONATE" ? "Donate" : d.category,
+    stock: 1, ownerId: user.id, status: needsApproval ? "PENDING" : "APPROVED",
   });
   if (error) return { error: "Could not publish the listing." };
+  if (needsApproval) {
+    const { data: admins } = await db.from("profiles").select("id").eq("role", "SUPER_ADMIN").eq("active", true);
+    await db.from("notifications").insert((admins ?? []).map((a) => ({ userId: a.id, kind: "MARKETPLACE" as const, title: "Listing waiting for approval", body: `${user.name}: ${d.title}` })));
+  }
   await audit(user.id, "LISTING_CREATED", d.title);
   revalidatePath("/marketplace");
-  redirect("/marketplace");
+  redirect(needsApproval ? "/marketplace/mine?msg=submitted" : "/marketplace/mine");
+}
+
+export async function reportListing(listingId: string, _: FormState, fd: FormData): Promise<FormState> {
+  const user = await requireUser();
+  const parsed = reportSchema.safeParse(formObject(fd));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const db = admin();
+  const { data: listing } = await createClient().from("listings").select("id, title").eq("id", String(listingId)).maybeSingle(); // RLS: must be visible to the reporter
+  if (!listing) return { error: "Listing not found." };
+  const { count } = await db.from("listing_reports").select("id", { count: "exact", head: true }).eq("reporterId", user.id).eq("listingId", listing.id);
+  if ((count ?? 0) > 0) return { ok: "You've already reported this listing. Thanks!" };
+  await db.from("listing_reports").insert({ listingId: listing.id, reporterId: user.id, reason: parsed.data.reason });
+  const { data: admins } = await db.from("profiles").select("id").eq("role", "SUPER_ADMIN").eq("active", true);
+  await db.from("notifications").insert((admins ?? []).map((a) => ({ userId: a.id, kind: "MARKETPLACE" as const, title: "Listing reported", body: `${listing.title}: ${parsed.data.reason}` })));
+  await audit(user.id, "LISTING_REPORTED", listing.title);
+  return { ok: "Thanks, our moderators will review it." };
 }
 
 export async function closeListing(listingId: string) {

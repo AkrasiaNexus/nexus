@@ -52,7 +52,10 @@ export const listingSchema = z.object({
   category: z.enum(["Reuse", "Donate", "Others"]),
   emoji: z.enum(["📦", "📚", "👕", "🧸", "🪑", "🚲", "🔌", "🪴", "🎒", "🍳"]),
   pricePoints: z.coerce.number().int().min(0).max(1000).default(0),
+  condition: z.enum(["NEW", "LIKE_NEW", "GOOD", "FAIR"]).default("GOOD"),
 });
+
+export const reportSchema = z.object({ reason: z.string().trim().min(3, "Tell us what's wrong (3+ characters).").max(280) });
 
 export const taskSchema = z.object({
   title: text(80),
