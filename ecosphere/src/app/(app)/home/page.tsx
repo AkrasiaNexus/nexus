@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, BookOpen, CalendarDays, ChevronLeft, ChevronRight, ClipboardCheck, Cloud, Droplet, Gift, Globe2, Handshake, HeartPulse, ScanLine, School, ShieldCheck, Store, Trash2 } from "lucide-react";
+import { BarChart3, Bell, BookOpen, CalendarDays, ChevronLeft, ChevronRight, ClipboardCheck, Cloud, Droplet, Gift, Globe2, Handshake, HeartPulse, Megaphone, ScanLine, School, ShieldCheck, Store, Trash2, Trophy, Users } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PERIOD_GOAL_KG, periodLabel, periodRange, type Period } from "@/lib/charts";
@@ -49,6 +49,16 @@ export default async function Home({ searchParams }: { searchParams: Params }) {
     sb.from("challenges").select("title, endsAt").gte("endsAt", now.toISOString()).lte("endsAt", inAWeek.toISOString()).order("endsAt").limit(1).maybeSingle(),
     sb.from("scans").select("wasteType, weightKg").eq("userId", user.id),
   ]);
+  const [announceRes, recentScans, recentBuys] = await Promise.all([
+    sb.from("notifications").select("id, title, body, createdAt").eq("kind", "ANNOUNCEMENT").or(`userId.eq.${user.id},userId.is.null`).order("createdAt", { ascending: false }).limit(2),
+    sb.from("scans").select("id, label, points, createdAt").eq("userId", user.id).order("createdAt", { ascending: false }).limit(3),
+    sb.from("purchases").select("id, points, createdAt, listing:listings(title)").eq("userId", user.id).order("createdAt", { ascending: false }).limit(2),
+  ]);
+  const announcements = withDates(announceRes.data, "createdAt");
+  const recent = [
+    ...withDates(recentScans.data, "createdAt").map((x) => ({ id: x.id, at: x.createdAt, text: `Scanned ${x.label}`, pts: `+${x.points}` })),
+    ...withDates(recentBuys.data, "createdAt").map((x) => ({ id: x.id, at: x.createdAt, text: `Redeemed ${(Array.isArray(x.listing) ? x.listing[0] : x.listing)?.title ?? "an item"}`, pts: x.points ? `-${x.points}` : "" })),
+  ].sort((a, b) => +b.at - +a.at).slice(0, 4);
   const done = new Set((doneRes.data ?? []).map((d) => d.taskId));
   const tasks = withDates(taskRes?.data ?? [], "dueAt").filter((t) => !done.has(t.id)).slice(0, 3);
   const events = withDates((rsvpRes.data ?? []).flatMap((r) => (Array.isArray(r.event) ? r.event : r.event ? [r.event] : [])), "startsAt")
@@ -62,14 +72,17 @@ export default async function Home({ searchParams }: { searchParams: Params }) {
   // First three match the mockup; the rest scroll sideways.
   const actions = [
     { href: "/scan", label: "Scan Waste", icon: ScanLine },
-    { href: "/guide", label: "Guide", icon: BookOpen },
+    { href: "/stats", label: "Statistics", icon: BarChart3 },
+    { href: "/guide", label: "Recycling Guide", icon: BookOpen },
+    { href: "/rewards", label: "Green Points", icon: Gift },
     { href: "/marketplace", label: "Marketplace", icon: Store },
+    { href: "/challenges", label: "Challenges", icon: Trophy },
     ...(isStudent ? [{ href: "/tasks", label: "Tasks", icon: ClipboardCheck }] : []),
     ...(user.role === "TEACHER" ? [{ href: "/teacher", label: "My Class", icon: School }] : []),
     ...(user.role === "SCHOOL_ADMIN" ? [{ href: "/school", label: "School", icon: School }] : []),
     ...(user.role === "SUPER_ADMIN" ? [{ href: "/admin/users", label: "Admin", icon: ShieldCheck }] : []),
     ...(["STUDENT", "PARENT", "TEACHER", "HEALTH_MONITOR", "SCHOOL_ADMIN"].includes(user.role) ? [{ href: "/health", label: "Health", icon: HeartPulse }] : []),
-    { href: "/rewards", label: "Rewards", icon: Gift },
+    ...(["COMMUNITY", "COMMUNITY_ADMIN"].includes(user.role) ? [{ href: "/community", label: "Community", icon: Users }] : []),
     { href: "/events", label: "Events", icon: CalendarDays },
     { href: "/impact", label: "SDG Impact", icon: Globe2 },
     { href: "/partners", label: "Partners", icon: Handshake },
@@ -77,12 +90,13 @@ export default async function Home({ searchParams }: { searchParams: Params }) {
   const reminders = [
     ...tasks.map((t) => ({ href: "/tasks", text: `Task due ${t.dueAt.toLocaleDateString()}: ${t.title}` })),
     ...events.map((e) => ({ href: "/events", text: `You're going: ${e.title} · ${e.startsAt.toLocaleDateString()}` })),
-    ...(challenge ? [{ href: "/rewards", text: `Challenge "${challenge.title}" ends ${challenge.endsAt.toLocaleDateString()}` }] : []),
+    ...(challenge ? [{ href: "/challenges", text: `Challenge "${challenge.title}" ends ${challenge.endsAt.toLocaleDateString()}` }] : []),
   ];
   const scopeItems = [["me", "Me"], ["class", "My Class"], ["school", "School"]].map(([k, v]) => ({ href: url({ s: k }), label: v, on: k === view }));
 
   return (
-    <div className="flex flex-col gap-5 px-5 pt-8">
+    <div className="px-5 pt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
+    <div className="flex flex-col gap-5">
       <div className="flex items-center gap-4">
         <span className="grid h-14 w-14 place-items-center rounded-full border-2 border-white/15 bg-card text-3xl">{user.avatar}</span>
         <p className="flex-1 text-lg leading-tight">Welcome back,<br /><b className="font-semibold">{user.name.split(" ")[0]}!</b></p>
@@ -99,6 +113,7 @@ export default async function Home({ searchParams }: { searchParams: Params }) {
       </div>
 
       <LeafGoal percent={percent} label={personalGoal ? "Green Goal" : "Recycling Rate"} />
+      {isPersonal && <Link href="/rewards" className="-mt-3 self-center text-sm text-white/60"><b className="text-leaf">{user.points}</b> green points</Link>}
 
       <div className="flex flex-col items-center gap-3">
         <div className="flex w-full items-center gap-3" aria-label="Timeline">
@@ -121,12 +136,15 @@ export default async function Home({ searchParams }: { searchParams: Params }) {
         <Stat icon={<Cloud size={22} className="text-[#7fe0c4]" />} value={`${data.co2} kg`} label="CO₂ Avoided" />
         <Stat icon={<Droplet size={22} className="text-leaf" />} value={`${data.water} L`} label="Water Saved" />
       </div>
+    </div>
+
+    <div className="mt-5 flex flex-col gap-5 lg:mt-0">
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">Quick Actions</h2>
-        <div className="stagger -mx-5 flex snap-x gap-3 overflow-x-auto px-5 pb-1">
+        <div className="stagger -mx-5 flex snap-x gap-3 overflow-x-auto px-5 pb-1 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0">
           {actions.map(({ href, label, icon: Icon }) => (
-            <Link key={href} href={href} className="card flex w-[calc((100%-1.5rem)/3)] shrink-0 snap-start flex-col items-center gap-2 py-4 text-center text-xs hover:border-leaf">
+            <Link key={href} href={href} className="card flex w-[calc((100%-1.5rem)/3)] shrink-0 snap-start flex-col items-center gap-2 py-4 text-center text-xs hover:border-leaf lg:w-auto">
               <Icon className="text-leaf" size={28} />{label}
             </Link>
           ))}
@@ -135,8 +153,26 @@ export default async function Home({ searchParams }: { searchParams: Params }) {
 
       {reminders.length > 0 && (
         <section className="card p-4">
-          <h2 className="mb-2 flex items-center gap-2 text-sm font-medium"><Bell size={16} className="text-leaf" />Reminders</h2>
+          <h2 className="mb-2 flex items-center gap-2 text-sm font-medium"><Bell size={16} className="text-leaf" />Upcoming</h2>
           <ul className="space-y-1 text-sm">{reminders.map((r) => <li key={r.text}><Link href={r.href} className="text-white/65 hover:text-white">• {r.text}</Link></li>)}</ul>
+        </section>
+      )}
+
+      {announcements.length > 0 && (
+        <section className="card p-4">
+          <h2 className="mb-2 flex items-center gap-2 text-sm font-medium"><Megaphone size={16} className="text-leaf" />Announcements</h2>
+          <ul className="space-y-2 text-sm">
+            {announcements.map((a) => <li key={a.id}><p>{a.title}</p><p className="text-xs text-white/50">{a.body}</p></li>)}
+          </ul>
+        </section>
+      )}
+
+      {recent.length > 0 && (
+        <section className="card p-4">
+          <div className="mb-2 flex items-center justify-between"><h2 className="text-sm font-medium">Recent activity</h2><Link href="/history" className="text-xs text-leaf">All →</Link></div>
+          <ul className="space-y-1.5 text-sm">
+            {recent.map((r) => <li key={r.id} className="flex gap-2"><span className="flex-1 truncate capitalize text-white/75">{r.text}</span><span className={r.pts.startsWith("-") ? "text-orange-300" : "text-leaf"}>{r.pts}</span></li>)}
+          </ul>
         </section>
       )}
 
@@ -147,6 +183,7 @@ export default async function Home({ searchParams }: { searchParams: Params }) {
           <p className="text-sm text-white/65">{top[0] ? TIPS[top[0].wasteType] : "Scan your first item to get personalised eco-tips."}</p>
         </div>
       </section>
+    </div>
     </div>
   );
 }

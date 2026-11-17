@@ -73,6 +73,9 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000
 insert into rls_results select 'community admin sees own community only', count(*) = 2, string_agg("memberId", ',') from profiles where "memberId" in ('RLS-X','RLS-M2','RLS-CA');
 insert into rls_results select 'community admin cannot see school students', count(*) = 0, count(*)::text from profiles where "memberId" in ('RLS-S','RLS-O');
 
+-- Filtered analytics: only admins get rows
+insert into rls_results select 'non-admin gets no filtered analytics', count(*) = 0, count(*)::text from scans_filtered();
+
 -- Anonymous (no session)
 reset role;
 set local role anon;

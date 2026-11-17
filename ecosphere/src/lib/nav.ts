@@ -17,6 +17,7 @@ export const NAV: NavSection[] = [
       { href: "/guide", label: "Recycling Guide", icon: "BookOpen" },
       { href: "/marketplace", label: "Marketplace", icon: "Store" },
       { href: "/rewards", label: "Green Points & Rewards", icon: "Gift" },
+      { href: "/challenges", label: "Challenges", icon: "Trophy" },
     ],
   },
   {

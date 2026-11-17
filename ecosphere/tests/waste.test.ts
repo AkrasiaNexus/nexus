@@ -86,3 +86,22 @@ describe("periods", () => {
     expect(seriesFor("month", new Date(2026, 10, 1), [])).toHaveLength(5);
   });
 });
+
+import { changePct, seriesBetween } from "@/lib/charts";
+
+describe("day period, custom ranges, comparisons", () => {
+  const now = new Date(2026, 10, 13, 12);
+  it("day range is midnight to midnight; series has 4-hour buckets", () => {
+    expect(periodRange("day", -1, now)).toEqual({ start: new Date(2026, 10, 12), end: new Date(2026, 10, 13) });
+    const s = seriesFor("day", new Date(2026, 10, 13), [{ weightKg: 2, createdAt: new Date(2026, 10, 13, 9) }]);
+    expect(s.map((x) => x.value)).toEqual([0, 0, 2, 0, 0, 0]);
+  });
+  it("picks bucket size from the range length", () => {
+    expect(seriesBetween(new Date(2026, 0, 1), new Date(2026, 0, 11), [])).toHaveLength(10);
+    expect(seriesBetween(new Date(2026, 0, 1), new Date(2026, 3, 1), []).length).toBeLessThanOrEqual(13);
+  });
+  it("changePct handles no baseline", () => {
+    expect(changePct(15, 10)).toBe(50);
+    expect(changePct(5, 0)).toBeNull();
+  });
+});

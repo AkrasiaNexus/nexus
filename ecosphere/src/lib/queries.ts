@@ -91,3 +91,15 @@ export async function publicNames(ids: (string | null | undefined)[]) {
   const { data } = await createClient().from("public_profiles").select("id, name, avatar").in("id", unique);
   return new Map((data ?? []).map((p) => [p.id as string, { name: p.name as string, avatar: p.avatar as string }]));
 }
+
+export type AdminFilters = { school?: string; community?: string; cls?: string; role?: string };
+
+// Admin analytics (super admin: any filter; school admin: pinned to their school in SQL).
+export async function impactFiltered(f: AdminFilters, since?: Date, until?: Date) {
+  const { data } = await createClient().rpc("scans_filtered", {
+    p_school: f.school || null, p_community: f.community || null, p_class: f.cls || null, p_role: f.role || null,
+    p_since: since?.toISOString() ?? null, p_until: until?.toISOString() ?? null,
+  });
+  const scans = withDates(data as ScanRow[] | null, "createdAt");
+  return { scans, ...impact(scans) };
+}
