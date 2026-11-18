@@ -10,13 +10,13 @@ const PLATEAU = LEAD + TWEEN; // where a chapter's camera state is fully settled
 // Camera orbit (theta, phi, dist), flags and explode sets accumulate by chapter.
 // `shift` pushes the car away from the text column (text left -> car right).
 const SHOTS = [
-  { theta: 0.75, phi: 0.32, dist: 4.6, light: 1, sweep: 1, flow: 0, blueprint: 0, drs: 0, spin: 0, add: [] },
-  { theta: 0.12, phi: 0.16, dist: 2.7, flow: 1, add: ['nose_cone', 'front_wing'] },
-  { theta: 0.7, phi: 1.1, dist: 3.3, flow: 0, add: ['halo', 'cockpit'] },
-  { theta: 1.57, phi: 0.06, dist: 3.2, add: ['sidepods_l', 'sidepods_r', 'floor'] },
-  { theta: 2.5, phi: 0.42, dist: 3.4, drs: 1, add: ['rear_wing', 'drs_flap', 'rear_pods_l', 'rear_pods_r', 'wheels_fl', 'wheels_fr', 'wheels_rl', 'wheels_rr', 'engine_cover'] },
-  { theta: 1.57, phi: 0.0, dist: 5.0, blueprint: 1, drs: 0, lift: 1, add: PART_NAMES.filter((n) => n !== 'monocoque') },
-  { theta: 0.6, phi: 0.3, dist: 4.0, blueprint: 0, drs: 0, lift: 0, reset: true },
+  { theta: 0.6, phi: 0.07, dist: 4.4, light: 1, sweep: 1, flow: 0, blueprint: 0, drs: 0, spin: 0, add: [] },
+  { theta: 0.35, phi: 0.18, dist: 2.9, flow: 1, add: ['nose_cone', 'front_wing'] },
+  { theta: 0.6, phi: 0.95, dist: 3.4, flow: 0, add: ['halo', 'cockpit'] },
+  { theta: 0.95, phi: 0.12, dist: 3.3, add: ['sidepods_l', 'sidepods_r', 'floor'] },
+  { theta: 2.35, phi: 0.3, dist: 3.5, drs: 1, add: ['rear_wing', 'drs_flap', 'rear_pods_l', 'rear_pods_r', 'wheels_fl', 'wheels_fr', 'wheels_rl', 'wheels_rr', 'engine_cover'] },
+  { theta: 0.85, phi: 0.28, dist: 5.2, blueprint: 1, drs: 0, lift: 1, add: PART_NAMES.filter((n) => n !== 'monocoque') },
+  { theta: 0.5, phi: 0.2, dist: 4.1, blueprint: 0, drs: 0, lift: 0, reset: true },
   { theta: 0.9, phi: 0.22, dist: 3.6, flow: 1, spin: Math.PI * 1.5, reset: true },
   { theta: 0.9, phi: 0.28, dist: 3.9, flow: 0.4, spin: Math.PI * 2, reset: true },
 ];
@@ -29,7 +29,7 @@ function explodeFor(active) {
 /** Initial state: dark studio, car hidden (light 0), camera pulled back. */
 export function createState() {
   return {
-    theta: 0.75, phi: 0.32, dist: 5.6, shift: 0,
+    theta: 0.6, phi: 0.07, dist: 5.6, shift: 0,
     light: 0, sweep: 0, flow: 0, blueprint: 0, drs: 0, spin: 0, lift: 0, end: 0,
     dragTheta: 0, dragPhi: 0,
     explode: explodeFor(new Set()),
@@ -41,7 +41,7 @@ export function createState() {
  * stepped version (see seekChapter) instead of a continuous scrub.
  */
 export function buildTimeline({ state, journey, chapters }) {
-  // The Scroll Observer reports progress through the journey; the timeline is seeked to it each frame.
+  // The Scroll Observer reports where the reader is; main.js eases toward it and seeks the timeline.
   const observer = onScroll({ target: journey, enter: 'top top', leave: 'bottom bottom' });
   const tl = createTimeline({ autoplay: false, defaults: { ease: 'inOutSine' } });
 
@@ -84,9 +84,10 @@ export function buildTimeline({ state, journey, chapters }) {
   tl.add(state, { end: 1, duration: 1 }, CHAPTER_COUNT * SPAN - 1);
 
   return {
-    /** Scrub the timeline to the observed scroll progress (0..1). */
-    scrub() {
-      tl.seek(observer.progress * CHAPTER_COUNT * SPAN);
+    observer,
+    /** Seek the timeline to a progress value (0..1). */
+    scrub(p) {
+      tl.seek(p * CHAPTER_COUNT * SPAN);
     },
     /** Reduced motion: jump to a chapter's settled pose. */
     seekChapter(i) {

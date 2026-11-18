@@ -92,7 +92,7 @@ renderTelemetry();
 renderRail();
 
 const car = await createCarScene(canvas, 'assets/car.glb');
-const { scrub, seekChapter } = buildTimeline({ state, journey, chapters });
+const { scrub, seekChapter, observer } = buildTimeline({ state, journey, chapters });
 
 // Chapter index, rail and callouts follow the native scroll position directly.
 // Anime.js drives the tweens (scroll-synced timeline); this just tracks where we are.
@@ -142,8 +142,16 @@ function placeCallouts() {
   }
 }
 
+// Eased scrub: the car trails the scroll position so it glides instead of snapping.
+let eased = 0;
+let lastNow = 0;
 function frame(now) {
-  if (!reduce) scrub();
+  const dt = Math.min(0.1, (now - lastNow) / 1000 || 0.016);
+  lastNow = now;
+  if (!reduce) {
+    eased += (observer.progress - eased) * (1 - Math.exp(-dt * 7));
+    scrub(eased);
+  }
   car.update(state, now / 1000);
   placeCallouts();
   requestAnimationFrame(frame);

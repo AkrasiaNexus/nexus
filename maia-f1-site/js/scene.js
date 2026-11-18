@@ -34,10 +34,10 @@ const EMERALD = 0x2fbf7a;
 
 const SIDES = { side: THREE.DoubleSide }; // the STL shells are not consistently wound
 const MATERIALS = {
-  body: new THREE.MeshPhysicalMaterial({ ...SIDES, color: 0x17503a, metalness: 0.25, roughness: 0.4, clearcoat: 0.8, clearcoatRoughness: 0.2 }),
-  wing: new THREE.MeshStandardMaterial({ ...SIDES, color: 0xc9a456, metalness: 0.9, roughness: 0.26 }),
-  halo: new THREE.MeshStandardMaterial({ ...SIDES, color: 0xaab3bd, metalness: 1, roughness: 0.2 }),
-  wheel: new THREE.MeshStandardMaterial({ ...SIDES, color: 0x1b1d21, metalness: 0.05, roughness: 0.65 }),
+  body: new THREE.MeshStandardMaterial({ ...SIDES, color: 0x1f4a37, metalness: 0.15, roughness: 0.6 }),
+  wing: new THREE.MeshStandardMaterial({ ...SIDES, color: 0xb59456, metalness: 0.7, roughness: 0.42 }),
+  halo: new THREE.MeshStandardMaterial({ ...SIDES, color: 0x9ca4ae, metalness: 0.9, roughness: 0.35 }),
+  wheel: new THREE.MeshStandardMaterial({ ...SIDES, color: 0x141518, metalness: 0.05, roughness: 0.8 }),
 };
 
 function materialFor(name) {
@@ -113,7 +113,7 @@ export async function createCarScene(canvas, url) {
   const parts = {};
   gltf.scene.traverse((node) => {
     if (!node.isMesh || !PARTS[node.name]) return;
-    let geo = toCreasedNormals(node.geometry.toNonIndexed(), 35 * DEG);
+    let geo = toCreasedNormals(node.geometry.toNonIndexed(), 60 * DEG);
     geo.computeBoundingBox();
     const centre = new THREE.Vector3();
     geo.boundingBox.getCenter(centre);
