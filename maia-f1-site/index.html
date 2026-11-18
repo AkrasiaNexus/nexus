@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Team MAIA Racing — Engineered for the limit</title>
-  <meta name="description" content="Team MAIA Racing: a scroll-driven deconstruction of the F1 in Schools car, from the no-go zone envelope to race-ready.">
-  <meta name="theme-color" content="#0a0b0d">
+  <meta name="description" content="Team MAIA Racing: one car, scrolled from the no-go zone envelope to race-ready.">
+  <meta name="theme-color" content="#07090a">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
@@ -23,124 +23,104 @@
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#top" aria-label="Team MAIA Racing home">
-      <span class="brand-bar" aria-hidden="true"></span>
-      <span>MAIA <em>Racing</em></span>
-    </a>
+    <a class="brand" href="#top">MAIA <em>Racing</em></a>
     <nav class="nav" aria-label="Primary">
-      <button type="button" data-go="0">Car overview</button>
-      <button type="button" data-go="1">Aero &amp; tech</button>
-      <button type="button" data-go="6">Team</button>
-      <button type="button" data-go="8">Partners</button>
-      <a href="#portal" class="nav-portal">Team portal</a>
+      <a href="#story">Car</a>
+      <a href="#team">Team</a>
+      <a href="#telemetry">Telemetry</a>
+      <a href="#portal" class="nav-portal">Portal</a>
     </nav>
   </header>
 
-  <main id="journey" aria-label="Scroll-driven car deconstruction">
-    <div class="stage" id="top">
-      <canvas id="car" aria-hidden="true"></canvas>
-      <div class="glow" aria-hidden="true"></div>
-      <div id="callouts" class="callouts"></div>
-      <div id="drag-layer" class="drag-layer" aria-hidden="true"></div>
+  <main>
+    <section class="stage-wrap" id="story" aria-label="The car, scrolled">
+      <div class="pin" id="top">
+        <canvas id="car" aria-hidden="true"></canvas>
+        <div class="glow" aria-hidden="true"></div>
 
-      <div class="chapters">
-        <article class="chapter" data-ch="0" data-side="left">
-          <p class="kicker"><span>01</span> The reveal</p>
-          <h2 class="split">Engineered for the limit.</h2>
-          <p class="lede">Team MAIA Racing builds its F1 in Schools car inside a strict envelope. The model you are looking at is the regulated no-go zone itself: every part of the car lives inside it.</p>
-          <ul class="facts">
-            <li><b>227</b><span>mm envelope length</span></li>
-            <li><b>74</b><span>mm width</span></li>
-            <li><b>30</b><span>mm offset from the no-go zone</span></li>
-          </ul>
-        </article>
+        <div class="beats">
+          <article class="beat" data-beat="0">
+            <p class="eyebrow">Team MAIA Racing · F1 in Schools</p>
+            <h2 class="split">Engineered for the limit.</h2>
+            <p class="lede">The model you are looking at is the regulated no-go zone itself. Every part of the car lives inside it.</p>
+            <ul class="facts">
+              <li><b>227</b><span>mm long</span></li>
+              <li><b>74</b><span>mm wide</span></li>
+              <li><b>30</b><span>mm offset</span></li>
+            </ul>
+          </article>
 
-        <article class="chapter" data-ch="1" data-side="right">
-          <p class="kicker"><span>02</span> Aerodynamics &amp; front wing</p>
-          <h2 class="split">Sculpting every molecule of air.</h2>
-          <p class="lede">A pair of curved air guiders sits beneath and around the chassis. The edges steer air away from the wheels, cutting turbulence at the front of the car and balancing it at speed.</p>
-          <p class="hint-line">Airflow streamlines shown are illustrative.</p>
-        </article>
+          <article class="beat" data-beat="1">
+            <p class="eyebrow">Aerodynamics</p>
+            <h2 class="split">Sculpting every molecule of air.</h2>
+            <p class="lede">Curved air guiders sit beneath and around the chassis. They steer air away from the wheels and cut turbulence at the front of the car.</p>
+          </article>
 
-        <article class="chapter" data-ch="2" data-side="left">
-          <p class="kicker"><span>03</span> Monocoque, halo &amp; cockpit</p>
-          <h2 class="split">Built around the driver.</h2>
-          <p class="lede">The halo platform and cockpit lift clear of the survival cell. The chassis is streamlined so the body stays clean through the air while the driver is held in place.</p>
-        </article>
+          <article class="beat" data-beat="2">
+            <p class="eyebrow">Chassis</p>
+            <h2 class="split">Built around the driver.</h2>
+            <p class="lede">The halo platform and cockpit sit inside the streamlined body, clear of the airflow over the top of the car.</p>
+          </article>
 
-        <article class="chapter" data-ch="3" data-side="right">
-          <p class="kicker"><span>04</span> Sidepods, floor &amp; venturi</p>
-          <h2 class="split">Invisible grip. Relentless downforce.</h2>
-          <p class="lede">Sidepods curve around the wheels to control airflow and limit the Magnus effect that wheel rotation creates. The rear section tapers cleanly so the air reattaches smoothly.</p>
-        </article>
+          <article class="beat" data-beat="3">
+            <p class="eyebrow">Sidepods &amp; floor</p>
+            <h2 class="split">Invisible grip. Relentless downforce.</h2>
+            <p class="lede">Sidepods curve around the wheels to limit the Magnus effect that wheel rotation creates. The tail tapers so the air reattaches cleanly.</p>
+          </article>
 
-        <article class="chapter" data-ch="4" data-side="left">
-          <p class="kicker"><span>05</span> Rear wing &amp; running gear</p>
-          <h2 class="split">Precision kinematics at speed.</h2>
-          <p class="lede">Two curved rear-wing sections meet at the centre to form one continuous surface. Air stays attached for longer, which cuts pressure drag and the wake behind the car. The rear flap moves on the scrub.</p>
-          <p class="hint-line">Scrub back and forth to actuate the rear flap.</p>
-        </article>
+          <article class="beat" data-beat="4">
+            <p class="eyebrow">Rear wing &amp; running gear</p>
+            <h2 class="split">Precision kinematics at speed.</h2>
+            <p class="lede">Two curved rear-wing sections meet at the centre to form one continuous surface. Air stays attached for longer.</p>
+          </article>
 
-        <article class="chapter" data-ch="5" data-side="top">
-          <p class="kicker"><span>06</span> Full exploded blueprint</p>
-          <h2 class="split">Every component has a purpose.</h2>
-          <p class="lede">Every floating part is live. Tap a callout for the engineering notes, or drag the car to orbit it.</p>
-        </article>
+          <article class="beat" data-beat="5">
+            <p class="eyebrow">Full blueprint</p>
+            <h2 class="split">Every component has a purpose.</h2>
+            <p class="lede">Every part, floating and labelled in the order it was designed.</p>
+          </article>
 
-        <article class="chapter" data-ch="6" data-side="left">
-          <p class="kicker"><span>07</span> Meet the team</p>
-          <h2 class="split">One team. Shared obsession.</h2>
-          <p class="lede">The car reassembles into race-ready form. Replace the placeholders below with the real names and roles.</p>
-          <div class="roster" id="roster"></div>
-        </article>
+          <article class="beat beat-final" data-beat="6">
+            <p class="eyebrow">Final call</p>
+            <h2 class="split">Team MAIA Racing. Ready for lights out.</h2>
+            <div class="lights" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="cta">
+              <a class="btn primary" href="#team">Meet the team</a>
+              <a class="btn" href="#portal">Team portal</a>
+            </div>
+          </article>
+        </div>
 
-        <article class="chapter" data-ch="7" data-side="right">
-          <p class="kicker"><span>08</span> Telemetry &amp; performance</p>
-          <h2 class="split">Data-driven speed.</h2>
-          <p class="lede">Three traces drawn on scroll: sector speed, downforce and tyre degradation.</p>
-          <div class="telemetry-wrap">
-            <p class="data-flag">Illustrative data. Swap in real run logs.</p>
-            <div id="telemetry"></div>
-          </div>
-        </article>
-
-        <article class="chapter" data-ch="8" data-side="left">
-          <p class="kicker"><span>09</span> Final call</p>
-          <h2 class="split">Team MAIA Racing. Ready for lights out.</h2>
-          <div class="lights" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-          <div class="cta">
-            <button type="button" class="btn primary" data-go="5">Explore the car</button>
-            <a class="btn" href="#portal">Team portal login</a>
-          </div>
-          <p class="partners">Built with the <b>Yas in Schools</b> kit · <b>STEM Racing UAE</b></p>
-        </article>
+        <p class="scroll-cue" aria-hidden="true">Scroll</p>
       </div>
+    </section>
 
-      <div class="rail" aria-hidden="true">
-        <div class="rail-track"><div class="rail-fill" id="rail-fill"></div></div>
-        <ol class="rail-ticks" id="rail-ticks"></ol>
-      </div>
+    <section class="block" id="team" aria-labelledby="team-title">
+      <p class="eyebrow">The team</p>
+      <h2 id="team-title" class="block-title">One team. Shared obsession.</h2>
+      <div class="roster" id="roster"></div>
+    </section>
 
-      <aside class="detail" id="detail" hidden>
-        <button type="button" class="detail-close" aria-label="Close notes">×</button>
-        <p class="kicker" id="detail-kicker"></p>
-        <h3 id="detail-title"></h3>
-        <p id="detail-body"></p>
-      </aside>
+    <section class="block" id="telemetry" aria-labelledby="telemetry-title">
+      <p class="eyebrow">Telemetry</p>
+      <h2 id="telemetry-title" class="block-title">Data-driven speed.</h2>
+      <p class="data-flag">Illustrative data. Swap in real run logs.</p>
+      <div class="chart" id="chart"></div>
+    </section>
 
-      <p class="scroll-cue" aria-hidden="true">Scroll</p>
-    </div>
+    <section class="block" id="partners" aria-label="Partners">
+      <p class="eyebrow">Partners</p>
+      <p class="partners">Built with the <b>Yas in Schools</b> kit · <b>STEM Racing UAE</b></p>
+    </section>
+
+    <section class="block portal" id="portal" aria-label="Team portal">
+      <p class="eyebrow">Team portal</p>
+      <h2 class="block-title">Operations hub, role by role.</h2>
+      <p class="lede">Telemetry, R&amp;D and race strategy for each role on the team. Not wired to a backend yet.</p>
+      <ul class="role-list">
+        <li>Driver</li><li>Race engineer</li><li>Aerodynamicist / CAD</li><li>Team principal</li><li>Sponsor / partner</li><li>Super admin</li>
+      </ul>
+    </section>
   </main>
-
-  <section id="portal" class="portal" aria-label="Team portal">
-    <p class="kicker"><span>//</span> Team portal</p>
-    <h2>Operations hub, role by role.</h2>
-    <p class="lede">Telemetry, R&amp;D and race strategy for each role on the team. The portal is not wired to a backend yet.</p>
-    <ul class="role-list">
-      <li>Driver</li><li>Race engineer</li><li>Aerodynamicist / CAD</li><li>Team principal</li><li>Sponsor / partner</li><li>Super admin</li>
-    </ul>
-  </section>
-
-  <noscript><p class="noscript">Enable JavaScript to view the interactive car deconstruction.</p></noscript>
 </body>
 </html>
