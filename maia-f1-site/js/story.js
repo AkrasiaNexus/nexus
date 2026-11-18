@@ -15,8 +15,8 @@ const lerp = (a, b, t) => a + (b - a) * t;
 
 // Camera keys: p, orbit theta (0 = nose-on, PI/2 = right side), elevation phi, distance.
 const CAM_KEYS = [
-  { p: 0.0, th: 0.55, ph: 0.08, d: 4.6 },
-  { p: 0.22, th: 0.5, ph: 0.12, d: 4.2 },
+  { p: 0.0, th: 1.25, ph: 0.02, d: 4.6 },
+  { p: 0.22, th: 1.1, ph: 0.04, d: 4.2 },
   { p: 0.34, th: 0.22, ph: 0.16, d: 2.9 },
   { p: 0.5, th: 1.0, ph: 0.1, d: 3.3 },
   { p: 0.64, th: 2.3, ph: 0.3, d: 3.5 },

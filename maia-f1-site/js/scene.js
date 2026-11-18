@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 
 // Explode vectors in car space (mm): +X forward, +Y up, +Z right.
 // `dir` is the direction, `mm` the distance at full explode.
@@ -34,10 +34,11 @@ const EMERALD = 0x2fbf7a;
 
 const SIDES = { side: THREE.DoubleSide }; // the STL shells are not consistently wound
 const MATERIALS = {
-  body: new THREE.MeshStandardMaterial({ ...SIDES, color: 0x163a2a, metalness: 0.15, roughness: 0.6 }),
-  wing: new THREE.MeshStandardMaterial({ ...SIDES, color: 0xb59456, metalness: 0.7, roughness: 0.42 }),
-  halo: new THREE.MeshStandardMaterial({ ...SIDES, color: 0x9ca4ae, metalness: 0.9, roughness: 0.35 }),
-  wheel: new THREE.MeshStandardMaterial({ ...SIDES, color: 0x141518, metalness: 0.05, roughness: 0.8 }),
+  // Satin carbon-green body with a faint clear coat, so the sheen is clean rather than plasticky.
+  body: new THREE.MeshPhysicalMaterial({ ...SIDES, color: 0x1d3d31, metalness: 0.1, roughness: 0.38, clearcoat: 0.35, clearcoatRoughness: 0.3 }),
+  wing: new THREE.MeshPhysicalMaterial({ ...SIDES, color: 0xc4a763, metalness: 0.85, roughness: 0.22, clearcoat: 0.25, clearcoatRoughness: 0.2 }),
+  halo: new THREE.MeshStandardMaterial({ ...SIDES, color: 0xc9ced6, metalness: 1, roughness: 0.18 }),
+  wheel: new THREE.MeshStandardMaterial({ ...SIDES, color: 0x111214, metalness: 0.05, roughness: 0.5 }),
 };
 
 function materialFor(name) {
@@ -91,7 +92,7 @@ export async function createCarScene(canvas, url) {
   const scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = 1.0;
+  scene.environmentIntensity = 0.8;
 
   const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
   const root = new THREE.Group();
@@ -101,7 +102,7 @@ export async function createCarScene(canvas, url) {
   const key = new THREE.DirectionalLight(0xfff1dc, 3.4);
   const rim = new THREE.DirectionalLight(EMERALD, 2.4);
   rim.position.set(-3, 2, -3);
-  scene.add(key, rim, new THREE.HemisphereLight(0x3a4456, 0x0b0c0e, 0.9));
+  scene.add(key, rim, new THREE.HemisphereLight(0x3a4456, 0x0b0c0e, 0.7));
 
   const grid = new THREE.GridHelper(12, 120, 0x2b3038, 0x171b21);
   grid.material.transparent = true;
@@ -113,7 +114,10 @@ export async function createCarScene(canvas, url) {
   const parts = {};
   gltf.scene.traverse((node) => {
     if (!node.isMesh || !PARTS[node.name]) return;
-    let geo = toCreasedNormals(node.geometry.toNonIndexed(), 60 * DEG);
+    // Weld the STL's duplicated vertices, then smooth-shade: removes the sliver-triangle spikes.
+    let geo = mergeVertices(node.geometry);
+    geo.deleteAttribute('normal');
+    geo.computeVertexNormals();
     geo.computeBoundingBox();
     const centre = new THREE.Vector3();
     geo.boundingBox.getCenter(centre);
