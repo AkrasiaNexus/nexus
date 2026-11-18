@@ -1,52 +1,69 @@
-# Team MAIA Racing — scroll-driven car deconstruction
+# Hermes V1 · Team MAIA Racing
 
-A scroll-scrubbed website. The F1 in Schools car (from the regulated no-go zone STL) splits into named parts as you scroll: front wing, halo and cockpit, sidepods and floor, rear wing and flap, a full exploded blueprint, team, telemetry, and a starting-lights finish.
+One scroll-driven story: the team's car turns through 11 chapters (envelope, front wing, side pods, rear, the
+constellation turntable, CFD iterations, the team, Why MAIA, partner tiers, lights out) under the Pleiades, with Maia in gold.
 
-No build step. Plain ES modules, Three.js and anime.js loaded from pinned CDN versions.
+Every fact comes from the team's Enterprise and Engineering portfolios. The story plan is in `docs/STORY.md`.
+
+No build step: plain ES modules, Three.js and anime.js from pinned CDN versions.
 
 ## Run it
-
-Modules need an HTTP server (not `file://`):
 
 ```bash
 cd maia-f1-site
 python3 -m http.server 8000
 ```
 
-Then open http://localhost:8000.
+Open http://localhost:8000 (modules need a server, not `file://`).
 
 ## Files
 
 | Path | What it is |
 | --- | --- |
-| `index.html` | Layout, chapter copy, nav, team portal stub |
-| `css/site.css` | Styles, layout, phone breakpoints, reduced-motion rules |
-| `js/main.js` | Boot, scroll tracking, callouts, hotspots, drag-to-orbit |
-| `js/timeline.js` | anime.js timeline: camera shots, explode sets, text reveals, telemetry draw-on, start lights |
-| `js/scene.js` | Three.js scene: GLB load, named parts, explode vectors, lights, streamlines, blueprint edges |
-| `js/content.js` | Callouts, engineering notes, roster placeholders, telemetry series |
-| `assets/car.glb` | Car mesh split into 17 named parts (mm, Y-up) |
+| `index.html` | The stage, the 11 chapters' copy, nav |
+| `css/site.css` | Team palette and type, chapter layouts, phone layout, reduced motion |
+| `js/main.js` | Boot, panels, eased scroll, sky focus, nav jumps, CTA gating, resize |
+| `js/story.js` | Chapter list, camera keys, and the anime.js timeline for all copy and panels |
+| `js/scene.js` | Three.js: the car, paints, studio floor, airflow lines |
+| `js/sky.js` | The Pleiades, from catalogue positions, Maia highlighted |
+| `js/overlay.js` | The constellation labels drawn over the turning car |
+| `js/content.js` | Team, CFD results, regulation numbers, partner tiers (from the portfolios) |
+| `assets/car.glb` | The car, 17 named parts, normals baked |
 | `tools/build_car_glb.py` | Rebuilds `car.glb` from the STL |
+| `qa/` | Playwright scripts: frames, consistency, functional, perf, record |
 
-## Edit the content
+## Edit
 
-- Chapter headlines and body copy: `index.html`, inside `.chapter` blocks.
-- Callouts, engineering notes (shown on the blueprint chapter): `js/content.js`, `CALLOUTS`.
-- Team roster: `js/content.js`, `ROSTER`. The cards say "Name TBC" until real names are added.
-- Telemetry: `js/content.js`, `TELEMETRY`. The series are **illustrative**; replace them with real run logs.
-- Camera shots and explode timing: `js/timeline.js`, `SHOTS`.
+- Copy and chapter headlines: `index.html`. Team, CFD, tiers: `js/content.js`.
+- Camera and car placement per chapter: `KEYS` in `js/story.js`.
 
-## Rebuild the car model
+## Rebuild the car
 
 ```bash
 python3 tools/build_car_glb.py path/to/no_go_zone.stl assets/car.glb
 ```
 
-The split is rule-based. The STL is one fused body for the chassis, so its parts come from triangle position, not the original CAD tree. The script refuses to run if the connected-body sizes change, so the rules can be re-tuned for a different file.
+The STL fuses the chassis into one body, so its parts are cut by position. The script checks body sizes, the axis swap
+(the car must come out upright) and that the wheels touch Y=0.
+
+## Test
+
+Serve the site on port 8000 or 8800, then:
+
+```bash
+URL=http://127.0.0.1:8800/ node qa/functional.cjs
+```
+
+```bash
+URL=http://127.0.0.1:8800/ node qa/consistency.cjs
+```
+
+```bash
+URL=http://127.0.0.1:8800/ MODE=m OUT=qa/out node qa/frames.cjs
+```
 
 ## Known limits
 
-- The chassis parts (monocoque, cockpit, sidepods, floor, nose) are cut by position. Their seams show as open edges in the blueprint chapter. A part-level STEP or STL export from CAD would remove that.
-- Telemetry data and the roster are placeholders.
-- The team portal link goes to a stub section. There is no backend.
-- Needs WebGL. Reduced-motion users get stepped chapter poses instead of a scrub.
+- The cockpit dome is shown but not named; the team's drawing does not label it.
+- No team photos: the portfolio photos are of students and the page is publicly shareable, so they are left out until the team decides.
+- Headless QA renders WebGL in software (about 4 fps); real GPUs run far faster.

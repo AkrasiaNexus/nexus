@@ -1,201 +1,171 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 
-// Explode vectors in car space (mm): +X forward, +Y up, +Z right.
-// `dir` is the direction, `mm` the distance at full explode.
+// Car space is millimetres: +X forward (nose), +Y up, +Z to the car's right.
+// Paint per part follows the team's renders: green body, champagne aero and pods, charcoal wheels, titanium dome.
 export const PARTS = {
-  nose_cone:    { dir: [1, 0.05, 0], mm: 45 },
-  front_wing:   { dir: [1, 0.25, 0], mm: 60 },
-  halo:         { dir: [0, 1, 0], mm: 80 },
-  cockpit:      { dir: [-0.1, 1, 0], mm: 40 },
-  monocoque:    { dir: [0, 0, 0], mm: 0 },
-  sidepods_l:   { dir: [0, 0.1, -1], mm: 60 },
-  sidepods_r:   { dir: [0, 0.1, 1], mm: 60 },
-  floor:        { dir: [0, -0.4, 0], mm: 30 },
-  engine_cover: { dir: [-1, 0.7, 0], mm: 50 },
-  rear_wing:    { dir: [-1, 0.9, 0], mm: 55 },
-  drs_flap:     { dir: [-1, 1, 0], mm: 75 },
-  rear_pods_l:  { dir: [-0.4, 0, -1], mm: 55 },
-  rear_pods_r:  { dir: [-0.4, 0, 1], mm: 55 },
-  wheels_fl:    { dir: [0.3, 0, -1], mm: 80 },
-  wheels_fr:    { dir: [0.3, 0, 1], mm: 80 },
-  wheels_rl:    { dir: [-0.4, 0, -1], mm: 90 },
-  wheels_rr:    { dir: [-0.4, 0, 1], mm: 90 },
+  nose_cone: 'green', front_wing: 'gold', dome: 'titanium', halo: 'green', chassis: 'green', floor: 'green',
+  sidepods_l: 'green', sidepods_r: 'green', rear_pods_l: 'gold', rear_pods_r: 'gold', rear_wing: 'gold',
+  co2_canister: 'gold', rear_body: 'green',
+  wheels_fl: 'charcoal', wheels_fr: 'charcoal', wheels_rl: 'charcoal', wheels_rr: 'charcoal',
 };
 export const PART_NAMES = Object.keys(PARTS);
 
-const DEG = Math.PI / 180;
-const SCALE = 0.01; // mm -> scene units; the car is 2.27 units long
+const SCALE = 0.01; // mm -> scene units
 const TARGET = new THREE.Vector3(0, 0.2, 0);
-const GOLD = 0xd8b66b;
-const EMERALD = 0x2fbf7a;
 
-const SIDES = { side: THREE.DoubleSide }; // the STL shells are not consistently wound
-const MATERIALS = {
-  // Satin carbon-green body with a faint clear coat, so the sheen is clean rather than plasticky.
-  body: new THREE.MeshPhysicalMaterial({ ...SIDES, color: 0x1d3d31, metalness: 0.1, roughness: 0.38, clearcoat: 0.35, clearcoatRoughness: 0.3 }),
-  wing: new THREE.MeshPhysicalMaterial({ ...SIDES, color: 0xc4a763, metalness: 0.85, roughness: 0.22, clearcoat: 0.25, clearcoatRoughness: 0.2 }),
-  halo: new THREE.MeshStandardMaterial({ ...SIDES, color: 0xc9ced6, metalness: 1, roughness: 0.18 }),
-  wheel: new THREE.MeshStandardMaterial({ ...SIDES, color: 0x111214, metalness: 0.05, roughness: 0.5 }),
-};
+// The team's colour scheme (Enterprise portfolio, Team Identity page).
+const BRAND = { green: 0x193b25, white: 0xf4f6f5, gold: 0xc6ae7c, charcoal: 0x1e201f, titanium: 0x8c8982 };
 
-function materialFor(name) {
-  if (name === 'halo') return MATERIALS.halo;
-  if (name.startsWith('wheels')) return MATERIALS.wheel;
-  if (name.includes('wing') || name.includes('flap') || name === 'front_wing') return MATERIALS.wing;
-  return MATERIALS.body;
-}
-
-// Air streamlines around the car, plus particles that travel along them.
-function buildFlow(root) {
-  const group = new THREE.Group();
-  group.visible = false;
-  const lineMat = new THREE.LineBasicMaterial({ color: EMERALD, transparent: true, opacity: 0, depthWrite: false });
-  const dotMat = new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0 });
-  const dotGeo = new THREE.SphereGeometry(1.8, 10, 8);
-  const streams = [];
-  const bands = [14, 28];
-  const lanes = [-46, -36, -26, 26, 36, 46];
-  bands.forEach((y) => lanes.forEach((z) => {
-    const curve = new THREE.CatmullRomCurve3([
-      [175, y, z], [110, y + 3, z * 1.03], [40, y + 5, z * 1.08],
-      [-40, y + 4, z * 1.1], [-110, y + 2, z * 1.04], [-175, y, z],
-    ].map((p) => new THREE.Vector3(...p)));
-    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(90)), lineMat));
-    const dot = new THREE.Mesh(dotGeo, dotMat);
-    group.add(dot);
-    streams.push({ curve, dot, phase: streams.length / (bands.length * lanes.length) });
-  }));
-  root.add(group);
-
+function paints() {
+  const side = THREE.DoubleSide; // the chassis split leaves open edges; render both faces
   return {
-    update(s, time) {
-      group.visible = s.flow > 0.01;
-      lineMat.opacity = 0.32 * s.flow;
-      dotMat.opacity = s.flow;
-      for (const { curve, dot, phase } of streams) {
-        curve.getPointAt((time * 0.12 + phase) % 1, dot.position);
-      }
-    },
+    green: new THREE.MeshPhysicalMaterial({ side, color: BRAND.green, roughness: 0.34, metalness: 0.08, clearcoat: 0.6, clearcoatRoughness: 0.22 }),
+    gold: new THREE.MeshPhysicalMaterial({ side, color: BRAND.gold, roughness: 0.3, metalness: 0.7, clearcoat: 0.3, clearcoatRoughness: 0.25 }),
+    titanium: new THREE.MeshPhysicalMaterial({ side, color: BRAND.titanium, roughness: 0.25, metalness: 0.85, clearcoat: 0.5, clearcoatRoughness: 0.15 }),
+    charcoal: new THREE.MeshStandardMaterial({ side, color: BRAND.charcoal, roughness: 0.62, metalness: 0.05 }),
   };
 }
 
-/** Builds the renderer, lights and the named car parts. Resolves once the GLB is loaded. */
+/** A soft pool of light on the studio floor plus a contact shadow under the car. */
+function buildFloor() {
+  const size = 512;
+  const tex = (draw) => {
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    draw(c.getContext('2d'));
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  };
+  const radial = (stops) => tex((g) => {
+    const r = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    stops.forEach(([at, colour]) => r.addColorStop(at, colour));
+    g.fillStyle = r;
+    g.fillRect(0, 0, size, size);
+  });
+  const pool = radial([[0, 'rgba(46,58,50,0.55)'], [0.55, 'rgba(24,30,27,0.25)'], [1, 'rgba(0,0,0,0)']]);
+  const shadow = radial([[0, 'rgba(0,0,0,0.85)'], [0.6, 'rgba(0,0,0,0.35)'], [1, 'rgba(0,0,0,0)']]);
+  const group = new THREE.Group();
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(9, 9), new THREE.MeshBasicMaterial({ map: pool, transparent: true, depthWrite: false }));
+  floor.rotation.x = -Math.PI / 2;
+  const contact = new THREE.Mesh(new THREE.PlaneGeometry(2.7, 1.1), new THREE.MeshBasicMaterial({ map: shadow, transparent: true, depthWrite: false }));
+  contact.rotation.x = -Math.PI / 2;
+  contact.position.y = 0.002;
+  group.add(floor, contact);
+  return group;
+}
+
+/** Streamlines past the car, with particles riding them (chapter 03). */
+function buildFlow(root) {
+  const group = new THREE.Group();
+  const lineMat = new THREE.LineBasicMaterial({ color: BRAND.titanium, transparent: true, opacity: 0, depthWrite: false });
+  const dotMat = new THREE.MeshBasicMaterial({ color: BRAND.white, transparent: true, opacity: 0 });
+  const dotGeo = new THREE.SphereGeometry(1.4, 8, 6);
+  const streams = [];
+  [10, 22, 36].forEach((y) => [-48, -40, 40, 48].forEach((z) => {
+    const curve = new THREE.CatmullRomCurve3([
+      [190, y, z * 0.5], [120, y + 2, z * 0.85], [40, y + 4, z * 1.05],
+      [-40, y + 4, z * 1.08], [-120, y + 2, z], [-200, y, z * 0.9],
+    ].map((p) => new THREE.Vector3(...p)));
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(80)), lineMat));
+    const dot = new THREE.Mesh(dotGeo, dotMat);
+    group.add(dot);
+    streams.push({ curve, dot, phase: streams.length / 12 });
+  }));
+  root.add(group);
+  return (k, time) => {
+    group.visible = k > 0.01;
+    lineMat.opacity = 0.28 * k;
+    dotMat.opacity = 0.9 * k;
+    for (const s of streams) s.curve.getPointAt((time * 0.16 + s.phase) % 1, s.dot.position);
+  };
+}
+
 export async function createCarScene(canvas, url) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0;
 
   const scene = new THREE.Scene();
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = 0.8;
+  scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = 0.7;
 
-  const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+  const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+  const key = new THREE.DirectionalLight(0xfff0dc, 3.0);
+  const rim = new THREE.DirectionalLight(0x5fd39a, 1.8);
+  rim.position.set(-3, 2.2, -2.6);
+  scene.add(key, rim, new THREE.HemisphereLight(0x3a4a42, 0x0b0c0c, 0.55));
+
+  const floor = buildFloor();
+  scene.add(floor);
+
   const root = new THREE.Group();
   root.scale.setScalar(SCALE);
   scene.add(root);
 
-  const key = new THREE.DirectionalLight(0xfff1dc, 3.4);
-  const rim = new THREE.DirectionalLight(EMERALD, 2.4);
-  rim.position.set(-3, 2, -3);
-  scene.add(key, rim, new THREE.HemisphereLight(0x3a4456, 0x0b0c0e, 0.7));
-
-  const grid = new THREE.GridHelper(12, 120, 0x2b3038, 0x171b21);
-  grid.material.transparent = true;
-  grid.material.opacity = 0.55;
-  grid.position.y = -0.02; // just under the wheels, so it does not cut the body
-  scene.add(grid);
-
+  const mats = paints();
   const gltf = await new GLTFLoader().loadAsync(url);
   const parts = {};
   gltf.scene.traverse((node) => {
-    if (!node.isMesh || !PARTS[node.name]) return;
-    // Weld the STL's duplicated vertices, then smooth-shade: removes the sliver-triangle spikes.
-    let geo = mergeVertices(node.geometry);
-    geo.deleteAttribute('normal');
-    geo.computeVertexNormals();
+    const paint = PARTS[node.name];
+    if (!node.isMesh || !paint) return;
+    const geo = node.geometry; // positions + crease-aware normals baked by the build script
     geo.computeBoundingBox();
-    const centre = new THREE.Vector3();
-    geo.boundingBox.getCenter(centre);
-    geo.translate(-centre.x, -centre.y, -centre.z);
-
+    const centre = geo.boundingBox.getCenter(new THREE.Vector3());
+    geo.translate(-centre.x, -centre.y, -centre.z); // each part's origin is its centre, for label anchors
     const group = new THREE.Group();
     group.position.copy(centre);
-    group.add(new THREE.Mesh(geo, materialFor(node.name)));
-    const edgeMat = new THREE.LineBasicMaterial({ color: GOLD, transparent: true, opacity: 0, depthWrite: false });
-    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 30), edgeMat);
-    group.add(edges);
+    group.add(new THREE.Mesh(geo, mats[paint]));
     root.add(group);
-
-    const { dir, mm } = PARTS[node.name];
-    parts[node.name] = {
-      group,
-      base: centre,
-      offset: new THREE.Vector3(...dir).multiplyScalar(mm),
-      edgeMat,
-      edges,
-    };
+    parts[node.name] = group;
   });
 
   const flow = buildFlow(root);
+  const scratch = new THREE.Vector3();
 
-  function update(s, time) {
+  function frame(s, time) {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
-    const portrait = w / h < 0.9;
     camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-
-    // orbit: theta 0 = nose-on, PI/2 = right side, PI = tail-on
-    const theta = s.theta + s.dragTheta;
-    const phi = THREE.MathUtils.clamp(s.phi + s.dragPhi, -0.15, 1.45);
-    const fit = Math.max(1, 1.1 / camera.aspect) * (portrait ? 1 + 0.35 * s.lift : 1); // blueprint is wider
+    const portrait = camera.aspect < 0.9;
+    // Phones are narrow: pull back so the whole car fits the width.
+    const fit = Math.max(1, 1.15 / camera.aspect);
     const d = s.dist * fit;
     camera.position.set(
-      TARGET.x + d * Math.cos(phi) * Math.cos(theta),
-      TARGET.y + d * Math.sin(phi),
-      TARGET.z + d * Math.cos(phi) * Math.sin(theta),
+      TARGET.x + d * Math.cos(s.phi) * Math.cos(s.theta),
+      TARGET.y + d * Math.sin(s.phi),
+      TARGET.z + d * Math.cos(s.phi) * Math.sin(s.theta),
     );
     camera.lookAt(TARGET);
-    // Chapter text sits left or right, so push the car into the open side.
-    // On phones the text is a bottom sheet, so lift the car instead.
-    if (portrait) camera.setViewOffset(w, h, 0, h * (0.14 - 0.3 * s.lift), w, h); // text sits at the bottom, or the top in the blueprint
-    else camera.setViewOffset(w, h, -s.shift * w, -s.lift * h * 0.2, w, h);
+    // Desktop: the car sits beside the copy column. Phone: copy is a bottom sheet, so the car rides higher.
+    // rise > 0 lifts the car in frame (to make room for panels below it), < 0 lowers it.
+    if (portrait) camera.setViewOffset(w, h, 0, h * (0.16 + Math.max(0, s.rise) * 0.5), w, h);
+    else camera.setViewOffset(w, h, -s.shift * w, s.rise * h, w, h);
+    camera.updateProjectionMatrix();
 
-    root.rotation.y = s.spin;
-    for (const p of Object.values(parts)) {
-      p.edgeMat.opacity = 0.42 * s.blueprint;
-      p.edges.visible = s.blueprint > 0.01; // skip drawing the blueprint lines when hidden
-    }
-    for (const [name, p] of Object.entries(parts)) {
-      const k = s.explode[name] ?? 0;
-      p.group.position.copy(p.base).addScaledVector(p.offset, k);
-    }
-    parts.drs_flap.group.rotation.z = -0.6 * s.drs;
-
-    key.position.set(THREE.MathUtils.lerp(-3, 3, s.sweep), 3, 2.6);
-    renderer.toneMappingExposure = s.light;
-    flow.update(s, time);
-
-    root.updateMatrixWorld(true);
+    key.position.set(Math.cos(s.keyAngle) * 3.4, 3.2, Math.sin(s.keyAngle) * 3.4);
+    renderer.toneMappingExposure = s.light * s.car; // the car recedes into the studio dark
+    flow(s.flow, time);
     renderer.render(scene, camera);
   }
 
   function resize() {
     renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
   }
-
   resize();
+
   return {
-    camera,
-    update,
+    frame,
     resize,
-    anchor(name) {
-      return parts[name].group.getWorldPosition(new THREE.Vector3());
+    /** Screen position (CSS px) of a part's centre, or null if it is behind the camera. */
+    project(name) {
+      const group = parts[name];
+      if (!group) return null;
+      group.getWorldPosition(scratch).project(camera);
+      if (scratch.z > 1) return null;
+      return { x: ((scratch.x + 1) / 2) * canvas.clientWidth, y: ((1 - scratch.y) / 2) * canvas.clientHeight };
     },
   };
 }

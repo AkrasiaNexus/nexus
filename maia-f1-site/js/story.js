@@ -1,121 +1,128 @@
-import { animate, createTimeline, splitText, stagger, svg } from 'animejs';
-import { PART_NAMES } from './scene.js';
+import { animate, createTimeline, splitText, stagger } from 'animejs';
 
-// One continuous story over the pinned stage, progress p in 0..1.
-// The car is the signature object: its camera orbit, its explode and its
-// blueprint lines are all functions of p, so scrolling back reverses everything.
+// The whole site is one story on one number: p, 0..1 through the pinned stage.
+// Camera, car placement, sky and labels are pure functions of p, so a fast jump and a slow scroll
+// land on the same frame, and scrolling back reverses everything.
 
-const PI2 = Math.PI * 2;
-
-const smooth = (a, b, x) => {
+export const smooth = (a, b, x) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
   return t * t * (3 - 2 * t);
 };
 const lerp = (a, b, t) => a + (b - a) * t;
 
-// Camera keys: p, orbit theta (0 = nose-on, PI/2 = right side), elevation phi, distance.
-const CAM_KEYS = [
-  { p: 0.0, th: -1.0, ph: 0.04, d: 4.6 },
-  { p: 0.22, th: -0.9, ph: 0.05, d: 4.2 },
-  { p: 0.34, th: 0.22, ph: 0.16, d: 2.9 },
-  { p: 0.5, th: 1.0, ph: 0.1, d: 3.3 },
-  { p: 0.64, th: 2.3, ph: 0.3, d: 3.5 },
-  { p: 0.8, th: 0.85, ph: 0.3, d: 5.9 },
-  { p: 0.92, th: 0.55, ph: 0.12, d: 4.0 },
-  { p: 1.0, th: 0.55, ph: 0.12, d: 3.8 },
+export const CHAPTER_NAMES = [
+  'Reveal', 'Envelope', 'Front wing', 'Side pods', 'Rear', 'Constellation',
+  'CFD', 'Team', 'Why MAIA', 'Partners', 'Lights out',
 ];
+const N = CHAPTER_NAMES.length;
+export const CHAPTERS = CHAPTER_NAMES.map((name, i) => ({ name, from: i / N, to: (i + 1) / N }));
+export const chapterCentre = (i) => (i + 0.5) / N;
+export const chapterAt = (p) => Math.min(N - 1, Math.max(0, Math.floor(p * N)));
 
-// Explode window per part: [start, end] in p. Parts fly out in build order.
-const EXPLODE = {
-  nose_cone: [0.22, 0.32], front_wing: [0.22, 0.34],
-  halo: [0.4, 0.48], cockpit: [0.42, 0.5],
-  sidepods_l: [0.44, 0.54], sidepods_r: [0.44, 0.54], floor: [0.46, 0.56],
-  engine_cover: [0.56, 0.62],
-  rear_pods_l: [0.6, 0.66], rear_pods_r: [0.6, 0.66],
-  rear_wing: [0.6, 0.68], drs_flap: [0.64, 0.7],
-  wheels_fl: [0.66, 0.74], wheels_fr: [0.66, 0.74], wheels_rl: [0.66, 0.74], wheels_rr: [0.66, 0.74],
-};
-
-// Text beats: [from, to] in p. The hero is the first beat and starts visible.
-export const BEATS = [
-  { from: 0.0, to: 0.14 },
-  { from: 0.24, to: 0.38 },
-  { from: 0.42, to: 0.54 },
-  { from: 0.56, to: 0.66 },
-  { from: 0.68, to: 0.76 },
-  { from: 0.78, to: 0.86 },
-  { from: 0.92, to: 1.0 },
+// Poses at chapter centres (the turntable chapter has a start and an end).
+// theta: 0 = looking at the nose, PI/2 = the car's right side (nose points right); it only ever keeps turning.
+// shift: car left (-) or right (+) of centre, in screen widths. rise: car higher (+) or lower (-) in frame.
+// car / sky: visibility of the car and the Pleiades.
+const TURN = Math.PI * 2;
+const at = (i, f = 0.5) => (i + f) / N;
+const KEYS = [
+  { p: 0, th: 0.9, ph: 0.22, d: 4.4, shift: 0.15, rise: 0, car: 1, sky: 1 },
+  { p: at(0), th: 0.95, ph: 0.21, d: 4.3, shift: 0.15, rise: 0, car: 1, sky: 1 },
+  { p: at(1), th: Math.PI / 2, ph: 0.05, d: 4.8, shift: 0.15, rise: 0, car: 1, sky: 0.15 },
+  { p: at(2), th: 0.45, ph: 0.12, d: 4.7, shift: 0.15, rise: 0, car: 1, sky: 0.15 },
+  { p: at(3), th: 1.2, ph: 0.1, d: 5.2, shift: 0.15, rise: 0, car: 1, sky: 0.15 },
+  { p: at(4), th: 2.35, ph: 0.3, d: 4.8, shift: 0.15, rise: 0, car: 1, sky: 0.15 },
+  { p: at(5, 0.12), th: 2.6, ph: 0.32, d: 4.2, shift: 0, rise: -0.06, car: 1, sky: 1 },
+  { p: at(5, 0.88), th: 0.9 + TURN, ph: 0.26, d: 4.2, shift: 0, rise: -0.06, car: 1, sky: 1 },
+  { p: at(6), th: 1.25 + TURN, ph: 0.2, d: 5.4, shift: -0.24, rise: 0, car: 1, sky: 0.15 },
+  { p: at(7), th: 1.9 + TURN, ph: 0.42, d: 8.5, shift: 0, rise: 0.3, car: 0.85, sky: 0.3 },
+  { p: at(8), th: 2.5 + TURN, ph: 0.3, d: 9.5, shift: 0.28, rise: -0.22, car: 0.4, sky: 1 },
+  { p: at(9), th: 0.95 + 2 * TURN, ph: 0.2, d: 5.6, shift: -0.24, rise: 0, car: 1, sky: 0.2 }, // nose toward the tiers
+  { p: at(10), th: 1.05 + 2 * TURN, ph: 0.16, d: 4.0, shift: 0.15, rise: 0, car: 1, sky: 0.7 },
+  { p: 1, th: 1.1 + 2 * TURN, ph: 0.16, d: 4.0, shift: 0.15, rise: 0, car: 1, sky: 0.7 },
 ];
-const TOTAL = 1000; // timeline units; one unit per 0.001 of progress
+const FIELDS = ['th', 'ph', 'd', 'shift', 'rise', 'car', 'sky'];
 
-function cameraAt(p) {
+function keyAt(p) {
   let i = 0;
-  while (i < CAM_KEYS.length - 2 && p > CAM_KEYS[i + 1].p) i += 1;
-  const a = CAM_KEYS[i];
-  const b = CAM_KEYS[i + 1];
+  while (i < KEYS.length - 2 && p > KEYS[i + 1].p) i += 1;
+  const a = KEYS[i];
+  const b = KEYS[i + 1];
   const t = smooth(a.p, b.p, p);
-  return { theta: lerp(a.th, b.th, t), phi: lerp(a.ph, b.ph, t), dist: lerp(a.d, b.d, t) };
+  return Object.fromEntries(FIELDS.map((f) => [f, lerp(a[f], b[f], t)]));
 }
 
-/** Fills `state` for progress p. Pure function of p, so it reverses cleanly. */
-export function stateAt(p, state) {
-  const cam = cameraAt(p);
-  const assemble = 1 - smooth(0.86, 0.92, p);
-  Object.assign(state, cam, {
-    // the car sits right of the text, easing toward centre for the wide blueprint
-    shift: lerp(0.2, 0.13, smooth(0.66, 0.8, p)),
-    light: 0.4 + 0.6 * smooth(0, 0.12, p),
-    sweep: smooth(0, 0.22, p),
-    flow: smooth(0.24, 0.3, p) * (1 - smooth(0.4, 0.46, p)),
-    blueprint: smooth(0.7, 0.76, p) * (1 - smooth(0.84, 0.9, p)),
-    drs: smooth(0.64, 0.68, p) * (1 - smooth(0.8, 0.84, p)),
-    spin: p > 0.92 ? ((p - 0.92) / 0.08) * PI2 : 0,
-    dragTheta: 0,
-    dragPhi: 0,
-  });
-  for (const name of PART_NAMES) {
-    const w = EXPLODE[name];
-    state.explode[name] = w ? smooth(w[0], w[1], p) * assemble : 0;
-  }
-  return state;
+/** Fill `s` for progress p. Reduced motion keeps the camera still and only changes visibility. */
+export function poseAt(p, s, reduce) {
+  const k = keyAt(p);
+  const still = reduce ? keyAt(0) : k;
+  s.theta = still.th;
+  s.phi = still.ph;
+  s.dist = still.d;
+  s.shift = reduce ? 0.15 : k.shift;
+  s.rise = reduce ? 0 : k.rise;
+  // Reduced motion: the car can't step aside, so it fades back behind the content chapters (CFD to Partners).
+  const content = smooth(at(6, 0), at(6, 0.2), p) * (1 - smooth(at(9, 0.8), at(10, 0), p));
+  s.car = reduce ? 1 - 0.8 * content : k.car;
+  s.sky = k.sky;
+  s.skyFocus = smooth(at(7, 0.7), at(8, 0.2), p) * (1 - smooth(at(8, 0.8), at(9, 0.3), p));
+  s.flow = reduce ? 0 : smooth(at(2, 0.05), at(2, 0.3), p) * (1 - smooth(at(2, 0.75), at(2, 0.98), p));
+  s.keyAngle = reduce ? 0.9 : 0.9 + p * 3;
+  s.constellation = smooth(at(5, 0.1), at(5, 0.3), p) * (1 - smooth(at(5, 0.85), at(5, 1), p));
+  s.envelope = smooth(at(1, 0.05), at(1, 0.4), p);
+  return s;
 }
+
+const T = 1000; // timeline units for p = 0..1
 
 /**
- * anime.js timeline for the text beats. It is seeked to p, never played,
- * so the words reverse with the scroll.
+ * All chapter copy and panels on one anime.js timeline, seeked to p (never played).
+ * Words reveal with a stagger, cards deal in, meters grow; each block leaves as ONE tween so a fast jump
+ * always lands on its final frame.
  */
-export function createStoryText(beatEls) {
+export function createChapterText(chapterEls, reduce) {
   const tl = createTimeline({ autoplay: false, defaults: { ease: 'outCubic' } });
-  beatEls.forEach((el, i) => {
-    const { from, to } = BEATS[i];
-    const words = splitText(el.querySelector('h2'), { words: true }).words;
-    if (i > 0) { // the hero is already on screen at the top of the page
-      tl.add(el, { opacity: [0, 1], translateY: [28, 0], duration: 70 }, from * TOTAL);
-      tl.add(words, { opacity: [0.12, 1], translateY: [12, 0], duration: 60, delay: stagger(12) }, from * TOTAL + 20);
+  const m = reduce ? 0 : 1; // no spatial motion when reduced
+  const span = T / N;
+  const heroWords = splitText(chapterEls[0].querySelector('h1'), { words: true }).words;
+
+  chapterEls.forEach((el, i) => {
+    const start = i * span;
+    const end = (i + 1) * span;
+    if (i > 0) {
+      const words = splitText(el.querySelector('h2'), { words: true }).words;
+      tl.add(el, { opacity: [0, 1], translateY: [24 * m, 0], duration: 30 }, start + 4);
+      tl.add(words, { opacity: [0.08, 1], translateY: [14 * m, 0], duration: 22, delay: stagger(2.5) }, start + 6);
     }
-    if (i < beatEls.length - 1) tl.add(el, { opacity: 0, translateY: -20, duration: 60, ease: 'inCubic' }, (to * TOTAL) - 40);
+    const cards = el.querySelectorAll('[data-deal]');
+    if (cards.length) {
+      tl.add(cards, { opacity: [0, 1], translateY: [26 * m, 0], scale: [1 - 0.04 * m, 1], duration: 18, delay: stagger(3) }, start + 12);
+    }
+    const meters = el.querySelectorAll('.meter');
+    if (meters.length) tl.add(meters, { scaleX: [0, 1], duration: 22, delay: stagger(3), ease: 'outExpo' }, start + 18);
+    if (i < chapterEls.length - 1) {
+      tl.add(el, { opacity: 0, translateY: -18 * m, duration: 22, ease: 'inCubic' }, end - 24);
+    }
   });
-  // The last beat (final call) stays on screen to the end.
-  const lamps = beatEls[beatEls.length - 1].querySelectorAll('.lights i');
-  tl.add(lamps, { opacity: [0.12, 1], duration: 40, delay: stagger(40), ease: 'outQuad' }, 930);
-  tl.add(lamps, { opacity: 0.12, duration: 60, delay: stagger(30), ease: 'inQuad' }, 975);
-  tl.add({}, { duration: 1 }, TOTAL - 1);
-  return {
-    seek(p) {
-      tl.seek(Math.min(1, Math.max(0, p)) * TOTAL);
-    },
+
+  const lamps = chapterEls[N - 1].querySelectorAll('.lamp');
+  const last = (N - 1) * span;
+  tl.add(lamps, { opacity: [0.14, 1], duration: 8, delay: stagger(7), ease: 'outQuad' }, last + 20);
+  tl.add(lamps, { opacity: 0.14, duration: 6, ease: 'inQuad' }, last + 70);
+  tl.add({}, { duration: 1 }, T - 1); // pin the end so the last chapter has room
+
+  // The hook: the hero headline builds itself on load, before any scroll.
+  animate(heroWords, {
+    opacity: [0, 1], translateY: [reduce ? 0 : 26, 0], duration: reduce ? 400 : 900, delay: stagger(110, { start: 250 }), ease: 'outExpo',
+  });
+
+  // A single seek that jumps clean over a tween can leave the earlier tween's value on screen (reproduced:
+  // 590 -> 682 left chapter 6 visible). Walk to the new time in small steps instead; skip when nothing changed.
+  let current = 0;
+  return (p) => {
+    const target = Math.min(1, Math.max(0, p)) * T;
+    const steps = Math.ceil(Math.abs(target - current) / 4);
+    for (let i = 1; i <= steps; i += 1) tl.seek(current + ((target - current) * i) / steps);
+    current = target;
   };
 }
-
-/** Telemetry traces draw on when the section scrolls into view. */
-export function drawTelemetryOnEnter(section) {
-  const io = new IntersectionObserver(([entry]) => {
-    if (!entry.isIntersecting) return;
-    animate(svg.createDrawable('#telemetry .trace'), {
-      draw: ['0 0', '0 1'], duration: 1800, ease: 'inOutQuart', delay: stagger(220),
-    });
-    io.disconnect();
-  }, { threshold: 0.35 });
-  io.observe(section);
-}
-

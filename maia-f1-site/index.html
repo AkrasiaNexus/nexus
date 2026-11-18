@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Team MAIA Racing — Engineered for the limit</title>
-  <meta name="description" content="Team MAIA Racing: one car, scrolled from the no-go zone envelope to race-ready.">
-  <meta name="theme-color" content="#07090a">
+  <title>Hermes V1 · Team MAIA Racing</title>
+  <meta name="description" content="Hermes V1, Team MAIA's car for STEM Racing UAE 2026–27: the car, the CFD iterations, the team and the partner tiers, in one scroll.">
+  <meta name="theme-color" content="#0d0f0e">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Montserrat:wght@600;700;800&family=Raleway:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/site.css">
   <script type="importmap">
   {
@@ -22,105 +22,109 @@
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="#top">MAIA <em>Racing</em></a>
-    <nav class="nav" aria-label="Primary">
-      <a href="#story">Car</a>
-      <a href="#team">Team</a>
-      <a href="#telemetry">Telemetry</a>
-      <a href="#portal" class="nav-portal">Portal</a>
+  <svg width="0" height="0" class="defs" aria-hidden="true">
+    <symbol id="star" viewBox="-9 -9 18 18"><path d="M0-8C1.3-1.8 1.8-1.3 8 0 1.8 1.3 1.3 1.8 0 8-1.3 1.8-1.8 1.3-8 0-1.8-1.3-1.3-1.8 0-8Z"/></symbol>
+  </svg>
+
+  <header class="bar">
+    <a class="brand" href="#hermes" data-go="0"><svg class="brand-star" aria-hidden="true"><use href="#star"/></svg>MAIA <span>Racing</span></a>
+    <nav aria-label="Chapters">
+      <a href="#hermes" data-go="6">CFD</a>
+      <a href="#hermes" data-go="7">Team</a>
+      <a href="#hermes" data-go="9" class="nav-cta">Partner with us</a>
     </nav>
   </header>
 
   <main>
-    <section class="stage-wrap" id="story" aria-label="The car, scrolled">
-      <div class="pin" id="top">
+    <section class="track" id="hermes" data-track aria-label="Hermes V1 and Team MAIA, scroll through the story">
+      <div class="stage">
+        <svg id="sky" class="sky" aria-hidden="true"></svg>
         <canvas id="car" aria-hidden="true"></canvas>
-        <div class="glow" aria-hidden="true"></div>
+        <svg id="constellation" class="constellation" aria-hidden="true"></svg>
 
-        <div class="beats">
-          <article class="beat" data-beat="0">
-            <p class="eyebrow">Team MAIA Racing · F1 in Schools</p>
-            <h2 class="split">Engineered for the limit.</h2>
-            <p class="lede">The model you are looking at is the regulated no-go zone itself. Every part of the car lives inside it.</p>
-            <ul class="facts">
-              <li><b>227</b><span>mm long</span></li>
-              <li><b>74</b><span>mm wide</span></li>
-              <li><b>30</b><span>mm offset</span></li>
-            </ul>
+        <div class="chapters">
+          <article class="chapter" data-ch="0">
+            <p class="eyebrow">Team MAIA · STEM Racing UAE 2026–27</p>
+            <h1>Hermes V1.</h1>
+            <p class="lede">In Greek mythology, Maia is the mother of Hermes, the god of speed.</p>
           </article>
 
-          <article class="beat" data-beat="1">
-            <p class="eyebrow">Aerodynamics</p>
-            <h2 class="split">Sculpting every molecule of air.</h2>
-            <p class="lede">Curved air guiders sit beneath and around the chassis. They steer air away from the wheels and cut turbulence at the front of the car.</p>
+          <article class="chapter" data-ch="1">
+            <p class="eyebrow">01 · The envelope</p>
+            <h2>Every millimetre, inside the <em>rules.</em></h2>
+            <p class="lede">The chassis was modelled from the regulated no-go zone, keeping a strict 30 mm offset for full compliance with the design rules.</p>
+            <dl class="readouts" id="readouts"></dl>
           </article>
 
-          <article class="beat" data-beat="2">
-            <p class="eyebrow">Chassis</p>
-            <h2 class="split">Built around the driver.</h2>
-            <p class="lede">The halo platform and cockpit sit inside the streamlined body, clear of the airflow over the top of the car.</p>
+          <article class="chapter" data-ch="2">
+            <p class="eyebrow">02 · Front wing</p>
+            <h2>Air goes <em>around,</em> not through.</h2>
+            <p class="lede">Two ramped front wings deflect air away from the wheels. Chord 25 mm, thickness 10 mm, span 69.04 mm.</p>
           </article>
 
-          <article class="beat" data-beat="3">
-            <p class="eyebrow">Sidepods &amp; floor</p>
-            <h2 class="split">Invisible grip. Relentless downforce.</h2>
-            <p class="lede">Sidepods curve around the wheels to limit the Magnus effect that wheel rotation creates. The tail tapers so the air reattaches cleanly.</p>
+          <article class="chapter" data-ch="3">
+            <p class="eyebrow">03 · Side pods</p>
+            <h2>No room for the <em>Magnus effect.</em></h2>
+            <p class="lede">Smooth side pods curve around the wheels to control airflow and reduce turbulence, limiting the Magnus effect generated by wheel rotation.</p>
           </article>
 
-          <article class="beat" data-beat="4">
-            <p class="eyebrow">Rear wing &amp; running gear</p>
-            <h2 class="split">Precision kinematics at speed.</h2>
-            <p class="lede">Two curved rear-wing sections meet at the centre to form one continuous surface. Air stays attached for longer.</p>
+          <article class="chapter" data-ch="4">
+            <p class="eyebrow">04 · Rear</p>
+            <h2>One cartridge of <em>CO₂.</em></h2>
+            <p class="lede">The CO₂ cartridge chamber is 18 mm wide and 52 mm deep. The rear pods are hollowed outside the no-go zone to cut mass legally.</p>
           </article>
 
-          <article class="beat" data-beat="5">
-            <p class="eyebrow">Full blueprint</p>
-            <h2 class="split">Every component has a purpose.</h2>
-            <p class="lede">Every part, floating and labelled in the order it was designed.</p>
+          <article class="chapter chapter-top" data-ch="5">
+            <p class="eyebrow">05 · The constellation</p>
+            <h2>Every part has a <em>place.</em></h2>
           </article>
 
-          <article class="beat beat-final" data-beat="6">
-            <p class="eyebrow">Final call</p>
-            <h2 class="split">Team MAIA Racing. Ready for lights out.</h2>
-            <div class="lights" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-            <div class="cta">
-              <a class="btn primary" href="#team">Meet the team</a>
-              <a class="btn" href="#portal">Team portal</a>
+          <article class="chapter chapter-right" data-ch="6">
+            <p class="eyebrow">06 · CFD</p>
+            <h2>Three models to find <em>one.</em></h2>
+            <div class="iterations" id="iteration-list"></div>
+          </article>
+
+          <article class="chapter chapter-wide" data-ch="7">
+            <p class="eyebrow">07 · The team</p>
+            <h2>Six of us. <em>One car.</em></h2>
+            <div class="team" id="team-list"></div>
+          </article>
+
+          <article class="chapter" data-ch="8">
+            <p class="eyebrow">08 · Why MAIA</p>
+            <h2>Before speed, there has to be a <em>spark.</em></h2>
+            <p class="lede">Maia is the mother of Hermes, the god of speed, making her the literal origin of velocity. We don't just build a car; we engineer precision and purpose into every millimetre.</p>
+          </article>
+
+          <article class="chapter chapter-right" data-ch="9">
+            <p class="eyebrow">09 · Partners</p>
+            <h2>Put your name on <em>Hermes.</em></h2>
+            <p class="lede small">Total estimated budget: 3,050 AED. We target small and growing businesses, and any extra or leftover sponsorship funds will be donated to charity.</p>
+            <div class="tiers" id="tier-list"></div>
+          </article>
+
+          <article class="chapter" data-ch="10">
+            <p class="eyebrow">10 · Lights out</p>
+            <h2>Ready for <em>lights out.</em></h2>
+            <div class="lights" aria-hidden="true"><i class="lamp"></i><i class="lamp"></i><i class="lamp"></i><i class="lamp"></i><i class="lamp"></i></div>
+            <div class="final-cta" inert>
+              <a class="btn btn-gold" href="#hermes" data-go="9">Partner with us</a>
+              <a class="btn" href="#hermes" data-go="7">Meet the team</a>
             </div>
+            <p class="contact">Sponsorship &amp; Marketing Manager: <b>Shaurya Gupta</b></p>
           </article>
         </div>
 
-        <p class="scroll-cue" aria-hidden="true">Scroll</p>
+        <p class="hud" aria-hidden="true"><span id="hud-index">01</span><span class="hud-of">/ 11</span><span id="hud-name">Reveal</span></p>
+        <p class="cue" aria-hidden="true">Scroll</p>
       </div>
     </section>
-
-    <section class="block" id="team" aria-labelledby="team-title">
-      <p class="eyebrow">The team</p>
-      <h2 id="team-title" class="block-title">One team. Shared obsession.</h2>
-      <div class="roster" id="roster"></div>
-    </section>
-
-    <section class="block" id="telemetry" aria-labelledby="telemetry-title">
-      <p class="eyebrow">Telemetry</p>
-      <h2 id="telemetry-title" class="block-title">Data-driven speed.</h2>
-      <p class="data-flag">Illustrative data. Swap in real run logs.</p>
-      <div class="chart" id="chart"></div>
-    </section>
-
-    <section class="block" id="partners" aria-label="Partners">
-      <p class="eyebrow">Partners</p>
-      <p class="partners">Built with the <b>Yas in Schools</b> kit · <b>STEM Racing UAE</b></p>
-    </section>
-
-    <section class="block portal" id="portal" aria-label="Team portal">
-      <p class="eyebrow">Team portal</p>
-      <h2 class="block-title">Operations hub, role by role.</h2>
-      <p class="lede">Telemetry, R&amp;D and race strategy for each role on the team. Not wired to a backend yet.</p>
-      <ul class="role-list">
-        <li>Driver</li><li>Race engineer</li><li>Aerodynamicist / CAD</li><li>Team principal</li><li>Sponsor / partner</li><li>Super admin</li>
-      </ul>
-    </section>
   </main>
+
+  <footer class="footer">
+    <p><svg class="brand-star" aria-hidden="true"><use href="#star"/></svg>Team MAIA · STEM Racing UAE · 2026–27</p>
+    <p>Wheel assembly supplied through the Yas in Schools kit.</p>
+  </footer>
 </body>
 </html>

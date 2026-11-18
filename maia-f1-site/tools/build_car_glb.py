@@ -19,10 +19,11 @@ import numpy as np
 # Triangle counts of the 15 connected bodies, largest first (checked at runtime).
 EXPECTED_SIZES = [18663, 14922, 7594, 5196, 4080, 3484, 2846, 2754,
                   642, 638, 420, 420, 420, 420, 48]
-RANK_HALO = (0, 14)
+# Names follow the team's own engineering drawing (Renders and Engineering Drawings page).
+RANK_DOME = (0, 14)            # the dome in the cockpit (not labelled in the team's drawing), plus a small pin
 RANK_BODY = 1
-RANK_REAR_WING = 3
-RANK_DRS = (6, 7)
+RANK_CO2_CANISTER = 3          # the Ø18 x 52 mm CO2 canister chamber at the tail
+RANK_REAR_WING = (6, 7)        # two thin plates ~38 mm above the track
 RANK_REAR_PODS = (8, 9)
 RANK_WHEEL_BODIES = (2, 4, 5, 10, 11, 12, 13)  # axles, wheels and axle bushes
 
@@ -69,9 +70,9 @@ def classify(tris, ranks):
     x, y, z = c[:, 0], c[:, 1], c[:, 2]
     names = np.full(len(tris), "", dtype=object)
 
-    names[np.isin(ranks, RANK_HALO)] = "halo"
-    names[ranks == RANK_REAR_WING] = "rear_wing"
-    names[np.isin(ranks, RANK_DRS)] = "drs_flap"
+    names[np.isin(ranks, RANK_DOME)] = "dome"
+    names[ranks == RANK_CO2_CANISTER] = "co2_canister"
+    names[np.isin(ranks, RANK_REAR_WING)] = "rear_wing"
 
     pods = np.isin(ranks, RANK_REAR_PODS)
     names[pods & (y > 0)] = "rear_pods_l"
@@ -91,16 +92,16 @@ def classify(tris, ranks):
     mid = body & (x > -200) & (x <= -76)
     side = mid & (np.abs(y) >= 20)
     floor = mid & (np.abs(y) < 20) & (z <= 20)
-    cockpit = mid & (np.abs(y) < 20) & (z > 20) & (x >= -165) & (x <= -108)
-    mono = mid & (np.abs(y) < 20) & (z > 20) & ~cockpit
+    halo = mid & (np.abs(y) < 20) & (z > 20) & (x >= -165) & (x <= -108)  # halo hoop and cockpit rim
+    chassis = mid & (np.abs(y) < 20) & (z > 20) & ~halo
     names[nose] = "nose_cone"
     names[wing] = "front_wing"
-    names[tail] = "engine_cover"
+    names[tail] = "rear_body"
     names[side & (y > 0)] = "sidepods_l"
     names[side & (y <= 0)] = "sidepods_r"
     names[floor] = "floor"
-    names[cockpit] = "cockpit"
-    names[mono] = "monocoque"
+    names[halo] = "halo"
+    names[chassis] = "chassis"
 
     if np.any(names == ""):
         raise RuntimeError("unassigned triangles: %d" % np.sum(names == ""))
@@ -109,21 +110,57 @@ def classify(tris, ranks):
 
 def to_gltf_axes(tris, centre_xz, min_z):
     """Model (x, y, z, Z-up, mm) -> glTF (x, z, -y), centred on X/Z, bottom at Y=0."""
-    out = tris.copy()
-    out[..., 0] -= centre_xz[0]
-    out[..., 2] -= centre_xz[1]
-    out[..., 1] -= min_z
-    xs, ys, zs = out[..., 0].copy(), out[..., 1].copy(), out[..., 2].copy()
-    out[..., 0] = xs
-    out[..., 1] = ys
-    out[..., 2] = -zs
+    x = tris[..., 0] - centre_xz[0]  # length, centred
+    y = tris[..., 1] - centre_xz[1]  # width, centred
+    z = tris[..., 2] - min_z         # height, wheels on the ground
+    return np.stack([x, z, -y], axis=-1)  # Z-up -> Y-up (a proper rotation, winding kept)
+
+
+CREASE_COS = np.cos(np.radians(40))  # faces sharper than 40 degrees keep a hard edge
+
+
+def corner_normals(tris):
+    """Angle-weighted, crease-aware normals per triangle corner.
+
+    The STL is full of long sliver triangles. Weighting by the corner angle
+    means slivers (tiny angles) barely affect the shading, so curved panels
+    shade smoothly instead of streaking.
+    """
+    e0 = tris[:, 1] - tris[:, 0]
+    e1 = tris[:, 2] - tris[:, 1]
+    e2 = tris[:, 0] - tris[:, 2]
+    fn = np.cross(e0, -e2)
+    fn /= np.maximum(np.linalg.norm(fn, axis=1, keepdims=True), 1e-12)
+
+    def angle(a, b):
+        cos = np.einsum("ij,ij->i", a, b) / np.maximum(np.linalg.norm(a, axis=1) * np.linalg.norm(b, axis=1), 1e-12)
+        return np.arccos(np.clip(cos, -1, 1))
+
+    ang = np.stack([angle(e0, -e2), angle(e1, -e0), angle(e2, -e1)], axis=1)
+    _, vid = np.unique(np.round(tris.reshape(-1, 3), 4), axis=0, return_inverse=True)
+    vid = vid.reshape(-1, 3)
+
+    incident = {}
+    for f in range(len(tris)):
+        for c in range(3):
+            incident.setdefault(vid[f, c], []).append((f, c))
+
+    out = np.zeros_like(tris)
+    for corners in incident.values():
+        faces = np.array([f for f, _ in corners])
+        weights = np.array([ang[f, c] for f, c in corners])[:, None] * fn[faces]
+        similar = fn[faces] @ fn[faces].T > CREASE_COS
+        for i, (f, c) in enumerate(corners):
+            n = weights[similar[i]].sum(axis=0)
+            out[f, c] = n / max(np.linalg.norm(n), 1e-12)
     return out
 
 
-def indexed(tris):
-    verts = tris.reshape(-1, 3)
-    uniq, inv = np.unique(np.round(verts, 4), axis=0, return_inverse=True)
-    return uniq.astype(np.float32), inv.reshape(-1).astype(np.uint32)
+def indexed(tris, normals):
+    """Unique (position, normal) vertices plus a triangle index."""
+    data = np.concatenate([tris.reshape(-1, 3), normals.reshape(-1, 3)], axis=1)
+    uniq, inv = np.unique(np.round(data, 4), axis=0, return_inverse=True)
+    return uniq[:, :3].astype(np.float32), uniq[:, 3:].astype(np.float32), inv.reshape(-1).astype(np.uint32)
 
 
 def write_glb(parts, path):
@@ -137,15 +174,18 @@ def write_glb(parts, path):
         views.append({"buffer": 0, "byteOffset": offset, "byteLength": len(data), "target": target})
         return len(views) - 1
 
-    for name, pos, idx in parts:
+    for name, pos, nrm, idx in parts:
         pv = blob(pos.astype("<f4").tobytes(), 34962)
         accessors.append({"bufferView": pv, "componentType": 5126, "count": len(pos), "type": "VEC3",
                           "min": pos.min(axis=0).tolist(), "max": pos.max(axis=0).tolist()})
         pa = len(accessors) - 1
+        nv = blob(nrm.astype("<f4").tobytes(), 34962)
+        accessors.append({"bufferView": nv, "componentType": 5126, "count": len(nrm), "type": "VEC3"})
+        na = len(accessors) - 1
         iv = blob(idx.astype("<u4").tobytes(), 34963)
         accessors.append({"bufferView": iv, "componentType": 5125, "count": int(idx.size), "type": "SCALAR"})
         ia = len(accessors) - 1
-        meshes.append({"name": name, "primitives": [{"attributes": {"POSITION": pa}, "indices": ia}]})
+        meshes.append({"name": name, "primitives": [{"attributes": {"POSITION": pa, "NORMAL": na}, "indices": ia}]})
         nodes.append({"name": name, "mesh": len(meshes) - 1})
 
     gltf = {"asset": {"version": "2.0", "generator": "maia-build_car_glb"}, "scene": 0,
@@ -174,12 +214,15 @@ def main(src, dst):
     lo, hi = all_pts.min(axis=0), all_pts.max(axis=0)
     centre_xz = ((lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2)
     gl = to_gltf_axes(tris, centre_xz, lo[2])
+    # Upright check: the car is 50 mm tall and 74 mm wide, so Y (up) must be the shorter span.
+    assert np.ptp(gl[..., 1]) < np.ptp(gl[..., 2]), "car is not upright after the axis swap"
+    assert abs(gl[..., 1].min()) < 1e-6, "wheels are not on the ground (Y=0)"
 
     parts, total = [], 0
     for name in sorted(groups):
         idx = groups[name]
-        pos, index = indexed(gl[idx])
-        parts.append((name, pos, index))
+        pos, nrm, index = indexed(gl[idx], corner_normals(gl[idx]))
+        parts.append((name, pos, nrm, index))
         total += len(idx)
         print("%-14s %6d tris" % (name, len(idx)))
     assert total == len(tris), "triangle count mismatch"
