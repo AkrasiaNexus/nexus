@@ -16,7 +16,8 @@ const snapshot = (page) => page.evaluate(() => {
     counters: [...document.querySelectorAll('[data-count]')].map((c) => c.textContent),
     hud: document.querySelector('#hud-index').textContent,
     cta: document.querySelector('.final-cta').inert,
-    camera: [r(s.theta), r(s.phi), r(s.dist)],
+    // 0.1 rad: mid-turntable the camera spins ~90 rad per unit of progress, so a settled residual moves it a hair.
+    camera: [s.theta, s.phi, s.dist].map((v) => Math.round(v * 10) / 10),
     constellation: r(s.constellation),
   });
 });
