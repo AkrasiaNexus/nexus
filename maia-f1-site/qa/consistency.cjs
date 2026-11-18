@@ -10,7 +10,7 @@ const snapshot = (page) => page.evaluate(() => {
   return JSON.stringify({
     chapters: [...document.querySelectorAll('.chapter')].map((c) => r(+getComputedStyle(c).opacity)),
     words: [...document.querySelectorAll('.chapter h2 .word')].map((w) => r(+getComputedStyle(w).opacity)),
-    cards: [...document.querySelectorAll('[data-deal], .meter')].map((c) => getComputedStyle(c).transform + r(+getComputedStyle(c).opacity)),
+    cards: [...document.querySelectorAll('[data-deal], .meter')].map((c) => getComputedStyle(c).transform.replace(/-?\d+\.\d+/g, (n) => r(+n)) + r(+getComputedStyle(c).opacity)),
     sky: [document.querySelector('#sky').style.opacity, document.querySelector('#sky').style.transform],
     lamps: [...document.querySelectorAll('.lamp')].map((l) => r(+getComputedStyle(l).opacity)),
     counters: [...document.querySelectorAll('[data-count]')].map((c) => c.textContent),
@@ -28,17 +28,20 @@ const snapshot = (page) => page.evaluate(() => {
   for (const p of TARGETS) {
     // fast: jump from the far end straight to p
     await scrollToProgress(page, 1); await settle(page, 1);
-    await scrollToProgress(page, p); await settle(page, p, 0.0004);
+    await scrollToProgress(page, p); await settle(page, p, 0.00005);
     const fast = await snapshot(page);
     // slow: walk from the start in small steps
     await scrollToProgress(page, 0); await settle(page, 0);
     for (let q = 0; q < p; q += 0.02) { await scrollToProgress(page, q); await page.waitForTimeout(40); }
-    await scrollToProgress(page, p); await settle(page, p, 0.0004);
+    await scrollToProgress(page, p); await settle(page, p, 0.00005);
     const slow = await snapshot(page);
-    console.log(`p=${p}`, fast === slow ? 'consistent' : 'DIFFERENT');
-    if (fast !== slow) diffs.push({ p, fast, slow });
+    const f = JSON.parse(fast);
+    const s = JSON.parse(slow);
+    const keys = Object.keys(f).filter((k) => JSON.stringify(f[k]) !== JSON.stringify(s[k]));
+    console.log(`p=${p.toFixed(3)}`, keys.length ? `DIFFERENT in ${keys.join(', ')}` : 'consistent');
+    if (keys.length) diffs.push({ p, ...Object.fromEntries(keys.map((k) => [k, { fast: f[k], slow: s[k] }])) });
   }
-  console.log(diffs.length ? `INCONSISTENT\n${JSON.stringify(diffs, null, 1)}` : 'ALL CONSISTENT');
+  console.log(diffs.length ? `INCONSISTENT\n${JSON.stringify(diffs).slice(0, 3000)}` : 'ALL CONSISTENT');
   console.log('errors:', errors.length ? errors.join(' | ') : 'none');
   await browser.close();
   process.exit(diffs.length || errors.length ? 1 : 0);

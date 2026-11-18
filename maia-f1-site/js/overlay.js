@@ -19,7 +19,12 @@ export function createConstellation(svg, items) {
     name.textContent = item.name;
     const spec = el('text', { class: 'c-spec', x: 14, y: i % 2 ? 37 : 3 }, g);
     spec.textContent = item.spec;
-    return g;
+    return { g, texts: [name, spec] };
+  });
+  // Labels near the right edge sit on the left of their star so they never run off screen.
+  const side = (texts, flip) => texts.forEach((t) => {
+    t.setAttribute('x', flip ? -14 : 14);
+    t.setAttribute('text-anchor', flip ? 'end' : 'start');
   });
 
   return function update(project, k) {
@@ -28,11 +33,13 @@ export function createConstellation(svg, items) {
     svg.setAttribute('viewBox', `0 0 ${svg.clientWidth} ${svg.clientHeight}`);
     const pts = items.map((item) => project(item.part));
     const n = items.length;
-    stars.forEach((g, i) => {
+    stars.forEach(({ g, texts }, i) => {
       const p = pts[i];
       const t = Math.min(1, Math.max(0, k * n - i * 0.6)); // stars light one after another
       g.style.opacity = p ? t : 0;
-      if (p) g.setAttribute('transform', `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
+      if (!p) return;
+      g.setAttribute('transform', `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
+      side(texts, p.x > svg.clientWidth * 0.6);
     });
     lines.forEach((line, i) => {
       const a = pts[i];

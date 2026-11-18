@@ -141,7 +141,8 @@ export async function createCarScene(canvas, url) {
     camera.lookAt(TARGET);
     // Desktop: the car sits beside the copy column. Phone: copy is a bottom sheet, so the car rides higher.
     // rise > 0 lifts the car in frame (to make room for panels below it), < 0 lowers it.
-    if (portrait) camera.setViewOffset(w, h, 0, h * (0.16 + Math.max(0, s.rise) * 0.5), w, h);
+    // Phone: the car rides above the copy sheet, and drops to mid-screen under the constellation headline.
+    if (portrait) camera.setViewOffset(w, h, 0, h * (0.16 + Math.max(0, s.rise) * 0.5 - 0.14 * s.constellation), w, h);
     else camera.setViewOffset(w, h, -s.shift * w, s.rise * h, w, h);
     camera.updateProjectionMatrix();
 

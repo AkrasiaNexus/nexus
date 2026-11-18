@@ -92,14 +92,14 @@ export function createChapterText(chapterEls, reduce) {
     if (i > 0) {
       const words = splitText(el.querySelector('h2'), { words: true }).words;
       tl.add(el, { opacity: [0, 1], translateY: [24 * m, 0], duration: 30 }, start + 4);
-      tl.add(words, { opacity: [0.08, 1], translateY: [14 * m, 0], duration: 22, delay: stagger(2.5) }, start + 6);
+      tl.add(words, { opacity: [0.08, 1], translateY: [14 * m, 0], duration: 18, delay: stagger(2.5) }, start + 6);
     }
     const cards = el.querySelectorAll('[data-deal]');
     if (cards.length) {
-      tl.add(cards, { opacity: [0, 1], translateY: [26 * m, 0], scale: [1 - 0.04 * m, 1], duration: 18, delay: stagger(3) }, start + 12);
+      tl.add(cards, { opacity: [0, 1], translateY: [26 * m, 0], scale: [1 - 0.04 * m, 1], duration: 18, delay: stagger(3) }, start + 8);
     }
     const meters = el.querySelectorAll('.meter');
-    if (meters.length) tl.add(meters, { scaleX: [0, 1], duration: 22, delay: stagger(3), ease: 'outExpo' }, start + 18);
+    if (meters.length) tl.add(meters, { scaleX: [0, 1], duration: 20, delay: stagger(3), ease: 'outExpo' }, start + 12);
     if (i < chapterEls.length - 1) {
       tl.add(el, { opacity: 0, translateY: -18 * m, duration: 22, ease: 'inCubic' }, end - 24);
     }

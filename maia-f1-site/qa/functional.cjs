@@ -18,7 +18,8 @@ const visibleIn = (page, sel) => page.evaluate((s) => [...document.querySelector
   // ---------- desktop ----------
   let { browser, page, errors } = await open(DESKTOP);
   await page.waitForTimeout(1500);
-  check('hero headline is real text', (await page.textContent('h1')).replace(/\s+/g, ' ').trim() === 'Hermes V1.');
+  // splitText keeps one accessible copy of the headline and hides the animated words from screen readers.
+  check('hero headline is real, accessible text', (await page.textContent('h1 > span:not([aria-hidden])')) === 'Hermes V1.');
   check('no driver anywhere in the copy', !/driver/i.test(await page.textContent('body')));
   const sky = await page.evaluate(() => ({ stars: document.querySelectorAll('#sky .sky-star').length, names: [...document.querySelectorAll('#sky text')].map((t) => t.textContent) }));
   check('Pleiades: nine stars, only Maia labelled', sky.stars === 9 && sky.names.join() === 'Maia', JSON.stringify(sky));

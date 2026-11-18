@@ -68,7 +68,7 @@ em { font-style: normal; color: var(--gold); }
   transition: color 0.2s;
 }
 .bar nav a:hover { color: var(--white); }
-.bar .nav-cta { color: var(--ground); background: var(--gold); padding: 11px 16px; border-radius: 999px; }
+.bar .nav-cta { color: var(--ground); background: var(--gold); padding: 11px 16px; border-radius: 999px; white-space: nowrap; }
 .bar .nav-cta:hover { color: var(--ground); background: #d6c193; }
 
 /* ---------- the pinned stage ---------- */
