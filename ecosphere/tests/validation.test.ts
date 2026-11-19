@@ -88,3 +88,14 @@ describe("ids & login", () => {
     expect(listingSchema.parse({ kind: "DONATE", title: "t", description: "d", category: "Donate", emoji: "📚" }).pricePoints).toBe(0);
   });
 });
+
+describe("scan feedback fingerprint", () => {
+  const base = { label: "bottle", wasteType: "PLASTIC", confidence: 0.9, weightKg: 0.03 };
+  it("accepts a 512-number fingerprint", () => {
+    expect(scanSchema.safeParse({ ...base, feedback: { embedding: Array(512).fill(1 / Math.sqrt(512)), predicted: "GLASS" } }).success).toBe(true);
+  });
+  it("rejects wrong length, non-finite, out-of-range or non-unit (crafted) values", () => {
+    for (const embedding of [Array(511).fill(0), [...Array(511).fill(0), Number.NaN], [...Array(511).fill(0), 1e6], Array(512).fill(1)])
+      expect(scanSchema.safeParse({ ...base, feedback: { embedding, predicted: "GLASS" } }).success).toBe(false);
+  });
+});

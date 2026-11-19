@@ -11,10 +11,12 @@ import { saveScan } from "../../actions";
 import { Glyph, WASTE_GLYPH } from "@/components/Glyph";
 
 // Runs the on-device model on an image URL (blob: preview) and returns the best waste type.
-type Model = (url: string) => Promise<{ wasteType: WasteType; label: string; confidence: number }>;
-type Result = { wasteType: WasteType; label: string; confidence: number; source?: "server" | "device" };
+type Model = (url: string) => Promise<ReturnType<typeof classifyEmbedding>>;
+type Result = { wasteType: WasteType; label: string; confidence: number; source?: "server" | "device"; runnerUp?: WasteType; unsure?: boolean; embedding?: number[] };
 
-const LOW_CONFIDENCE = 0.5; // below this the user is asked to confirm the category
+const LOW_CONFIDENCE = 0.5; // server results below this ask the user to confirm the category
+const LEARN_KEY = "eco-scan-learn";
+const FRAME = 0.8; // snap keeps the centre 80% of the camera frame, roughly the corner-bracket area
 type Cam = "off" | "starting" | "live" | "denied" | "unavailable";
 const CAM_HELP: Partial<Record<Cam, string>> = {
   denied: "Camera access is blocked. Allow it in your browser's site settings (the icon left of the address bar), then tap the button again. Or upload a photo.",
@@ -40,6 +42,12 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
   const [weight, setWeight] = useState("0.03");
   const [message, setMessage] = useState<string | null>(null);
   const [earned, setEarned] = useState<{ points: number; key: number } | null>(null);
+  const [learn, setLearn] = useState(true); // per-device opt-out for the learning loop
+  useEffect(() => { try { setLearn(localStorage.getItem(LEARN_KEY) !== "0"); } catch { /* storage blocked: keep default */ } }, []);
+  function toggleLearn(on: boolean) {
+    setLearn(on);
+    try { localStorage.setItem(LEARN_KEY, on ? "1" : "0"); } catch { /* storage blocked */ }
+  }
 
   useEffect(() => {
     // CLIP image model runs fully in the browser; photos never leave the device. ~64 MB, downloaded once then cached.
@@ -117,10 +125,13 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
   function snap() {
     const v = video.current;
     if (!v?.videoWidth) return;
+    // Crop to the framed centre: less background clutter for the model to latch onto.
+    // shortcut: fixed 80% crop, not the exact on-screen bracket box (object-cover offsets); measure on real photos before refining.
+    const w = Math.round(v.videoWidth * FRAME), h = Math.round(v.videoHeight * FRAME);
     const canvas = document.createElement("canvas");
-    canvas.width = v.videoWidth;
-    canvas.height = v.videoHeight;
-    canvas.getContext("2d")!.drawImage(v, 0, 0);
+    canvas.width = w;
+    canvas.height = h;
+    canvas.getContext("2d")!.drawImage(v, (v.videoWidth - w) / 2, (v.videoHeight - h) / 2, w, h, 0, 0, w, h);
     canvas.toBlob((blob) => {
       stopCamera();
       setCam("off");
@@ -175,7 +186,8 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
   async function save() {
     if (!result) return;
     setBusy(true);
-    const res = await saveScan({ label: result.label, wasteType: type, confidence: result.confidence, weightKg: Number(weight) });
+    const feedback = learn && result.embedding && result.source === "device" ? { embedding: result.embedding, predicted: result.wasteType } : undefined;
+    const res = await saveScan({ label: result.label, wasteType: type, confidence: result.confidence, weightKg: Number(weight), feedback });
     setBusy(false);
     setMessage(res?.error ?? `+${res?.points} points! Logged as ${GUIDE[type].name}.`);
     if (res?.points) setEarned({ points: res.points, key: Date.now() });
@@ -213,7 +225,7 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
       </div>
 
       <p className="text-center text-sm text-white/75">
-        {cam === "live" ? "Point at the item and tap to snap" : cam === "starting" ? "Allow camera access when your browser asks" : <>Take a photo or upload<br />an image</>}
+        {cam === "live" ? <>One item at a time, filling the frame.<br />Tap to snap</> : cam === "starting" ? "Allow camera access when your browser asks" : <>Take a photo or upload<br />an image</>}
       </p>
       {CAM_HELP[cam] && <p role="alert" className="card p-3 text-center text-xs text-gold">{CAM_HELP[cam]}</p>}
 
@@ -265,7 +277,19 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
           </section>
 
           <section className="sheet-up card flex flex-col gap-3 p-4" style={{ animationDelay: "110ms" }}>
-            {result.confidence < LOW_CONFIDENCE && (
+            {result.unsure && result.runnerUp ? (
+              <div className="rounded-xl bg-yellow-500/10 p-3">
+                <p className="mb-2 text-sm text-yellow-200">Not quite sure. Which is it?</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[result.wasteType, result.runnerUp].map((t) => (
+                    <button key={t} type="button" onClick={() => pickType(t)} aria-pressed={t === type}
+                      className={`press flex items-center justify-center gap-2 rounded-xl border py-3 text-sm font-semibold transition-colors ${t === type ? "border-leaf bg-leaf text-ink" : "border-white/10 bg-card"}`}>
+                      <Glyph name={WASTE_GLYPH[t]} className="h-5 w-5" />{GUIDE[t].name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : !result.unsure && result.confidence < LOW_CONFIDENCE && result.source === "server" && (
               <p className="rounded-lg bg-yellow-500/10 p-2 text-xs text-yellow-300">Not sure about this one. Please check the category below. You know your item best.</p>
             )}
             <p className="text-sm"><span style={{ color: g.binColor }}>●</span> {g.name} → {g.bin}</p>
@@ -282,6 +306,12 @@ export function Scanner({ serverAI }: { serverAI: boolean }) {
               <input type="number" min="0.01" max="50" step="0.01" value={weight} onChange={(e) => setWeight(e.target.value)} className="input w-24 py-2" /> kg
             </label>
             <button className="btn" onClick={save} disabled={busy || !(Number(weight) > 0)}>Log it · +{g.points} EC</button>
+            {result.embedding && (
+              <label className="flex items-start gap-2 text-[11px] text-mute">
+                <input type="checkbox" checked={learn} onChange={(e) => toggleLearn(e.target.checked)} className="mt-0.5 accent-[#a2d47e]" />
+                <span>Help the scanner learn: share this photo&apos;s fingerprint (a list of numbers, never the photo) and the bin you chose. Linked to your account, deleted after 180 days.</span>
+              </label>
+            )}
             <Link href={`/guide?type=${type}`} className="text-center text-xs text-leaf">Full recycling guide →</Link>
           </section>
         </>

@@ -131,9 +131,12 @@ export async function saveScan(input: unknown): Promise<FormState & { points?: n
   const user = await requireUser();
   const parsed = scanSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid scan." };
-  const { label, wasteType, confidence, weightKg } = parsed.data;
-  const { data: points, error } = await createClient().rpc("log_scan", { p_label: label, p_type: wasteType, p_confidence: confidence, p_weight: weightKg });
+  const { label, wasteType, confidence, weightKg, feedback } = parsed.data;
+  const sb = createClient();
+  const { data: points, error } = await sb.rpc("log_scan", { p_label: label, p_type: wasteType, p_confidence: confidence, p_weight: weightKg });
   if (error) return { error: error.message.includes("limit") ? "Scan limit reached for this hour. Take a break! 🌿" : "Could not save the scan." };
+  // Best effort: a failed feedback write must never cost the user their scan.
+  if (feedback) await sb.rpc("log_scan_feedback", { p_embedding: feedback.embedding, p_predicted: feedback.predicted, p_chosen: wasteType, p_confidence: confidence });
   await syncBadges(user.id);
   revalidatePath("/", "layout");
   return { ok: "Saved", points: points as number };

@@ -116,6 +116,30 @@ insert into audit_logs (action, detail) values ('RLS_TEST', 'x');
 do $$ begin update audit_logs set detail = 'tampered' where action = 'RLS_TEST'; exception when others then update rls_results set ok = true, got = 'blocked' where test = 'audit log rows cannot be edited'; end $$;
 delete from audit_logs where action = 'RLS_TEST';
 
+-- Scanner feedback (0011): only via the RPC, validated, unreadable to normal users.
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}', true);
+insert into rls_results values ('feedback needs a matching recent scan', false, 'accepted');
+do $$ begin perform log_scan_feedback(array_fill(0.0441942::real, array[512]), 'GLASS', 'PLASTIC', 0.4); exception when others then update rls_results set ok = true, got = 'rejected' where test = 'feedback needs a matching recent scan'; end $$;
+select log_scan('rls fb item', 'PLASTIC', 0.4, 0.1);
+select log_scan_feedback(array_fill(0.0441942::real, array[512]), 'GLASS', 'PLASTIC', 0.4);
+insert into rls_results values ('feedback rejects a non-unit (crafted) fingerprint', false, 'accepted');
+do $$ begin perform log_scan_feedback(array_fill(1::real, array[512]), 'GLASS', 'PLASTIC', 0.4); exception when others then update rls_results set ok = true, got = 'rejected' where test = 'feedback rejects a non-unit (crafted) fingerprint'; end $$;
+insert into rls_results select 'student cannot read scan feedback, even their own', count(*) = 0, count(*)::text from scan_feedback;
+insert into rls_results values ('feedback rejects a short fingerprint', false, 'accepted');
+do $$ begin perform log_scan_feedback(array_fill(0.0441942::real, array[511]), 'GLASS', 'PLASTIC', 0.4); exception when others then update rls_results set ok = true, got = 'rejected' where test = 'feedback rejects a short fingerprint'; end $$;
+insert into rls_results values ('feedback rejects NaN values', false, 'accepted');
+do $$ begin perform log_scan_feedback(array_fill('NaN'::real, array[512]), 'GLASS', 'PLASTIC', 0.4); exception when others then update rls_results set ok = true, got = 'rejected' where test = 'feedback rejects NaN values'; end $$;
+insert into rls_results values ('feedback cannot be inserted directly', false, 'inserted');
+do $$ begin insert into scan_feedback ("userId", embedding, predicted, chosen, confidence) values ('00000000-0000-0000-0000-0000000000a1', array_fill(0.01::real, array[512]), 'GLASS', 'GLASS', 1); exception when others then update rls_results set ok = true, got = 'blocked' where test = 'feedback cannot be inserted directly'; end $$;
+reset role;
+set local role anon;
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+insert into rls_results values ('anon cannot log scan feedback', false, 'accepted');
+do $$ begin perform log_scan_feedback(array_fill(0.0441942::real, array[512]), 'GLASS', 'PLASTIC', 0.4); exception when others then update rls_results set ok = true, got = 'rejected' where test = 'anon cannot log scan feedback'; end $$;
+reset role;
+insert into rls_results select 'feedback stored once, owned by caller', count(*) = 1 and bool_and("userId" = '00000000-0000-0000-0000-0000000000a2' and chosen = 'PLASTIC'), count(*)::text from scan_feedback where "userId" in ('00000000-0000-0000-0000-0000000000a1','00000000-0000-0000-0000-0000000000a2');
+
 -- Cleanup fixtures
 delete from listings where id in ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000c2');
 delete from notifications where id = '00000000-0000-0000-0000-0000000000e1';

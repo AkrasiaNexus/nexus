@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import labels from "@/lib/clipLabels.json";
 import { classifyEmbedding } from "@/lib/clip";
-import { PROMPT_LIST, bestType } from "@/lib/wasteLabels";
+import { PROMPT_LIST } from "@/lib/wasteLabels";
+import head from "@/lib/scannerHead.json";
 
 describe("on-device CLIP labels", () => {
   it("has one precomputed embedding per prompt, in the same order (rerun build-clip-labels if this fails)", () => {
@@ -14,9 +15,13 @@ describe("on-device CLIP labels", () => {
     expect(r.wasteType).toBe("METAL");
     expect(r.label).toBe("aluminium drink can");
   });
-  it("scores a type by summing its phrases", () => {
-    const r = bestType([{ label: "a plastic bottle", score: 0.3 }, { label: "a plastic bag", score: 0.3 }, { label: "a glass bottle", score: 0.4 }]);
-    expect(r).toMatchObject({ wasteType: "PLASTIC", label: "plastic bottle" });
-    expect(r.confidence).toBeCloseTo(0.6);
+  it("names the item with a phrase from the chosen bin and offers a different runner-up", () => {
+    for (const e of labels.embeddings) {
+      const r = classifyEmbedding(e);
+      expect(PROMPT_LIST.some((p) => p.type === r.wasteType && p.prompt.replace(/^an? /, "") === r.label)).toBe(true);
+      expect(r.runnerUp).not.toBe(r.wasteType);
+      expect(r.unsure).toBe(r.confidence < head.unsure);
+      expect(r.embedding).toHaveLength(512);
+    }
   });
 });

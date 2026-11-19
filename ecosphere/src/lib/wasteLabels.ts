@@ -14,16 +14,3 @@ export const WASTE_PROMPTS: Record<WasteType, string[]> = {
 };
 
 export const PROMPT_LIST = Object.entries(WASTE_PROMPTS).flatMap(([type, prompts]) => prompts.map((p) => ({ type: type as WasteType, prompt: p })));
-
-// Collapse per-phrase probabilities: a type's confidence is the sum over its phrases; its best phrase is the label.
-export function bestType(scores: { label: string; score: number }[]) {
-  const byPrompt = new Map(scores.map((s) => [s.label, s.score]));
-  const totals = new Map<WasteType, { sum: number; top: string; topScore: number }>();
-  for (const { type, prompt } of PROMPT_LIST) {
-    const sc = byPrompt.get(prompt) ?? 0;
-    const t = totals.get(type) ?? { sum: 0, top: prompt, topScore: -1 };
-    totals.set(type, { sum: t.sum + sc, ...(sc > t.topScore ? { top: prompt, topScore: sc } : { top: t.top, topScore: t.topScore }) });
-  }
-  const [wasteType, best] = Array.from(totals).sort((a, b) => b[1].sum - a[1].sum)[0];
-  return { wasteType, label: best.top.replace(/^an? /, ""), confidence: best.sum };
-}

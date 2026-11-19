@@ -38,6 +38,12 @@ export const scanSchema = z.object({
   wasteType: z.enum(WASTE_TYPES),
   confidence: z.coerce.number().min(0).max(1),
   weightKg: z.coerce.number().positive().max(50),
+  // Learning loop (optional): the photo's CLIP fingerprint and the model's own guess, never the photo itself.
+  feedback: z.object({
+    embedding: z.array(z.number().finite().min(-1).max(1)).length(512)
+      .refine((v) => Math.abs(Math.hypot(...v) - 1) < 0.01, "fingerprint must be unit length"),
+    predicted: z.enum(WASTE_TYPES),
+  }).optional(),
 });
 
 export const MAX_SCANS_PER_HOUR = 60;
