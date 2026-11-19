@@ -8,7 +8,7 @@ import { GUIDE, WASTE_TYPES, impact, round } from "@/lib/waste";
 import { WEEKDAYS, changePct, heatmapGrid, periodRange, seriesBetween, seriesFor, type Period } from "@/lib/charts";
 import { Header, Heatmap, LineChart, Ring } from "@/components/ui";
 import { Glyph, WASTE_GLYPH } from "@/components/Glyph";
-import { Critter } from "@/components/Critter";
+import { Leaderboard, type BoardRow } from "@/components/Leaderboard";
 
 const PERIODS: Record<Period, string> = { day: "Today", week: "This Week", month: "This Month", year: "This Year" };
 const PREV: Record<Period, string> = { day: "yesterday", week: "last week", month: "last month", year: "last year" };
@@ -32,7 +32,6 @@ export default async function Stats({ searchParams: q }: { searchParams: Params 
   const isAdmin = user.role === "SUPER_ADMIN" || user.role === "SCHOOL_ADMIN";
   const type = WASTE_TYPES.find((t) => t === q.t) as WasteType | undefined;
   const boards = user.schoolId ? BOARDS : (["Schools"] as const);
-  const board = boards.find((b) => b === q.b) ?? boards[0];
   const href = (extra: Params) => `/stats?${new URLSearchParams(Object.entries({ ...q, ...extra }).filter(([, v]) => v) as [string, string][])}`;
 
   // Range: a custom admin date range, else the selected period; "previous" is the same length just before.
@@ -53,12 +52,13 @@ export default async function Stats({ searchParams: q }: { searchParams: Params 
   const leaders = students.filter((x) => x.schoolId === user.schoolId);
   const schools = (schoolRes.data ?? []) as { id: string; name: string; points: number }[];
   const sum = (xs: { points: number }[]) => xs.reduce((t, x) => t + x.points, 0);
-  const rows = board === "Students"
-    ? leaders.slice(0, 5).map((l) => ({ key: l.id, label: l.name, avatar: l.avatar, points: l.points, me: l.id === user.id }))
-    : board === "Classes"
-      ? Array.from(new Set(leaders.map((l) => l.grade ?? "—"))).map((g) => ({ key: g, label: `Class ${g}`, points: sum(leaders.filter((l) => (l.grade ?? "—") === g)), me: g === user.grade }))
-        .sort((a, b) => b.points - a.points).slice(0, 5)
-      : schools.map((s) => ({ key: s.id, label: s.name, points: Number(s.points), me: s.id === user.schoolId })).sort((a, b) => b.points - a.points);
+  const all: Record<(typeof BOARDS)[number], BoardRow[]> = {
+    Students: leaders.slice(0, 5).map((l) => ({ key: l.id, label: l.name, avatar: l.avatar, points: l.points, me: l.id === user.id })),
+    Classes: Array.from(new Set(leaders.map((l) => l.grade ?? "—"))).map((g) => ({ key: g, label: /^class/i.test(g) ? g : `Class ${g}`, points: sum(leaders.filter((l) => (l.grade ?? "—") === g)), me: g === user.grade }))
+      .sort((a, b) => b.points - a.points).slice(0, 5),
+    Schools: schools.map((s) => ({ key: s.id, label: s.name, points: Number(s.points), me: s.id === user.schoolId })).sort((a, b) => b.points - a.points),
+  };
+  const boardRows = Object.fromEntries(boards.map((b) => [b, all[b]]));
 
   const kgBy = (scans: { wasteType: WasteType; weightKg: number }[]) =>
     scans.reduce<Record<string, number>>((acc, s) => ({ ...acc, [s.wasteType]: (acc[s.wasteType] ?? 0) + s.weightKg }), {});
@@ -188,20 +188,7 @@ export default async function Stats({ searchParams: q }: { searchParams: Params 
           <Heatmap grid={heatmapGrid(last4w.scans)} rowLabels={["3 wks ago", "2 wks ago", "Last wk", "This wk"]} colLabels={WEEKDAYS} />
         </section>
 
-        <section className="card p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-medium">EcoCreds leaderboard</h2>
-            <nav className="flex gap-1">{boards.map((b) => <Link key={b} href={href({ b })} className={`chip ${b === board ? "chip-on" : ""}`}>{b}</Link>)}</nav>
-          </div>
-          <ol className="space-y-2">
-            {rows.map((r, i) => (
-              <li key={r.key} className={`flex items-center gap-3 text-sm ${r.me ? "text-leaf" : ""}`}>
-                <span className="w-5 text-mute">{i + 1}</span><span className="flex flex-1 items-center gap-2">{"avatar" in r && typeof r.avatar === "string" && <Critter avatar={r.avatar} size={22} />}{r.label}</span><span>{r.points} EC</span>
-              </li>
-            ))}
-            {rows.length === 0 && <li className="text-xs text-white/50">No rankings yet.</li>}
-          </ol>
-        </section>
+        <Leaderboard boards={boardRows} initial={q.b ?? ""} />
         <Link href="/impact" className="btn-ghost text-sm">See SDG 12 & community impact →</Link>
       </div>
     </>
