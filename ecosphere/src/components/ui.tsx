@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CountUp } from "./Motion";
 export { Ring } from "./Ring";
+export { PillMenu } from "./PillMenu";
 
 // Mockup style: sub-screens get a back arrow + centred title; tab screens a large left title.
 export function Header({ title, back = "/home", right }: { title: string; back?: string | null; right?: React.ReactNode }) {
@@ -180,16 +181,3 @@ export function Heatmap({ grid, rowLabels, colLabels }: { grid: number[][]; rowL
   );
 }
 
-// Pill dropdown (mockup "School ⌄", "This Month ⌄") built on <details>, no JS needed.
-export function PillMenu({ label, items, className = "" }: { label: string; items: { href: string; label: string; on?: boolean }[]; className?: string }) {
-  return (
-    <details className={`group relative ${className}`}>
-      <summary className="flex cursor-pointer list-none items-center gap-2 rounded-xl border border-white/[.06] bg-card px-4 py-2 text-sm [&::-webkit-details-marker]:hidden">
-        {label}<ChevronRight size={14} className="rotate-90 transition group-open:-rotate-90" />
-      </summary>
-      <ul className="absolute left-1/2 z-30 mt-1 min-w-full -translate-x-1/2 overflow-hidden rounded-xl border border-white/10 bg-[#121b15] shadow-xl">
-        {items.map((i) => <li key={i.href}><Link href={i.href} className={`block whitespace-nowrap px-4 py-2 text-sm hover:bg-white/5 ${i.on ? "text-leaf" : ""}`}>{i.label}</Link></li>)}
-      </ul>
-    </details>
-  );
-}
