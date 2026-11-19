@@ -86,6 +86,9 @@ This file is the user's standing preferences. Load and follow it every session. 
 - Finish with the skill's QA scripts (fast/slow consistency, functional, perf), a jury self-score, and a scroll-through recording sent to the user.
 - Reference build: `ecosphere/src/components/landing/` (copy the structure, never the concept).
 
+## 12d. EcoSphere deploy gate (always ON)
+- Whenever the user says deploy / ship / go live for EcoSphere (app or website), FIRST remind them of every item in `ecosphere/docs/DEPLOY_CHECKLIST.md` (real-world scanner photo test, accuracy expectations, bigger-model fallback, Supabase cleanup) and get each ticked or explicitly skipped.
+
 ## 13. Graphify
 - For codebase questions: `graphify query` / `path` / `explain` first.
 - Use `graphify-out/wiki/index.md` for navigation.
