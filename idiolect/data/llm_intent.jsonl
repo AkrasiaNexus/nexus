@@ -442,3 +442,7 @@
 {"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t216", "pred": "context"}
 {"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t217", "pred": "context"}
 {"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t218", "pred": "reject"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "raw", "id": "d01", "pred": "request"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "raw", "id": "d02", "pred": "reject"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "raw", "id": "d03", "pred": "pitch"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "raw", "id": "d04", "pred": "pitch"}
