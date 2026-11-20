@@ -19,7 +19,7 @@ Most hangouts end up in a mall because nobody knows where else to go, and growin
 - **Group size (1–8)** changes the fare totals, how many dares get dealt, and which games unlock. Team games need 4 or more.
 - **Time window** ("out from" / "home by"). Every quest gets a timeline: bus there, time at the spot, bus home, with today's sunset marked. Spots that don't fit get filtered out.
 - **Budget cap per person**, covering bus fare both ways, entry, food and game money.
-- **40 spots**: 30 by bus with real DARB/ITC lines and walking distance, 3 a short walk from the station, and 7 where no direct bus goes, priced as a cab split per person.
+- **49 spots**: 38 by bus with real DARB/ITC lines and walking distance, 3 a short walk from the station, and 8 where no direct bus goes, priced as a cab split per person.
 - **Vibe filter**: sunset, chaos, chill, edge, food.
 - **Games:** NPC Dialogue (a deck of harmless stranger dares, one per person), the AED 5 Draft, Split Hunt (4+ people), and Cover Art (an album-cover group photo that becomes the Lore Book entry).
 - **Boss Fights:** two-stop runs, for example markets before dusk followed by a 3.5 km walk to dinner.
@@ -46,7 +46,7 @@ Most hangouts end up in a mall because nobody knows where else to go, and growin
 
 ## Data sources
 
-- Routes: Google Maps transit data for ITC buses, pulled 10 Nov 2026, for the first 10 spots. The 30 spots added on 20 Nov 2026 use DARB line and stop lists from Moovit (lines 34, 54, 56, 102, 5 and N2 from Abu Dhabi Bus Station), with road distances from OpenStreetMap's OSRM. Their trip times are estimates: wait, about a minute per stop, plus walking.
+- Routes: Google Maps transit data for ITC buses, pulled 10 Nov 2026, for the first 10 spots. Spots added later by the daily research job, and the 30 added on 20 Nov 2026, use DARB line and stop lists from Moovit (lines 34, 54, 56, 102, 5 and N2 from Abu Dhabi Bus Station), with road distances from OpenStreetMap's OSRM. Their trip times are estimates: wait, about a minute per stop, plus walking.
 - Fares: Abu Dhabi Mobility (admobility.gov.ae).
 - Spot details: r/abudhabi, Time Out Abu Dhabi, Visit Abu Dhabi, wow-abudhabi.com, digiflow.ae and the venues' own pages (opening hours and prices checked 20 Nov 2026). Coordinates from OpenStreetMap.
 - New spots get added by a daily research job that verifies each route before adding it.
