@@ -13,6 +13,7 @@ The model must answer with exactly one intent label (grammar-constrained, temper
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -47,7 +48,7 @@ def run(model_paths: list[str]) -> None:
     done = {(r["model"], r["condition"], r["id"]) for r in _results()}
     examples = load_examples(DATA)
     for path in model_paths:
-        name = Path(path).stem
+        name = re.sub(r"-\d{5}-of-\d{5}$", "", Path(path).stem)  # split GGUFs: name the model, not part 1
         llm = Llama(model_path=path, n_ctx=4096, n_threads=4, seed=0, verbose=False)
         # One condition at a time, so the shared system prompt stays in the KV cache.
         for condition in CONDITIONS:

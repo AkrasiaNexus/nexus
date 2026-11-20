@@ -331,11 +331,114 @@
 {"model": "qwen2.5-3b-instruct-q4_k_m", "condition": "profile prompt", "id": "t216", "pred": "context"}
 {"model": "qwen2.5-3b-instruct-q4_k_m", "condition": "profile prompt", "id": "t217", "pred": "request"}
 {"model": "qwen2.5-3b-instruct-q4_k_m", "condition": "profile prompt", "id": "t218", "pred": "request"}
-{"model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002", "condition": "raw", "id": "d01", "pred": "pitch"}
-{"model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002", "condition": "raw", "id": "d02", "pred": "reject"}
-{"model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002", "condition": "raw", "id": "d03", "pred": "request"}
-{"model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002", "condition": "raw", "id": "d04", "pred": "context"}
-{"model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002", "condition": "raw", "id": "d05", "pred": "request"}
-{"model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002", "condition": "raw", "id": "d06", "pred": "pitch"}
-{"model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002", "condition": "raw", "id": "t01", "pred": "context"}
-{"model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002", "condition": "raw", "id": "t02", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "d01", "pred": "pitch"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "d02", "pred": "reject"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "d03", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "d04", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "d05", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "d06", "pred": "pitch"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t01", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t02", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t03", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t04", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t05", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t06", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t07", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t08", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t09", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t10", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t11", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t12", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t13", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t201", "pred": "reject"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t202", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t203", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t204", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t205", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t206", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t207", "pred": "question"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t208", "pred": "reject"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t209", "pred": "question"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t210", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t211", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t212", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t213", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t214", "pred": "pitch"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t215", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t216", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t217", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "raw", "id": "t218", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "d01", "pred": "pitch"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "d02", "pred": "reject"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "d03", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "d04", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "d05", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "d06", "pred": "pitch"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t01", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t02", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t03", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t04", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t05", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t06", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t07", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t08", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t09", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t10", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t11", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t12", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t13", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t201", "pred": "reject"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t202", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t203", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t204", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t205", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t206", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t207", "pred": "question"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t208", "pred": "reject"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t209", "pred": "question"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t210", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t211", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t212", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t213", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t214", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t215", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t216", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t217", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "normalized", "id": "t218", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "d01", "pred": "pitch"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "d02", "pred": "reject"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "d03", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "d04", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "d05", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "d06", "pred": "pitch"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t01", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t02", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t03", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t04", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t05", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t06", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t07", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t08", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t09", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t10", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t11", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t12", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t13", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t201", "pred": "reject"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t202", "pred": "reject"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t203", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t204", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t205", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t206", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t207", "pred": "question"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t208", "pred": "reject"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t209", "pred": "question"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t210", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t211", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t212", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t213", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t214", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t215", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t216", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t217", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m", "condition": "profile prompt", "id": "t218", "pred": "reject"}
