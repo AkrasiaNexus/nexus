@@ -539,3 +539,14 @@
 {"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t202", "pred": "request"}
 {"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t203", "pred": "reject"}
 {"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t204", "pred": "request"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t205", "pred": "request"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t206", "pred": "request"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t207", "pred": "context"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t208", "pred": "reject"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t209", "pred": "context"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t210", "pred": "request"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t211", "pred": "request"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t212", "pred": "request"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t213", "pred": "request"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t214", "pred": "request"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t215", "pred": "context"}

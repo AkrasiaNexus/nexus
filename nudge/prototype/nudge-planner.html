@@ -174,6 +174,8 @@ const today = () => ymd(new Date());
 const nowMin = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
 const uid = () => Math.random().toString(36).slice(2, 9);
 const CATEGORIES = ["skill", "idea", "task", "habit", "explore", "social"];
+const PRIORITIES = ["high", "medium", "low"];
+const PRIORITY_RANK = { high: 0, medium: 1, low: 2 };
 
 // ---------- state ----------
 function exampleState() {
@@ -195,9 +197,9 @@ function exampleState() {
   return {
     v: 1, rev: 0, example: true,
     goals: [
-      { id: g1, title: "Learn Rust basics", category: "skill", due: addDays(t, 14), notes: "2 weeks, a few evening sessions", status: "active", created: t },
-      { id: g2, title: "Find 3 new Lore spots", category: "explore", due: addDays(t, 6), notes: "", status: "active", created: addDays(t, -2) },
-      { id: g3, title: "Run twice a week", category: "habit", due: addDays(t, 28), notes: "", status: "active", created: addDays(t, -7) },
+      { id: g1, title: "Learn Rust basics", category: "skill", due: addDays(t, 14), minutesPerDay: 60, priority: "medium", notes: "evenings", status: "active", created: t },
+      { id: g2, title: "Find 3 new Lore spots", category: "explore", due: addDays(t, 6), minutesPerDay: 120, priority: "high", notes: "", status: "active", created: addDays(t, -2) },
+      { id: g3, title: "Run twice a week", category: "habit", due: addDays(t, 28), minutesPerDay: 40, priority: "low", notes: "", status: "active", created: addDays(t, -7) },
     ],
     blocks: s.blocks, fixed,
     memories: [
@@ -260,16 +262,24 @@ function placeBlock(input, ignoreId) {
 const label = (b) => `${WEEKDAYS[parseYmd(b.date).getDay()]} ${b.start}`;
 
 const TOOLS = [
-  { name: "add_goal", description: "Add a goal the user wants to do. Returns its id. Then schedule sessions for it with schedule_block.",
+  { name: "add_goal", description: "Add a goal once you know how many minutes a day it needs and its due date. Returns its id. Then schedule its sessions with schedule_block.",
     inputSchema: { type: "object", properties: { title: { type: "string", description: "short, starts with a verb, e.g. 'Learn Rust basics'" },
-      category: { type: "string", enum: CATEGORIES }, due: { type: "string", description: "YYYY-MM-DD" }, notes: { type: "string" } }, required: ["title", "category", "due"] },
+      category: { type: "string", enum: CATEGORIES }, due: { type: "string", description: "YYYY-MM-DD" },
+      minutes_per_day: { type: "number", description: "minutes a day the user will spend on it" },
+      priority: { type: "string", enum: PRIORITIES, description: "high = soon due or a lot of work for the time left" }, notes: { type: "string" } },
+      required: ["title", "category", "due", "minutes_per_day", "priority"] },
     execute(i) { const due = String(i.due); if (!isYmd(due)) throw new Error("due must be YYYY-MM-DD");
-      const g = { id: uid(), title: str(i.title, "title"), category: CATEGORIES.includes(i.category) ? i.category : "task", due, notes: String(i.notes ?? "").slice(0, 300), status: "active", created: today() };
-      state.goals.push(g); act(`+ ${g.title} (due ${due})`); return { id: g.id }; } },
-  { name: "update_goal", description: "Change a goal's title, due date, notes, or status (active, done). Returns ok.",
-    inputSchema: { type: "object", properties: { id: { type: "string" }, title: { type: "string" }, due: { type: "string" }, notes: { type: "string" }, status: { type: "string", enum: ["active", "done"] } }, required: ["id"] },
+      const perDay = Math.round(Number(i.minutes_per_day)); if (!(perDay >= 5 && perDay <= 600)) throw new Error("minutes_per_day must be 5 to 600; ask the user if you don't know it");
+      const g = { id: uid(), title: str(i.title, "title"), category: CATEGORIES.includes(i.category) ? i.category : "task", due, minutesPerDay: perDay,
+        priority: PRIORITIES.includes(i.priority) ? i.priority : "medium", notes: String(i.notes ?? "").slice(0, 300), status: "active", created: today() };
+      state.goals.push(g); act(`+ ${g.title} · ${perDay} min/day · due ${due} · ${g.priority}`); return { id: g.id }; } },
+  { name: "update_goal", description: "Change a goal's title, due date, minutes per day, priority, notes, or status (active, done). Returns ok.",
+    inputSchema: { type: "object", properties: { id: { type: "string" }, title: { type: "string" }, due: { type: "string" }, minutes_per_day: { type: "number" },
+      priority: { type: "string", enum: PRIORITIES }, notes: { type: "string" }, status: { type: "string", enum: ["active", "done"] } }, required: ["id"] },
     execute(i) { const g = goalById(i.id);
       if (i.title) g.title = str(i.title, "title"); if (i.notes !== undefined) g.notes = String(i.notes).slice(0, 300);
+      if (i.minutes_per_day !== undefined) { const m = Math.round(Number(i.minutes_per_day)); if (!(m >= 5 && m <= 600)) throw new Error("minutes_per_day must be 5 to 600"); g.minutesPerDay = m; }
+      if (PRIORITIES.includes(i.priority)) g.priority = i.priority;
       if (i.due) { if (!isYmd(i.due)) throw new Error("due must be YYYY-MM-DD"); g.due = String(i.due); }
       if (i.status === "active" || i.status === "done") g.status = i.status;
       act(`~ ${g.title}${g.status === "done" ? " ✓ done" : ""}`); return "ok"; } },
@@ -323,7 +333,7 @@ const HOW_I_WRITE = "They type fast and casual: lowercase, little punctuation, t
 function promptState() {
   const t = today(), horizon = addDays(t, 21);
   return JSON.stringify({
-    goals: state.goals.map(({ id, title, category, due, status, notes }) => ({ id, title, category, due, status, notes })),
+    goals: state.goals.map(({ id, title, category, due, minutesPerDay, priority, status, notes }) => ({ id, title, category, due, minutes_per_day: minutesPerDay, priority, status, notes })),
     sessions: state.blocks.filter((b) => b.date >= t && b.date <= horizon).sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))
       .map(({ id, goalId, title, date, start, minutes, done }) => ({ id, goal_id: goalId, title, date, day: WEEKDAYS[parseYmd(date).getDay()], start, minutes, done })),
     fixed: state.fixed, memories: state.memories,
@@ -335,7 +345,8 @@ function rules() {
 Right now: ${WEEKDAYS[d.getDay()]} ${today()}, ${fromMin(nowMin())} local time. Free time is ${fromMin(DAY_START)}-${fromMin(DAY_END)} unless their memories say otherwise.
 
 Do the work with the tools; the plan only changes through them, so never say you changed something you didn't change with a tool.
-- New thing to do ("learn rust in 2 weeks"): add_goal with a due date from their timeframe (default 1 week), then find_free_slots and schedule_block for a sensible number of sessions before the due date (sessions of 30-90 min, spread out, matching their memories). Small one-off tasks get one session.
+- New thing to do ("i wanna learn rust"): before adding it you need two answers: how much time a day they'll put in, and by when they want it done. If they didn't say both, ask for the missing one(s) in one short question and change nothing yet. Once you have both, set its priority (high = due soon or a lot of work for the time left, low = far off and light), add_goal, then use find_free_slots and schedule_block to book a session of that length on most days until the due date (at least the next 7 days), matching their memories. One-off small tasks need only a deadline and get one session.
+- Priority decides who gets the good slots: when time is tight, book high-priority goals first, and move lower-priority sessions out of the way rather than squeezing a high one into a bad time.
 - They change their mind ("nah i dont wanna do that anymore", "scrap the X"): remove_goal for it. Moving or shrinking: move_block / remove_block / update_goal.
 - Fixed weekly stuff (school, work, gym, practice): set_fixed. If it now clashes with booked sessions, move those.
 - Lasting facts and preferences: remember. Finished: update_goal status done.
@@ -482,13 +493,15 @@ function goalProgress(g) {
 }
 function renderGoals() {
   const box = $("goals"); box.replaceChildren();
-  const goals = [...state.goals].sort((a, b) => (a.status === b.status ? a.due.localeCompare(b.due) : a.status === "done" ? 1 : -1));
+  const rank = (g) => PRIORITY_RANK[g.priority] ?? 1;
+  const goals = [...state.goals].sort((a, b) => a.status !== b.status ? (a.status === "done" ? 1 : -1) : rank(a) - rank(b) || a.due.localeCompare(b.due));
   if (!goals.length) { box.append(el("p", { class: "muted" }, "No goals yet. Tell Nudge something you want to do, with a timeframe if you have one.")); return; }
   for (const g of goals) {
     const p = goalProgress(g), daysLeft = Math.round((parseYmd(g.due) - parseYmd(today())) / 864e5);
     box.append(el("div", { class: "goal" },
       el("div", {}, el("div", { class: "gt", style: g.status === "done" ? "text-decoration:line-through;color:var(--muted)" : "" }, g.title),
-        el("div", { class: "meta" }, el("span", { class: "tag", style: `color:${color(g.category)}` }, g.category),
+        el("div", { class: "meta" }, g.status !== "done" && g.priority ? el("span", { class: "tag", style: g.priority === "high" ? "color:var(--danger)" : "" }, `${g.priority} priority`) : null,
+          el("span", { class: "tag", style: `color:${color(g.category)}` }, g.category), g.minutesPerDay ? el("span", {}, `${g.minutesPerDay} min/day`) : null,
           el("span", {}, g.status === "done" ? "done" : daysLeft < 0 ? `${-daysLeft}d overdue` : daysLeft === 0 ? "due today" : `due in ${daysLeft}d`),
           el("span", {}, `${p.done}/${p.total} sessions`), p.next ? el("span", {}, `next ${label(p.next)}`) : null)),
       el("div", {}, el("button", { class: "mini", "aria-label": `Drop ${g.title}`, onclick: () => mutate(() => { state.goals = state.goals.filter((x) => x !== g); state.blocks = state.blocks.filter((b) => b.goalId !== g.id); }) }, "drop")),
@@ -521,7 +534,7 @@ function renderMems() {
 }
 
 // ---------- wiring ----------
-const SUGGESTIONS = ["lowk wanna learn rust in 2 weeks", "i have football practice tue and thu 5 to 7", "nah drop the rust thing", "move my run to the weekend", "what's my week look like"];
+const SUGGESTIONS = ["i wanna learn rust", "lowk wanna learn guitar, 30 mins a day for a month", "i have football practice tue and thu 5 to 7", "nah drop the rust thing", "move my run to the weekend", "what's my week look like"];
 $("chips").append(...SUGGESTIONS.map((s) => el("button", { class: "chip", type: "button", onclick: () => { $("box").value = s; $("box").focus(); } }, s)));
 $("form").addEventListener("submit", (e) => { e.preventDefault(); const t = $("box").value; if (!t.trim() || busy) return; $("box").value = ""; send(t); });
 $("box").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("form").requestSubmit(); } });
