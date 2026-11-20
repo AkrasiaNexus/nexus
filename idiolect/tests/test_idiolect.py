@@ -135,6 +135,23 @@ class ContextRuleTests(unittest.TestCase):
         override = parse("## Context rules\n| a | b | c | d | e |\n|---|---|---|---|---|\n| its | it's | own | | |\n")
         self.assertEqual(self.norm("its own", self.p.merged(override)), "it's own")
 
+    def test_a_block_holds_if_either_spelling_of_the_neighbour_is_blocked(self):
+        typo = parse("## Typos\n| I write | Correct |\n|---|---|\n| iz | is |\n")
+        self.assertEqual(self.norm("he iz ill today", typo.merged(self.p)), "he is ill today")
+
+    def test_multi_word_neighbour_is_matched_by_its_touching_word(self):
+        slang = parse("## Slang\n| a | b | c |\n|---|---|---|\n| nt | not really | x |\n| fyl | i feel | x |\n")
+        merged = slang.merged(self.p)
+        self.assertEqual(self.norm("its nt", merged), "it's not really")
+        self.assertEqual(self.norm("fyl ill", merged), "i feel ill")
+
+    def test_sentence_end_counts_as_end(self):
+        self.assertEqual(self.norm("yea its. the end"), "yea it's. the end")
+        self.assertEqual(self.norm("i feel bad. ill rest"), "i feel bad. i'll rest")
+
+    def test_rule_without_a_standard_is_ignored(self):
+        self.assertEqual(parse("## Context rules\n| a | b |\n|---|---|\n| its | |\n").context_rules, {})
+
     def test_tokens_api_matches_text_api(self):
         self.assertEqual(normalize_tokens(tokenize("okay ill go, its fine"), self.p), ["okay", "i'll", "go", ",", "it's", "fine"])
 

@@ -54,7 +54,7 @@ def run(model_paths: list[str]) -> None:
             for ex in examples:
                 if (name, condition, ex.id) in done:
                     continue
-                out = llm.create_chat_completion(build(condition, ex.text), grammar=grammar, temperature=0, max_tokens=4)
+                out = llm.create_chat_completion(build(condition, ex.text), grammar=grammar, temperature=0, max_tokens=8)
                 row = {"model": name, "condition": condition, "id": ex.id, "pred": out["choices"][0]["message"]["content"].strip()}
                 with RESULTS.open("a", encoding="utf-8") as f:
                     f.write(json.dumps(row) + "\n")
@@ -62,7 +62,21 @@ def run(model_paths: list[str]) -> None:
 
 
 def _results() -> list[dict]:
-    return [json.loads(line) for line in RESULTS.read_text(encoding="utf-8").splitlines() if line.strip()] if RESULTS.exists() else []
+    rows = []
+    for line in RESULTS.read_text(encoding="utf-8").splitlines() if RESULTS.exists() else []:
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:  # a run killed mid-write leaves a partial last line
+            continue
+    return rows
+
+
+def _size(model: str) -> tuple[float, str]:
+    """Sort key: the parameter count in names like qwen2.5-1.5b-instruct; unknown sizes sort last."""
+    for part in model.lower().split("-"):
+        if part[:-1].replace(".", "", 1).isdigit() and part[-1] in "mb":
+            return float(part[:-1]) / (1000 if part[-1] == "m" else 1), model
+    return float("inf"), model
 
 
 def report() -> str:
@@ -79,10 +93,13 @@ def report() -> str:
     rules = {ex.id: classify(ex.text, PROFILE).label for ex in examples}
     lines = ["| Model | Input | all 37 | test2 (unseen) | vs raw: fixed / broke | p |", "|---|---|---|---|---|---|",
              f"| hand-written rules | normalized | {acc(rules, list(gold))} | {acc(rules, unseen)} | | |"]
-    for model in sorted({m for m, _ in preds}, key=lambda m: float(m.split("-")[1].rstrip("b"))):
+    for model in sorted({m for m, _ in preds}, key=_size):
         raw = preds.get((model, "raw"), {})
         for condition in CONDITIONS:
             p = preds.get((model, condition), {})
+            if len(p) < len(gold) or len(raw) < len(gold):
+                lines.append(f"| {model} | {condition} | running ({len(p)}/{len(gold)}) | | | |")
+                continue
             cells = ["", ""]
             if condition != "raw":
                 fixed = sum(raw.get(i) != gold[i] and p.get(i) == gold[i] for i in gold)

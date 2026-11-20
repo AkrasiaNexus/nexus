@@ -52,14 +52,23 @@ class Normalized:
     changes: list[tuple[str, str]]
 
 
+SENTENCE_END = ".!?"
+
+
 def _neighbour(tokens: list[str], i: int, step: int, profile: Profile) -> set[str]:
-    """The nearest word token in one direction, as written and as normalized; punctuation is skipped."""
+    """The nearest word, as written and as normalized (only the word touching ours, if that's several).
+
+    Commas and other symbols are skipped; a sentence end or the message edge counts as (end).
+    """
     j = i + step
     while 0 <= j < len(tokens) and not _is_word(tokens[j][0]):
+        if tokens[j] in SENTENCE_END:
+            return {END}
         j += step
     if not 0 <= j < len(tokens):
         return {END}
-    return {tokens[j], profile.replacements.get(tokens[j], tokens[j])}
+    words = profile.replacements.get(tokens[j], tokens[j]).split()
+    return {tokens[j], words[0] if step > 0 else words[-1]}
 
 
 def _replace(tokens: list[str], i: int, profile: Profile) -> str:
@@ -67,10 +76,8 @@ def _replace(tokens: list[str], i: int, profile: Profile) -> str:
     if tok in profile.replacements:
         return profile.replacements[tok]
     rule = profile.context_rules.get(tok)
-    if rule:
-        prev, nxt = _neighbour(tokens, i, -1, profile), _neighbour(tokens, i, 1, profile)
-        if any(rule.applies(p, n) for p in prev for n in nxt):
-            return rule.standard
+    if rule and rule.applies(_neighbour(tokens, i, -1, profile), _neighbour(tokens, i, 1, profile)):
+        return rule.standard
     return tok
 
 

@@ -20,8 +20,10 @@ class ContextRule:
     not_before: frozenset[str] = frozenset()
     not_after: frozenset[str] = frozenset()
 
-    def applies(self, prev: str, nxt: str) -> bool:
-        return (not self.only_before or nxt in self.only_before) and nxt not in self.not_before and prev not in self.not_after
+    def applies(self, prev: set[str], nxt: set[str]) -> bool:
+        """Neighbours come as {as written, as normalized}: one spelling may allow, any spelling blocks."""
+        allowed = not self.only_before or bool(nxt & self.only_before)
+        return allowed and not nxt & self.not_before and not prev & self.not_after
 
 
 @dataclass(frozen=True)
@@ -77,8 +79,9 @@ def _words(cell: str) -> frozenset[str]:
 def _context_rules(lines: list[str]) -> dict[str, ContextRule]:
     rules = {}
     for row in _rows(lines):
-        written, standard, *conds = row + ["", "", ""]
-        rules[written.lower()] = ContextRule(standard.lower(), *(_words(c) for c in conds[:3]))
+        written, standard, *conds = row + ["", "", "", ""]
+        if standard:
+            rules[written.lower()] = ContextRule(standard.lower(), *(_words(c) for c in conds[:3]))
     return rules
 
 
