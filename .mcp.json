@@ -2,24 +2,59 @@
   "mcpServers": {
     "playwright": {
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@0.0.86", "--headless", "--executable-path", "/opt/pw-browsers/chromium"]
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.86",
+        "--headless",
+        "--executable-path",
+        "/opt/pw-browsers/chromium"
+      ]
     },
     "serena": {
       "command": "serena",
-      "args": ["start-mcp-server", "--context", "claude-code", "--project-from-cwd"]
+      "args": [
+        "start-mcp-server",
+        "--context",
+        "claude-code",
+        "--project-from-cwd"
+      ]
     },
     "code-graph": {
       "command": "npx",
-      "args": ["-y", "@sdsrs/code-graph@0.204.0"],
-      "env": { "CODE_GRAPH_NO_AUTO_UPDATE": "1", "CODE_GRAPH_NO_AUTO_ADOPT": "1" }
+      "args": [
+        "-y",
+        "@sdsrs/code-graph@0.204.0"
+      ],
+      "env": {
+        "CODE_GRAPH_NO_AUTO_UPDATE": "1",
+        "CODE_GRAPH_NO_AUTO_ADOPT": "1"
+      }
     },
     "repomix": {
       "command": "npx",
-      "args": ["-y", "repomix@1.19.0", "--mcp"]
+      "args": [
+        "-y",
+        "repomix@1.19.0",
+        "--mcp"
+      ]
     },
     "context7": {
       "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@4.7.3"]
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@4.7.3"
+      ]
+    },
+    "headroom": {
+      "command": "headroom",
+      "args": [
+        "mcp",
+        "serve"
+      ],
+      "env": {
+        "HEADROOM_TELEMETRY": "off",
+        "HEADROOM_BEACON": "off"
+      }
     }
   }
 }
