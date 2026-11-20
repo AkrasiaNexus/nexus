@@ -1,0 +1,550 @@
+<title>Nudge</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a secretary you talk to on the left, the week it keeps on the right; each day is a 07–23 time strip showing what got squeezed in. */
+:root {
+  --bg: #eef1f6; --surface: #ffffff; --ink: #17202e; --muted: #5d6879; --line: #d5dbe5;
+  --accent: #2647c8; --accent-ink: #ffffff; --accent-soft: #e3e9fb;
+  --fixed: #c9d0dc; --danger: #b4232f; --ok: #1f7a4d;
+  --c-skill: #2f6fd6; --c-idea: #8a4fd0; --c-task: #c2601a; --c-habit: #1f8a5b; --c-explore: #b8357a; --c-social: #0f8796;
+  --font-display: "Schibsted Grotesk", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f141d; --surface: #171e2a; --ink: #e6ebf3; --muted: #97a2b4; --line: #2a3445;
+  --accent: #7f9bff; --accent-ink: #0f141d; --accent-soft: #212c48;
+  --fixed: #3a4558; --danger: #ff7b84; --ok: #5fd39a;
+  --c-skill: #6ea2ff; --c-idea: #b993ff; --c-task: #ff9d5c; --c-habit: #5fd39a; --c-explore: #ff86c0; --c-social: #4fd0dd;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f141d; --surface: #171e2a; --ink: #e6ebf3; --muted: #97a2b4; --line: #2a3445;
+  --accent: #7f9bff; --accent-ink: #0f141d; --accent-soft: #212c48;
+  --fixed: #3a4558; --danger: #ff7b84; --ok: #5fd39a;
+  --c-skill: #6ea2ff; --c-idea: #b993ff; --c-task: #ff9d5c; --c-habit: #5fd39a; --c-explore: #ff86c0; --c-social: #4fd0dd;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-body); }
+button, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.app { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 20px; height: 100%;
+  padding-block: 20px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  max-width: 1280px; margin: 0 auto; }
+@media (max-width: 860px) { .app { grid-template-columns: minmax(0, 1fr); height: auto; } }
+
+.brand { display: flex; align-items: baseline; gap: 10px; }
+.brand h1 { font: 800 28px/1 var(--font-display); letter-spacing: -0.02em; margin: 0; }
+.brand span { color: var(--muted); font-size: 13px; }
+
+/* Chat */
+.chat { display: flex; flex-direction: column; gap: 12px; min-height: 0; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+.log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 280px; }
+@media (max-width: 860px) { .log { max-height: 52vh; } }
+.msg { max-width: 92%; padding: 10px 13px; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg.user { align-self: flex-end; background: var(--accent); color: var(--accent-ink); border-bottom-right-radius: 4px; }
+.msg.assistant { align-self: flex-start; background: var(--bg); border-bottom-left-radius: 4px; }
+.msg.note { align-self: center; background: none; color: var(--muted); font-size: 13px; text-align: center; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.act { font: 500 12px/1.3 var(--font-mono); padding: 3px 8px; border-radius: 6px; background: var(--accent-soft); color: var(--ink); }
+.act.drop { text-decoration: line-through; color: var(--muted); }
+.thinking { color: var(--muted); font-style: italic; }
+
+.composer { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.composer textarea { width: 100%; min-height: 64px; resize: vertical; border: 0; background: transparent; padding: 6px; outline: none; }
+.composer .row { display: flex; gap: 8px; align-items: center; }
+.partial { color: var(--muted); font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 9px; padding: 7px 12px; font-weight: 600; font-size: 14px; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+.btn.mic[aria-pressed="true"] { background: var(--danger); border-color: var(--danger); color: var(--surface); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px dashed var(--line); background: none; border-radius: 999px; padding: 4px 10px; font-size: 13px; color: var(--muted); }
+.chip:hover { color: var(--ink); border-color: var(--muted); }
+
+/* Week */
+.week { display: flex; flex-direction: column; gap: 14px; min-width: 0; overflow-y: auto; }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.bar h2 { font: 700 18px/1.2 var(--font-display); margin: 0; }
+.status { font-size: 13px; color: var(--muted); }
+.banner { padding: 10px 14px; border-radius: 10px; background: var(--accent-soft); font-size: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+
+.days { padding: 6px 16px; }
+.day { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.day:last-child { border-bottom: 0; }
+.dlabel { font: 700 14px/1.2 var(--font-display); }
+.dlabel small { display: block; font: 400 12px/1.4 var(--font-mono); color: var(--muted); }
+.day.today .dlabel { color: var(--accent); }
+.strip { position: relative; height: 22px; border-radius: 6px; background: var(--bg); overflow: hidden; }
+.seg { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+.seg.fixed { background: repeating-linear-gradient(135deg, var(--fixed) 0 4px, transparent 4px 8px); }
+.now { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--danger); }
+.ticks { display: flex; justify-content: space-between; font: 400 10px/1 var(--font-mono); color: var(--muted); margin-top: 3px; }
+.items { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.item { display: grid; grid-template-columns: 92px 10px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 14px; }
+.item time { font: 500 12px/1 var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.dot { width: 10px; height: 10px; border-radius: 3px; }
+.item.fixed { color: var(--muted); }
+.item.done .t { text-decoration: line-through; color: var(--muted); }
+.item .t { overflow-wrap: anywhere; }
+.mini { border: 0; background: none; color: var(--muted); font-size: 13px; padding: 2px 6px; border-radius: 6px; }
+.mini:hover { color: var(--ink); background: var(--bg); }
+.empty-day { font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+@media (max-width: 1100px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.box { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.box h3 { font: 700 15px/1.2 var(--font-display); margin: 0; }
+.goal { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+.goal:first-of-type { border-top: 0; }
+.goal .gt { font-weight: 600; overflow-wrap: anywhere; }
+.meta { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.tag { font: 500 11px/1.4 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; }
+.prog { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--bg); overflow: hidden; }
+.prog i { display: block; height: 100%; }
+.nudge { font-size: 13px; padding: 8px 10px; border-radius: 8px; background: var(--bg); }
+.nudge b { font-weight: 600; }
+.mem { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; align-items: start; }
+.mem span { overflow-wrap: anywhere; min-width: 0; }
+.muted { color: var(--muted); font-size: 13px; }
+@media (prefers-reduced-motion: no-preference) { .seg, .prog i { transition: left .3s, width .3s; } }
+</style>
+
+<div class="app">
+  <section class="chat" aria-label="Talk to Nudge">
+    <div class="brand"><h1>Nudge</h1><span>your secretary</span></div>
+    <div class="panel log" id="log" aria-live="polite"></div>
+    <div class="chips" id="chips"></div>
+    <form class="panel composer" id="form">
+      <label for="box" class="muted" hidden>Message</label>
+      <textarea id="box" placeholder="dump whatever's on your mind… 'wanna learn rust in 2 weeks', 'gym moved to 7pm', 'nah drop the rust thing'"></textarea>
+      <div class="row">
+        <button type="button" class="btn mic" id="mic" aria-pressed="false" hidden>Talk</button>
+        <span class="partial" id="partial"></span>
+        <button type="button" class="btn ghost" id="stop" hidden>Stop</button>
+        <button type="submit" class="btn primary" id="send">Send</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="week" aria-label="Your week">
+    <div class="bar">
+      <h2 id="range">This week</h2>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span class="status" id="status">Loading…</span>
+        <button class="btn" id="undo" disabled>Undo</button>
+      </div>
+    </div>
+    <div class="banner" id="exampleBanner" hidden>
+      <span>This is an example week so you can see how it works. Your own plan starts when you clear it.</span>
+      <button class="btn" id="clearExamples">Clear examples</button>
+    </div>
+    <div class="banner" id="noClaude" hidden>Claude isn't available in this view, so Nudge can show and tidy your plan, but it can't plan for you here.</div>
+    <div class="panel days" id="days"></div>
+    <div class="cols">
+      <div class="panel box"><h3>Goals</h3><div id="goals"></div></div>
+      <div class="panel box"><h3>Check-ins</h3><div id="nudges" style="display:flex;flex-direction:column;gap:8px"></div>
+        <h3 style="margin-top:6px">What Nudge remembers</h3><div id="mems" style="display:flex;flex-direction:column;gap:6px"></div></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+"use strict";
+// ---------- time helpers (local time, dates as YYYY-MM-DD, times as HH:MM) ----------
+const DAY_START = 7 * 60, DAY_END = 23 * 60, SLOT_STEP = 15, WEEK_DAYS = 7, CHAT_KEEP = 40, PROMPT_TURNS = 12, UNDO_KEEP = 10;
+const pad = (n) => String(n).padStart(2, "0");
+const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseYmd = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const addDays = (s, n) => { const d = parseYmd(s); d.setDate(d.getDate() + n); return ymd(d); };
+const toMin = (hm) => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(hm).trim()); if (!m || +m[1] > 24 || +m[2] > 59) throw new Error(`time must be HH:MM, got "${hm}"`); return +m[1] * 60 + +m[2]; };
+const fromMin = (m) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+const isYmd = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s)) && !isNaN(parseYmd(String(s)));
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const today = () => ymd(new Date());
+const nowMin = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
+const uid = () => Math.random().toString(36).slice(2, 9);
+const CATEGORIES = ["skill", "idea", "task", "habit", "explore", "social"];
+
+// ---------- state ----------
+function exampleState() {
+  const t = today(), g1 = "ex-rust", g2 = "ex-lore", g3 = "ex-run";
+  const fixed = [
+    { id: "ex-school", title: "School", days: [1, 2, 3, 4, 5], start: "07:30", end: "14:30" },
+    { id: "ex-gym", title: "Gym", days: [1, 3, 5], start: "17:00", end: "18:00" },
+  ];
+  const s = { fixed, blocks: [] };
+  // Examples go in the first real gap at or after a preferred time, so they never overlap school or gym.
+  const put = (goalId, title, dayOffset, prefer, minutes) => {
+    const date = addDays(t, dayOffset), slot = slotsFor(s, date, minutes, toMin(prefer), DAY_END, false)[0];
+    if (slot) s.blocks.push({ id: uid(), goalId, title, date, start: slot.start, minutes, done: false });
+  };
+  put(g1, "Rust: ownership chapter", 1, "19:30", 60);
+  put(g1, "Rust: build a tiny CLI", 3, "20:00", 90);
+  put(g2, "Scout a rooftop spot for Lore", 2, "16:00", 120);
+  put(g3, "Evening run", 4, "18:30", 40);
+  return {
+    v: 1, rev: 0, example: true,
+    goals: [
+      { id: g1, title: "Learn Rust basics", category: "skill", due: addDays(t, 14), notes: "2 weeks, a few evening sessions", status: "active", created: t },
+      { id: g2, title: "Find 3 new Lore spots", category: "explore", due: addDays(t, 6), notes: "", status: "active", created: addDays(t, -2) },
+      { id: g3, title: "Run twice a week", category: "habit", due: addDays(t, 28), notes: "", status: "active", created: addDays(t, -7) },
+    ],
+    blocks: s.blocks, fixed,
+    memories: [
+      { id: "ex-m1", text: "Codes best late in the evening" },
+      { id: "ex-m2", text: "Hangouts with friends are usually 4pm to 10:30pm" },
+    ],
+    chat: [{ role: "assistant", content: "yo. tell me whatever you're thinking about and i'll slot it into your week. this week is an example so you can see how it looks." }],
+  };
+}
+const emptyState = () => ({ v: 1, rev: 0, example: false, goals: [], blocks: [], fixed: [], memories: [],
+  chat: [{ role: "assistant", content: "clean slate. tell me your fixed stuff first (school, work, gym), then dump anything you wanna do." }] });
+
+let state = null;
+const undoStack = [];
+const clone = (o) => JSON.parse(JSON.stringify(o));
+
+// ---------- scheduling ----------
+function busyOn(s, date) {
+  const wd = parseYmd(date).getDay();
+  const out = [];
+  for (const f of s.fixed) if (f.days.includes(wd)) out.push({ s: toMin(f.start), e: toMin(f.end), title: f.title, kind: "fixed", id: f.id });
+  for (const b of s.blocks) if (b.date === date) { const st = toMin(b.start); out.push({ s: st, e: st + b.minutes, title: b.title, kind: "block", id: b.id }); }
+  return out.sort((a, b) => a.s - b.s);
+}
+function slotsFor(s, date, minutes, earliest, latest, clampToNow = true) {
+  let from = earliest;
+  if (clampToNow && date === today()) from = Math.max(from, Math.ceil(nowMin() / SLOT_STEP) * SLOT_STEP);
+  const gaps = [];
+  let cursor = from;
+  for (const b of busyOn(s, date)) {
+    if (b.e <= cursor) continue;
+    if (b.s - cursor >= minutes && b.s <= latest) gaps.push({ date, start: fromMin(cursor), end: fromMin(Math.min(b.s, latest)) });
+    cursor = Math.max(cursor, b.e);
+  }
+  if (latest - cursor >= minutes) gaps.push({ date, start: fromMin(cursor), end: fromMin(latest) });
+  return gaps.filter((g) => toMin(g.end) - toMin(g.start) >= minutes);
+}
+function clash(s, date, start, minutes, ignoreId) {
+  return busyOn(s, date).find((b) => b.id !== ignoreId && start < b.e && b.s < start + minutes);
+}
+
+// ---------- tools the model calls ----------
+const str = (v, name, max = 120) => { const t = String(v ?? "").trim(); if (!t) throw new Error(`${name} is required`); return t.slice(0, max); };
+const goalById = (id) => { const g = state.goals.find((x) => x.id === String(id)); if (!g) throw new Error(`no goal with id ${id}`); return g; };
+let currentActions = null;
+const act = (text, kind = "") => { currentActions?.push({ text, kind }); };
+
+function placeBlock(input, ignoreId) {
+  const date = String(input.date);
+  if (!isYmd(date)) throw new Error("date must be YYYY-MM-DD");
+  if (date < today()) throw new Error("that date is in the past");
+  const start = toMin(input.start), minutes = Math.round(Number(input.minutes));
+  if (!(minutes >= 10 && minutes <= 480)) throw new Error("minutes must be 10 to 480");
+  if (start + minutes > 24 * 60) throw new Error("block runs past midnight");
+  if (date === today() && start < nowMin()) throw new Error("that time today has already passed");
+  const hit = clash(state, date, start, minutes, ignoreId);
+  if (hit) throw new Error(`clashes with "${hit.title}" ${fromMin(hit.s)}-${fromMin(hit.e)}; call find_free_slots`);
+  return { date, start: fromMin(start), minutes };
+}
+const label = (b) => `${WEEKDAYS[parseYmd(b.date).getDay()]} ${b.start}`;
+
+const TOOLS = [
+  { name: "add_goal", description: "Add a goal the user wants to do. Returns its id. Then schedule sessions for it with schedule_block.",
+    inputSchema: { type: "object", properties: { title: { type: "string", description: "short, starts with a verb, e.g. 'Learn Rust basics'" },
+      category: { type: "string", enum: CATEGORIES }, due: { type: "string", description: "YYYY-MM-DD" }, notes: { type: "string" } }, required: ["title", "category", "due"] },
+    execute(i) { const due = String(i.due); if (!isYmd(due)) throw new Error("due must be YYYY-MM-DD");
+      const g = { id: uid(), title: str(i.title, "title"), category: CATEGORIES.includes(i.category) ? i.category : "task", due, notes: String(i.notes ?? "").slice(0, 300), status: "active", created: today() };
+      state.goals.push(g); act(`+ ${g.title} (due ${due})`); return { id: g.id }; } },
+  { name: "update_goal", description: "Change a goal's title, due date, notes, or status (active, done). Returns ok.",
+    inputSchema: { type: "object", properties: { id: { type: "string" }, title: { type: "string" }, due: { type: "string" }, notes: { type: "string" }, status: { type: "string", enum: ["active", "done"] } }, required: ["id"] },
+    execute(i) { const g = goalById(i.id);
+      if (i.title) g.title = str(i.title, "title"); if (i.notes !== undefined) g.notes = String(i.notes).slice(0, 300);
+      if (i.due) { if (!isYmd(i.due)) throw new Error("due must be YYYY-MM-DD"); g.due = String(i.due); }
+      if (i.status === "active" || i.status === "done") g.status = i.status;
+      act(`~ ${g.title}${g.status === "done" ? " ✓ done" : ""}`); return "ok"; } },
+  { name: "remove_goal", description: "Drop a goal the user no longer wants. Its future sessions are removed too. Use when they say they don't want to do something anymore.",
+    inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+    execute(i) { const g = goalById(i.id); state.goals = state.goals.filter((x) => x !== g);
+      const before = state.blocks.length; state.blocks = state.blocks.filter((b) => b.goalId !== g.id);
+      act(`${g.title}`, "drop"); return { removed: g.title, sessions_removed: before - state.blocks.length }; } },
+  { name: "find_free_slots", description: "Free gaps of at least `minutes` between from_date and to_date, around fixed commitments and booked sessions. Returns [{date,start,end}] (max 20).",
+    inputSchema: { type: "object", properties: { from_date: { type: "string" }, to_date: { type: "string" }, minutes: { type: "number" },
+      earliest: { type: "string", description: "HH:MM, default 07:00" }, latest: { type: "string", description: "HH:MM, default 23:00" } }, required: ["from_date", "to_date", "minutes"] },
+    execute(i) { if (!isYmd(i.from_date) || !isYmd(i.to_date)) throw new Error("dates must be YYYY-MM-DD");
+      const minutes = Math.max(10, Math.round(Number(i.minutes) || 30));
+      const e = i.earliest ? toMin(i.earliest) : DAY_START, l = i.latest ? toMin(i.latest) : DAY_END;
+      const out = []; let d = String(i.from_date) < today() ? today() : String(i.from_date);
+      for (let n = 0; n < 60 && d <= i.to_date && out.length < 20; n++, d = addDays(d, 1)) out.push(...slotsFor(state, d, minutes, e, l));
+      return out.slice(0, 20); } },
+  { name: "schedule_block", description: "Book one session in the calendar. Fails with a reason if it clashes with something, so check find_free_slots first. Returns the block id.",
+    inputSchema: { type: "object", properties: { goal_id: { type: "string", description: "the goal this works toward, if any" }, title: { type: "string" },
+      date: { type: "string" }, start: { type: "string", description: "HH:MM" }, minutes: { type: "number" } }, required: ["title", "date", "start", "minutes"] },
+    execute(i) { const goalId = i.goal_id ? goalById(i.goal_id).id : null; const p = placeBlock(i);
+      const b = { id: uid(), goalId, title: str(i.title, "title"), ...p, done: false }; state.blocks.push(b);
+      act(`${b.title} · ${label(b)}`); return { id: b.id }; } },
+  { name: "move_block", description: "Move a booked session to a new date/time (and optionally length). Fails with a reason on a clash.",
+    inputSchema: { type: "object", properties: { id: { type: "string" }, date: { type: "string" }, start: { type: "string" }, minutes: { type: "number" } }, required: ["id", "date", "start"] },
+    execute(i) { const b = state.blocks.find((x) => x.id === String(i.id)); if (!b) throw new Error(`no session with id ${i.id}`);
+      Object.assign(b, placeBlock({ date: i.date, start: i.start, minutes: i.minutes ?? b.minutes }, b.id)); act(`→ ${b.title} · ${label(b)}`); return "ok"; } },
+  { name: "remove_block", description: "Remove one booked session (the goal stays).",
+    inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+    execute(i) { const b = state.blocks.find((x) => x.id === String(i.id)); if (!b) throw new Error(`no session with id ${i.id}`);
+      state.blocks = state.blocks.filter((x) => x !== b); act(`${b.title} · ${label(b)}`, "drop"); return "ok"; } },
+  { name: "set_fixed", description: "Add or replace a weekly fixed commitment (school, work, gym). days are 0=Sun..6=Sat. Pass id to replace an existing one. Booked sessions are not moved automatically.",
+    inputSchema: { type: "object", properties: { id: { type: "string" }, title: { type: "string" }, days: { type: "array", items: { type: "number" } }, start: { type: "string" }, end: { type: "string" } }, required: ["title", "days", "start", "end"] },
+    execute(i) { const days = [...new Set((Array.isArray(i.days) ? i.days : []).map(Number).filter((d) => d >= 0 && d <= 6))].sort();
+      if (!days.length) throw new Error("days must list 0-6"); const s = toMin(i.start), e = toMin(i.end); if (e <= s) throw new Error("end must be after start");
+      const f = { id: i.id && state.fixed.some((x) => x.id === String(i.id)) ? String(i.id) : uid(), title: str(i.title, "title"), days, start: fromMin(s), end: fromMin(e) };
+      state.fixed = state.fixed.filter((x) => x.id !== f.id).concat(f); act(`⟳ ${f.title} ${days.map((d) => WEEKDAYS[d]).join(" ")} ${f.start}-${f.end}`); return { id: f.id }; } },
+  { name: "remove_fixed", description: "Remove a weekly fixed commitment.",
+    inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+    execute(i) { const f = state.fixed.find((x) => x.id === String(i.id)); if (!f) throw new Error(`no fixed commitment ${i.id}`);
+      state.fixed = state.fixed.filter((x) => x !== f); act(`${f.title}`, "drop"); return "ok"; } },
+  { name: "remember", description: "Save a lasting fact or preference about the user (when they like to work, a deadline, a constraint). Or forget one by id.",
+    inputSchema: { type: "object", properties: { text: { type: "string" }, forget_id: { type: "string" } } },
+    execute(i) { if (i.forget_id) { const m = state.memories.find((x) => x.id === String(i.forget_id)); if (!m) throw new Error("no such memory");
+        state.memories = state.memories.filter((x) => x !== m); act(m.text, "drop"); return "ok"; }
+      const m = { id: uid(), text: str(i.text, "text", 200) }; state.memories.push(m); act(`★ ${m.text}`); return { id: m.id }; } },
+];
+
+// ---------- prompt ----------
+const HOW_I_WRITE = "They type fast and casual: lowercase, little punctuation, typos and slang (lowk = low-key, jus = just, ykwim = you know what i mean, ion = i don't, idw = i don't want, alr = alright, nah = no, its = it's, ill = i'll). Infer meaning; never ask them to fix spelling.";
+function promptState() {
+  const t = today(), horizon = addDays(t, 21);
+  return JSON.stringify({
+    goals: state.goals.map(({ id, title, category, due, status, notes }) => ({ id, title, category, due, status, notes })),
+    sessions: state.blocks.filter((b) => b.date >= t && b.date <= horizon).sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))
+      .map(({ id, goalId, title, date, start, minutes, done }) => ({ id, goal_id: goalId, title, date, day: WEEKDAYS[parseYmd(date).getDay()], start, minutes, done })),
+    fixed: state.fixed, memories: state.memories,
+  });
+}
+function rules() {
+  const d = new Date();
+  return `You are Nudge, the user's own secretary inside a planner app. They tell you whatever they're thinking; you keep their plan.
+Right now: ${WEEKDAYS[d.getDay()]} ${today()}, ${fromMin(nowMin())} local time. Free time is ${fromMin(DAY_START)}-${fromMin(DAY_END)} unless their memories say otherwise.
+
+Do the work with the tools; the plan only changes through them, so never say you changed something you didn't change with a tool.
+- New thing to do ("learn rust in 2 weeks"): add_goal with a due date from their timeframe (default 1 week), then find_free_slots and schedule_block for a sensible number of sessions before the due date (sessions of 30-90 min, spread out, matching their memories). Small one-off tasks get one session.
+- They change their mind ("nah i dont wanna do that anymore", "scrap the X"): remove_goal for it. Moving or shrinking: move_block / remove_block / update_goal.
+- Fixed weekly stuff (school, work, gym, practice): set_fixed. If it now clashes with booked sessions, move those.
+- Lasting facts and preferences: remember. Finished: update_goal status done.
+- If it's unclear which goal they mean, ask one short question instead of guessing. Never delete anything they didn't ask to drop.
+Reply in 1-3 short casual sentences, matching their tone. Say what you changed with the day and time.
+
+How they write: ${HOW_I_WRITE}
+
+Their plan now (ids are for tools; never show ids):
+${promptState()}`;
+}
+
+// ---------- persistence: private per-person doc in the artifact db; else this browser; else memory ----------
+let db = null, docRef = null, saveChain = Promise.resolve(), saveTimer = null, where = "memory";
+const LS_KEY = "nudge-planner-v1";
+function save() {
+  state.rev = Date.now();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    const body = clone(state); body.chat = body.chat.slice(-CHAT_KEEP);
+    if (docRef) saveChain = saveChain.then(() => docRef.set(body)).then(() => setStatus("Saved"), (e) => setStatus(e?.code === "quota_exceeded" ? "Storage is full, so this change wasn't saved" : "Couldn't save, so this change is only on this screen"));
+    else try { localStorage.setItem(LS_KEY, JSON.stringify(body)); setStatus("Saved in this browser"); } catch { setStatus("Not saved: storage is off in this view"); }
+  }, 400);
+}
+const setStatus = (t) => { $("status").textContent = t; };
+async function boot() {
+  render();
+  const c = window.claude;
+  const [dbNs, user] = await Promise.all(["db", "user"].map((n) => Promise.resolve(c?.use ? c.use(n) : null).catch(() => null)));
+  const id = user ? await user.id().catch(() => null) : null;
+  if (dbNs && id) {
+    db = dbNs; docRef = db.doc(`data/users/${id}/planner`); where = "db";
+    const timer = setTimeout(() => setStatus("Can't reach your saved plan yet; showing what's here"), 10000);
+    let first = true;
+    docRef.onSnapshot((snap) => {
+      if (!snap.metadata.fromCache) clearTimeout(timer);
+      if (snap.exists) { const d = snap.data(); if (first || (!snap.metadata.hasPendingWrites && (d.rev ?? 0) > (state.rev ?? 0))) { state = clone(d); render(); } setStatus("Saved"); }
+      else if (first && !snap.metadata.fromCache) { state = exampleState(); render(); setStatus("Not saved yet"); }
+      if (!snap.metadata.fromCache) first = false;
+    }, () => { clearTimeout(timer); setStatus("Your saved plan can't be loaded right now"); });
+  } else {
+    where = "local";
+    try { const raw = localStorage.getItem(LS_KEY); state = raw ? JSON.parse(raw) : exampleState(); } catch { state = exampleState(); }
+    setStatus("Saved in this browser only");
+    render();
+  }
+}
+
+// ---------- talking to the model ----------
+let sample = null, ctl = null, busy = false;
+const ERRORS = { rate_limited: "Too many requests right now. Try again in a minute.", session_expired: "Sign in to Claude again, then resend.",
+  refused: "Claude wouldn't handle that one. Try rephrasing.", empty_completion: "No reply came back. Try saying it more simply.",
+  prompt_too_large: "Your plan got too big to send. Clear some old goals and try again.", upstream_error: "The connection dropped. Send it again." };
+async function send(text) {
+  if (!text.trim() || busy || !state) return;
+  if (!sample) { addNote("Claude isn't available in this view, so I can't plan this. You can still tick off and remove things by hand."); return; }
+  busy = true; undoStack.push(clone(state)); if (undoStack.length > UNDO_KEEP) undoStack.shift();
+  state.chat.push({ role: "user", content: text.trim() });
+  const reply = { role: "assistant", content: "", actions: [] };
+  state.chat.push(reply); currentActions = reply.actions;
+  render(); $("send").disabled = true; $("stop").hidden = false;
+  const turns = state.chat.slice(0, -1).filter((m) => m.role !== "note" && m.content).slice(-PROMPT_TURNS)
+    .map((m) => ({ role: m.role, content: m.content + (m.actions?.length ? `\n[changes made: ${m.actions.map((a) => (a.kind === "drop" ? "removed " : "") + a.text).join("; ")}]` : "") }));
+  while (turns.length && turns[0].role !== "user") turns.shift();
+  ctl = new AbortController();
+  try {
+    const { text: out } = await sample([{ role: "user", content: rules() }, ...turns], {
+      modelTier: "quick", cache: false, signal: ctl.signal, tools: TOOLS.map((t) => ({ ...t, execute: (i) => { const r = t.execute(i ?? {}); renderSoon(); return r; } })),
+      onText: ({ text: t }) => { reply.content = t; renderSoon(); },
+    });
+    reply.content = out.trim();
+  } catch (e) {
+    reply.content = (e?.text ?? reply.content ?? "").trim();
+    if (e?.code === "not_granted" || e?.code === "sampling_disabled" || e?.code === "tools_unavailable" || e?.code === "not_declared") { sample = null; $("noClaude").hidden = false; }
+    if (e?.code !== "cancelled") addNote(ERRORS[e?.code] ?? (sample ? ERRORS.upstream_error : "Claude isn't available here, so nothing was planned."));
+  } finally {
+    if (!reply.content && !reply.actions.length) state.chat.splice(state.chat.indexOf(reply), 1);
+    else if (!reply.content) reply.content = "done.";
+    if (state.example && reply.actions.length) state.example = false; // they started planning for real on top of the examples
+    currentActions = null; busy = false; $("send").disabled = false; $("stop").hidden = true;
+    if (!reply.actions.length) undoStack.pop(); // nothing in the plan changed, so there's nothing to undo
+    save(); render();
+  }
+}
+function addNote(t) { state.chat.push({ role: "note", content: t }); render(); }
+
+// ---------- rendering ----------
+const $ = (id) => document.getElementById(id);
+const el = (tag, attrs = {}, ...kids) => { const n = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === "class") n.className = v; else if (k === "style") n.style.cssText = v; else if (k.startsWith("on")) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v); } for (const k of kids.flat()) if (k != null) n.append(k); return n; };
+const color = (cat) => `var(--c-${CATEGORIES.includes(cat) ? cat : "task"})`;
+let raf = 0; const renderSoon = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; render(); }); };
+
+function mutate(fn) { undoStack.push(clone(state)); if (undoStack.length > UNDO_KEEP) undoStack.shift(); fn(); save(); render(); }
+
+function render() {
+  const log = $("log"), stick = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+  log.replaceChildren();
+  if (!state) { log.append(el("div", { class: "msg note" }, "Loading your plan…")); return; }
+  for (const m of state.chat) {
+    const kids = [m.content || (busy && m === state.chat.at(-1) ? el("span", { class: "thinking" }, "thinking…") : "")];
+    if (m.actions?.length) kids.push(el("div", { class: "actions" }, m.actions.map((a) => el("span", { class: `act ${a.kind}` }, a.text))));
+    log.append(el("div", { class: `msg ${m.role}` }, kids));
+  }
+  if (stick) log.scrollTop = log.scrollHeight;
+  $("exampleBanner").hidden = !state.example;
+  $("undo").disabled = !undoStack.length || busy;
+  renderDays(); renderGoals(); renderNudges(); renderMems();
+}
+
+function renderDays() {
+  const t = today(), box = $("days"); box.replaceChildren();
+  const end = addDays(t, WEEK_DAYS - 1), fmt = (s) => parseYmd(s).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  $("range").textContent = `${fmt(t)} – ${fmt(end)}`;
+  const span = DAY_END - DAY_START, pct = (m) => `${((Math.min(Math.max(m, DAY_START), DAY_END) - DAY_START) / span) * 100}%`;
+  for (let i = 0; i < WEEK_DAYS; i++) {
+    const date = addDays(t, i), d = parseYmd(date), busy = busyOn(state, date);
+    const strip = el("div", { class: "strip", role: "img", "aria-label": `${busy.length} things on ${WEEKDAYS[d.getDay()]}` });
+    for (const b of busy) {
+      const blk = state.blocks.find((x) => x.id === b.id), goal = blk && state.goals.find((g) => g.id === blk.goalId);
+      const w = `calc(${pct(b.e)} - ${pct(b.s)})`;
+      strip.append(el("div", { class: `seg ${b.kind}`, style: `left:${pct(b.s)};width:${w};${b.kind === "block" ? `background:${color(goal?.category)};opacity:${blk.done ? .35 : 1}` : ""}`, title: `${fromMin(b.s)}-${fromMin(b.e)} ${b.title}` }));
+    }
+    if (i === 0 && nowMin() > DAY_START && nowMin() < DAY_END) strip.append(el("div", { class: "now", style: `left:${pct(nowMin())}` }));
+    const items = el("ul", { class: "items" });
+    for (const b of busy) {
+      const time = el("time", {}, `${fromMin(b.s)}–${fromMin(b.e)}`);
+      if (b.kind === "fixed") { items.append(el("li", { class: "item fixed" }, time, el("span", { class: "dot", style: "background:var(--fixed)" }), el("span", { class: "t" }, b.title), el("span"))); continue; }
+      const blk = state.blocks.find((x) => x.id === b.id), goal = state.goals.find((g) => g.id === blk.goalId);
+      items.append(el("li", { class: `item ${blk.done ? "done" : ""}` }, time, el("span", { class: "dot", style: `background:${color(goal?.category)}` }), el("span", { class: "t" }, blk.title),
+        el("span", {}, el("button", { class: "mini", "aria-label": `${blk.done ? "Mark not done" : "Mark done"}: ${blk.title}`, onclick: () => mutate(() => { blk.done = !blk.done; }) }, blk.done ? "undo" : "done"),
+          el("button", { class: "mini", "aria-label": `Remove ${blk.title}`, onclick: () => mutate(() => { state.blocks = state.blocks.filter((x) => x !== blk); }) }, "✕"))));
+    }
+    box.append(el("div", { class: `day ${i === 0 ? "today" : ""}` },
+      el("div", { class: "dlabel" }, i === 0 ? "Today" : i === 1 ? "Tomorrow" : WEEKDAYS[d.getDay()], el("small", {}, fmt(date))),
+      el("div", {}, strip, el("div", { class: "ticks", "aria-hidden": "true" }, ["07", "11", "15", "19", "23"].map((h) => el("span", {}, h))),
+        busy.length ? items : el("div", { class: "empty-day" }, "Nothing booked. Free for whatever comes up."))));
+  }
+}
+
+function goalProgress(g) {
+  const bs = state.blocks.filter((b) => b.goalId === g.id), done = bs.filter((b) => b.done).length;
+  const next = bs.filter((b) => !b.done && b.date >= today()).sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))[0];
+  return { total: bs.length, done, next };
+}
+function renderGoals() {
+  const box = $("goals"); box.replaceChildren();
+  const goals = [...state.goals].sort((a, b) => (a.status === b.status ? a.due.localeCompare(b.due) : a.status === "done" ? 1 : -1));
+  if (!goals.length) { box.append(el("p", { class: "muted" }, "No goals yet. Tell Nudge something you want to do, with a timeframe if you have one.")); return; }
+  for (const g of goals) {
+    const p = goalProgress(g), daysLeft = Math.round((parseYmd(g.due) - parseYmd(today())) / 864e5);
+    box.append(el("div", { class: "goal" },
+      el("div", {}, el("div", { class: "gt", style: g.status === "done" ? "text-decoration:line-through;color:var(--muted)" : "" }, g.title),
+        el("div", { class: "meta" }, el("span", { class: "tag", style: `color:${color(g.category)}` }, g.category),
+          el("span", {}, g.status === "done" ? "done" : daysLeft < 0 ? `${-daysLeft}d overdue` : daysLeft === 0 ? "due today" : `due in ${daysLeft}d`),
+          el("span", {}, `${p.done}/${p.total} sessions`), p.next ? el("span", {}, `next ${label(p.next)}`) : null)),
+      el("div", {}, el("button", { class: "mini", "aria-label": `Drop ${g.title}`, onclick: () => mutate(() => { state.goals = state.goals.filter((x) => x !== g); state.blocks = state.blocks.filter((b) => b.goalId !== g.id); }) }, "drop")),
+      el("div", { class: "prog", "aria-hidden": "true" }, el("i", { style: `width:${p.total ? (p.done / p.total) * 100 : 0}%;background:${color(g.category)}` }))));
+  }
+}
+
+// Check-ins at 25/50/75/100% of the time given, firmer each time (same schedule as Nudge desktop).
+function renderNudges() {
+  const box = $("nudges"); box.replaceChildren();
+  const now = Date.now(), lines = [];
+  for (const g of state.goals.filter((x) => x.status === "active")) {
+    const start = parseYmd(g.created).getTime(), end = parseYmd(g.due).getTime() + 864e5 - 1, span = Math.max(end - start, 1);
+    const pct = (now - start) / span, p = goalProgress(g), ratio = p.total ? p.done / p.total : 0;
+    if (pct < 0.25) continue;
+    const step = pct >= 1 ? 1 : pct >= 0.75 ? 0.75 : pct >= 0.5 ? 0.5 : 0.25;
+    if (ratio >= step) continue;
+    const tone = step === 1 ? "Deadline's here." : step >= 0.5 ? `You're ${Math.round(step * 100)}% through the time.` : "Quick check-in.";
+    lines.push({ urgency: step, node: el("div", { class: "nudge", style: step === 1 ? "outline:1px solid var(--danger)" : "" }, el("b", {}, g.title), ` · ${tone} ${p.done} of ${p.total} sessions done.`) });
+  }
+  lines.sort((a, b) => b.urgency - a.urgency);
+  if (!lines.length) box.append(el("p", { class: "muted" }, "Nothing's behind. Nudge checks in at 25%, 50%, 75% and 100% of the time you gave each goal."));
+  else box.append(...lines.map((l) => l.node));
+}
+function renderMems() {
+  const box = $("mems"); box.replaceChildren();
+  if (!state.memories.length) { box.append(el("p", { class: "muted" }, "Nothing yet. Tell it things like \"i code best at night\".")); return; }
+  for (const m of state.memories) box.append(el("div", { class: "mem" }, el("span", {}, m.text),
+    el("button", { class: "mini", "aria-label": `Forget: ${m.text}`, onclick: () => mutate(() => { state.memories = state.memories.filter((x) => x !== m); }) }, "forget")));
+}
+
+// ---------- wiring ----------
+const SUGGESTIONS = ["lowk wanna learn rust in 2 weeks", "i have football practice tue and thu 5 to 7", "nah drop the rust thing", "move my run to the weekend", "what's my week look like"];
+$("chips").append(...SUGGESTIONS.map((s) => el("button", { class: "chip", type: "button", onclick: () => { $("box").value = s; $("box").focus(); } }, s)));
+$("form").addEventListener("submit", (e) => { e.preventDefault(); const t = $("box").value; if (!t.trim() || busy) return; $("box").value = ""; send(t); });
+$("box").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("form").requestSubmit(); } });
+$("stop").addEventListener("click", () => ctl?.abort());
+$("undo").addEventListener("click", () => { const prev = undoStack.pop(); if (!prev) return; prev.chat = state.chat.concat({ role: "note", content: "Undid the last change." }); state = prev; save(); render(); });
+$("clearExamples").addEventListener("click", () => { undoStack.length = 0; state = emptyState(); save(); render(); });
+
+(async () => {
+  const c = window.claude;
+  const s = c?.use ? await c.use("sample").catch(() => null) : null;
+  if (s) { const lim = await s.limits?.().catch(() => null); sample = lim && !lim.tools ? null : s; }
+  $("noClaude").hidden = !!sample;
+  const dict = c?.use ? await c.use("dictation").catch(() => null) : null;
+  if (dict) {
+    const mic = $("mic"); mic.hidden = false;
+    dict.onPartial(({ text }) => { $("partial").textContent = text; });
+    dict.onFinal(({ text }) => { const b = $("box"); b.value = (b.value + text).replace(/^\s+/, ""); $("partial").textContent = ""; });
+    dict.onState(({ state: st, reason }) => { const on = st !== "idle"; mic.setAttribute("aria-pressed", String(on)); mic.textContent = on ? "Stop talking" : "Talk";
+      if (st === "idle") $("partial").textContent = ""; if (reason === "not_granted" || reason === "unavailable") mic.hidden = true; });
+    mic.addEventListener("click", () => { if (dict.active()) dict.stop(); else dict.start().catch((e) => { if (e?.code === "not_granted" || e?.code === "unavailable") mic.hidden = true; }); });
+  }
+})();
+boot();
+setInterval(() => { if (state && !busy) renderSoon(); }, 60000); // keeps the now-line and "today" current; renders only, never writes
+})();
+</script>
