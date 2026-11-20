@@ -8,6 +8,7 @@ from idiolect.evaluate import err, load_examples, word_accuracy
 from idiolect.learn import (instagram_owner, messages_from_claude_code, messages_from_claude_export,
                             messages_from_instagram, read_messages, suggest)
 from idiolect.profile import Profile
+from idiolect.style import style_report
 
 ROOT = Path(__file__).resolve().parent.parent
 SAMPLE = """# Test profile
@@ -209,6 +210,27 @@ class LearnTests(unittest.TestCase):
             Path(tmp, "message_2.json").write_text("{not json", encoding="utf-8")
             Path(tmp, "message_3.json").write_text("[1, 2]", encoding="utf-8")
             self.assertEqual(read_messages(tmp, me="Me Myself"), ["still works"])
+
+    def test_private_output_never_contains_a_sentence(self):
+        msgs = ["abso secret thing one", "abso secret thing two", "abso", "bobname once"]
+        md = suggest(msgs, self.zipf, self.RANK, min_count=3).to_markdown(private=True)
+        self.assertIn("| abso | ? | ? (seen 3x) |", md)
+        self.assertNotIn("secret", md)
+        self.assertNotIn("bobname", md)  # said fewer than 3 times: names and one-offs stay out
+
+
+class StyleTests(unittest.TestCase):
+    def test_style_report_is_aggregate_only(self):
+        msgs = ["lowk wanna go 🔥🔥", "nah", "where u at?", "OKAY bet", "secret plan tonight"]
+        report = style_report(msgs, load(ROOT / "profiles" / "me.md"))
+        self.assertIn("5 messages", report)
+        self.assertIn("80% all lowercase", report)
+        self.assertIn("80% end without . ! or ?", report)
+        self.assertIn("🔥", report)
+        self.assertIn("reject 20%", report)
+        for msg in msgs:
+            self.assertNotIn(msg, report)
+        self.assertNotIn("secret", report)
 
 
 class EvaluateTests(unittest.TestCase):

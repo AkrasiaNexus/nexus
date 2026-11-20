@@ -49,10 +49,10 @@ Reproduce: `python -m idiolect eval`
 pip install wordfreq
 python -m idiolect learn ~/Downloads/conversations.json      # claude.ai export
 python -m idiolect learn ~/.claude/projects/                 # Claude Code transcripts
-python -m idiolect learn private/instagram/                  # Instagram export (your DMs only)
+python -m idiolect learn --private private/instagram/        # Instagram export (your DMs only)
 ```
 
-Instagram: Accounts Center → Your information and permissions → Download your information → pick **Messages**, format **JSON**. Unzip it into `private/` (gitignored). Only your own typed messages are read. Friends' messages, reactions, shares, calls, unsends and group events are dropped. You're detected as the one person in every thread; if that's ambiguous, pass `--me "Your display name"`.
+Instagram: Accounts Center → Your information and permissions → Download your information → pick **Messages**, format **JSON**. Unzip it into `private/` (gitignored) and run it on your own machine; the export never needs to leave it. With `--private` the output is word lists, counts and aggregate style stats (lowercase rate, punctuation, emoji, intent mix) only: no sentences, and no word said fewer than 3 times, which keeps out names and one-offs. Read it before you paste it anywhere. Only your own typed messages are read. Friends' messages, reactions, shares, calls, unsends and group events are dropped. You're detected as the one person in every thread; if that's ambiguous, pass `--me "Your display name"`.
 
 The learner ranks your words by **keyness**: how much more often you use a word than English in general does (log10 of your rate over the English rate from `wordfreq`). High-keyness words are slang, names or typos:
 - A word one edit away from a much more common word becomes a **typo** suggestion, marked *self-corrected* if you also wrote the right spelling ("charactaer" and "character" in the same message).
@@ -111,7 +111,7 @@ Voice: pass `me.whisper_hotwords()` as faster-whisper's `hotwords` (or `initial_
 python -m unittest discover -s tests
 ```
 
-26 tests: profile parsing and merging, Unicode-safe tokenization (Arabic, accents, emoji), splice-in-place output, multi-word expansion, intent labels and personal-cue precedence, all three chat export formats (claude.ai, Claude Code, Instagram), the learner's typo and slang logic, ERR maths, gold-alignment validation, and a regression check that the headline result still holds.
+28 tests: profile parsing and merging, Unicode-safe tokenization (Arabic, accents, emoji), splice-in-place output, multi-word expansion, intent labels and personal-cue precedence, all three chat export formats (claude.ai, Claude Code, Instagram), the learner's typo and slang logic, private mode leaking no sentences, ERR maths, gold-alignment validation, and a regression check that the headline result still holds.
 
 ## Limitations and next steps
 

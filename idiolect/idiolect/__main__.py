@@ -8,8 +8,10 @@ from pathlib import Path
 from . import classify, load, normalize
 from .evaluate import learner_report, load_examples, report
 from .learn import read_messages, suggest, wordfreq_backend
+from .style import style_report
 
 HERE = Path(__file__).resolve().parent.parent
+PRIVATE_MIN_COUNT = 3  # below this, a word is likely a name or a one-off
 DEFAULT_PROFILES = [str(HERE / "profiles" / "generic.md"), str(HERE / "profiles" / "me.md")]
 
 
@@ -27,6 +29,8 @@ def main(argv: list[str] | None = None) -> None:
     lrn.add_argument("source", help="claude.ai conversations.json, a Claude Code .jsonl or folder, or an Instagram export folder")
     lrn.add_argument("--me", help="your Instagram display name, if it can't be detected")
     lrn.add_argument("--min-keyness", type=float, default=3.0)
+    lrn.add_argument("--private", action="store_true",
+                     help="words, counts and style stats only: no example sentences, nothing said under 3 times")
     e = sub.add_parser("eval", help="score profiles on a gold set")
     e.add_argument("--data", default=str(HERE / "data" / "eval.jsonl"))
     args = ap.parse_args(argv)
@@ -50,7 +54,11 @@ def main(argv: list[str] | None = None) -> None:
             messages = read_messages(args.source, args.me)
         except ValueError as e:
             ap.error(str(e))
-        print(suggest(messages, zipf, rank, profile.replacements.keys(), args.min_keyness).to_markdown())
+        found = suggest(messages, zipf, rank, profile.replacements.keys(), args.min_keyness,
+                        min_count=PRIVATE_MIN_COUNT if args.private else 1)
+        print(found.to_markdown(private=args.private))
+        if args.private:
+            print(style_report(messages, profile))
     elif args.cmd == "eval":
         here = HERE / "profiles"
         generic, me = load(here / "generic.md"), load(here / "me.md")

@@ -143,6 +143,10 @@ def edits1(word: str) -> set[str]:
     return set(deletes + transposes + replaces + inserts)
 
 
+def _example(examples: list[str], private: bool) -> str:
+    return "" if private else f', e.g. "{examples[0][:60]}"'
+
+
 @dataclass(frozen=True)
 class Suggestions:
     slang: list[tuple[str, int, list[str]]]
@@ -152,9 +156,10 @@ class Suggestions:
     def tokens(self) -> set[str]:
         return {t for t, *_ in self.slang} | {t for t, *_ in self.typos}
 
-    def to_markdown(self) -> str:
+    def to_markdown(self, private: bool = False) -> str:
+        """private=True prints words and counts only, never an example sentence."""
         lines = ["## Slang", "| I write | Standard | Meaning |", "|---|---|---|"]
-        lines += [f"| {tok} | ? | ? (seen {n}x, e.g. \"{ex[0][:60]}\") |" for tok, n, ex in self.slang]
+        lines += [f"| {tok} | ? | ? (seen {n}x{_example(ex, private)}) |" for tok, n, ex in self.slang]
         lines += ["", "## Typos", "| I write | Correct | Evidence |", "|---|---|---|"]
         lines += [f"| {tok} | {fix} | {'you also wrote ' + repr(fix) if own else 'one edit from a common word'} |" for tok, fix, _, own in self.typos]
         return "\n".join(lines) + "\n"
@@ -167,6 +172,7 @@ def suggest(
     known_entries: Iterable[str] = (),
     min_keyness: float = 3.0,
     max_examples: int = 2,
+    min_count: int = 1,
 ) -> Suggestions:
     counts: Counter[str] = Counter()
     examples: dict[str, list[str]] = defaultdict(list)
@@ -184,7 +190,7 @@ def suggest(
 
     slang, typos = [], []
     for tok in sorted(counts, key=keyness, reverse=True):
-        if tok in skip or not tok.isalpha() or keyness(tok) < min_keyness:
+        if tok in skip or not tok.isalpha() or counts[tok] < min_count or keyness(tok) < min_keyness:
             continue
         fixes = []
         if len(tok) >= MIN_TYPO_LENGTH and zipf(tok) < MAX_TYPO_ZIPF:
