@@ -41,6 +41,25 @@ def build(condition: str, text: str) -> list[dict]:
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
 
+def chat_prompt(llm, messages: list[dict]) -> str:
+    """The model's own chat template, with thinking off so a one-word answer isn't squeezed out of a thought.
+
+    The template ships inside the downloaded GGUF, so it is rendered in Jinja's sandbox.
+    """
+    from jinja2.sandbox import ImmutableSandboxedEnvironment
+
+    def fail(message):
+        raise ValueError(message)
+
+    template = ImmutableSandboxedEnvironment(trim_blocks=True, lstrip_blocks=True).from_string(
+        llm.metadata["tokenizer.chat_template"])
+    vocab = llm._model
+    # create_completion() adds BOS itself when the model wants one; emitting it here too would double it.
+    bos = "" if vocab.add_bos_token() else vocab.token_get_text(vocab.token_bos())
+    return template.render(messages=messages, add_generation_prompt=True, enable_thinking=False,
+                           bos_token=bos, eos_token=vocab.token_get_text(vocab.token_eos()), raise_exception=fail)
+
+
 def run(model_paths: list[str]) -> None:
     from llama_cpp import Llama, LlamaGrammar
 
@@ -49,14 +68,16 @@ def run(model_paths: list[str]) -> None:
     examples = load_examples(DATA)
     for path in model_paths:
         name = re.sub(r"-\d{5}-of-\d{5}$", "", Path(path).stem)  # split GGUFs: name the model, not part 1
-        llm = Llama(model_path=path, n_ctx=4096, n_threads=4, seed=0, verbose=False)
+        # n_gpu_layers=-1 puts every layer on the GPU when there is one (Metal on a Mac); a CPU build ignores it.
+        llm = Llama(model_path=path, n_ctx=4096, n_gpu_layers=-1, seed=0, verbose=False)
         # One condition at a time, so the shared system prompt stays in the KV cache.
         for condition in CONDITIONS:
             for ex in examples:
                 if (name, condition, ex.id) in done:
                     continue
-                out = llm.create_chat_completion(build(condition, ex.text), grammar=grammar, temperature=0, max_tokens=8)
-                row = {"model": name, "condition": condition, "id": ex.id, "pred": out["choices"][0]["message"]["content"].strip()}
+                prompt = chat_prompt(llm, build(condition, ex.text))
+                out = llm.create_completion(prompt, grammar=grammar, temperature=0, max_tokens=8)
+                row = {"model": name, "condition": condition, "id": ex.id, "pred": out["choices"][0]["text"].strip()}
                 with RESULTS.open("a", encoding="utf-8") as f:
                     f.write(json.dumps(row) + "\n")
             print(f"{name} {condition}: done", file=sys.stderr)
