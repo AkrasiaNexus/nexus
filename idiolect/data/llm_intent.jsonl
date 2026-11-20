@@ -703,3 +703,75 @@
 {"model": "gemma-4-12b-it-qat-q4_0", "condition": "raw", "id": "t218", "pred": "request"}
 {"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "d01", "pred": "request"}
 {"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "d02", "pred": "reject"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "d03", "pred": "pitch"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "d04", "pred": "pitch"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "d05", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "d06", "pred": "pitch"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t01", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t02", "pred": "question"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t03", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t04", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t05", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t06", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t07", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t08", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t09", "pred": "pitch"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t10", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t11", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t12", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t13", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t201", "pred": "reject"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t202", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t203", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t204", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t205", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t206", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t207", "pred": "question"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t208", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t209", "pred": "question"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t210", "pred": "question"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t211", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t212", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t213", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t214", "pred": "pitch"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t215", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t216", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t217", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "normalized", "id": "t218", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "d01", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "d02", "pred": "reject"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "d03", "pred": "pitch"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "d04", "pred": "pitch"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "d05", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "d06", "pred": "pitch"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t01", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t02", "pred": "question"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t03", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t04", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t05", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t06", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t07", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t08", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t09", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t10", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t11", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t12", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t13", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t201", "pred": "reject"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t202", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t203", "pred": "approve"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t204", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t205", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t206", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t207", "pred": "question"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t208", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t209", "pred": "question"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t210", "pred": "question"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t211", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t212", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t213", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t214", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t215", "pred": "request"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t216", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t217", "pred": "context"}
+{"model": "gemma-4-12b-it-qat-q4_0", "condition": "profile prompt", "id": "t218", "pred": "request"}

@@ -55,22 +55,26 @@ Reproduce: `python -m idiolect eval`
 
 ## Does it help a small model?
 
-Each of the 37 messages went to four local models (Qwen2.5 Instruct, Q4_K_M GGUF, run on CPU with llama.cpp) three ways: **as written**, **normalized** by Idiolect, and as written with the **profile in the system prompt**. The model had to answer with one intent label, using the same definitions the gold was labelled with (grammar-constrained, temperature 0). The predictions are saved in [`data/llm_intent.jsonl`](data/llm_intent.jsonl), so the table reproduces without a model: `python tools/llm_intent_eval.py report`.
+Each of the 37 messages went to seven local models three ways: **as written**, **normalized** by Idiolect, and as written with the **profile in the system prompt**. The models were Qwen2.5 Instruct (Sept 2024), Qwen3.5 (Feb 2026) and Gemma 4 (Apr 2026), all 4-bit GGUF on CPU with llama.cpp. Each had to answer with one intent label, using the same definitions the gold was labelled with (grammar-constrained, temperature 0). The predictions are saved in [`data/llm_intent.jsonl`](data/llm_intent.jsonl), so the table reproduces without a model: `python tools/llm_intent_eval.py report`.
 
 | Model | as written | normalized | profile in prompt | test2: as written → normalized | test2: as written → profile |
 |---|---|---|---|---|---|
-| hand-written rules | | 25/37 | | | |
-| 0.5B | 9/37 | 9/37 | 10/37 | 5 → 5 | 5 → 6 |
-| 1.5B | 8/37 | 9/37 | 8/37 | 3 → 3 | 3 → 3 |
-| 3B | 14/37 | 15/37 | 18/37 | 7 → 8 | 7 → **11** |
-| 7B | 20/37 | **22/37** | 17/37 | 8 → 9 | 8 → 8 |
+| hand-written rules | | 25/37 | | | 7/18 |
+| Qwen2.5 0.5B | 9/37 | 9/37 | 10/37 | 5 → 5 | 5 → 6 |
+| Qwen2.5 1.5B | 8/37 | 9/37 | 8/37 | 3 → 3 | 3 → 3 |
+| Qwen2.5 3B | 14/37 | 15/37 | 18/37 | 7 → 8 | 7 → 11 |
+| Qwen2.5 7B | 20/37 | 22/37 | 17/37 | 8 → 9 | 8 → 8 |
+| Qwen3.5 4B | 25/37 | **27/37** | 24/37 | 8 → **10** | 8 → 9 |
+| Qwen3.5 9B | 24/37 | 25/37 | 24/37 | 7 → 8 | 7 → 10 |
+| Gemma 4 12B | 27/37 | 27/37 | **30/37** | 9 → 9 | 9 → **12** |
 
 What it shows:
-- **Normalizing never hurt.** Across four models and 37 messages it fixed 5 predictions and broke 1, and on test2 it fixed 2 and broke none. The direction is consistent, but the effect is small and not significant with this little data (exact McNemar p ≥ 0.5 per model).
-- **Pasting the profile into the prompt is unreliable.** It gave the biggest single gain (3B on test2: 4 fixed, 0 broken, p = 0.12), but it hurt the 7B (3 fixed, 6 broken). A long block of slang tables seems to distract a model more than it helps.
-- **Models up to 3B can't do this task zero-shot.** They answer "request" or "reject" for almost anything. Normalization can't rescue a model that doesn't understand the task.
-- **The hand-written rules still win on all 37** (25 vs 22), but only because they were written with dev and test visible. On unseen messages, the 3B with the profile prompt (11/18) and the 7B with normalized input (9/18) both beat them (7/18).
-- Caveat: one person labelled the gold intents, and some model "errors" are arguable. "scrap the codex plugin" was labelled *request*, but the 7B's *reject* is defensible. With 18 unseen messages, each one moves the score by about 6 points.
+- **Model generation matters more than anything Idiolect does.** The 2026 models at 4B already beat the 2024 models at 7B, and Gemma 4 12B reads these messages about as well as the hand-written rules do on the messages those rules were written from.
+- **Normalizing almost never hurt.** Across all seven models it fixed 10 predictions and broke 3. The direction is consistent, but each model's gain is 0 to 2 messages, too small to call significant on its own. The 10 vs 3 is a tally over the same messages, not an independent test.
+- **The profile in the prompt helps the strongest models most.** Gemma 4 12B goes from 9 to 12 of the 18 unseen messages (4 fixed, 1 broken) and to 30 of 37 overall, the best result here. For mid-size models it is a coin flip (the Qwen2.5 7B lost 3 net).
+- **The hand-written rules are overfit.** They score 25/37 overall but only 7/18 on unseen messages. Every 2026 model matches or beats that on test2 with no rules at all.
+- **Best setup for a personal assistant on a laptop:** a current 4B to 12B model, with the profile in the prompt for the larger ones and normalization in front of the smaller ones.
+- Caveats: one person labelled the gold intents, and some model "errors" are arguable. With 18 unseen messages, each message moves the score by about 6 points. The Qwen3.5 and Gemma 4 runs render each model's own chat template with thinking turned off; the earlier runs used llama-cpp-python's built-in chat formatting.
 
 ## Learning a profile from your chats
 
@@ -153,7 +157,7 @@ python -m unittest discover -s tests
 
 - [x] Context-aware handling of real-word forms ("its", "ill"): rule table in `profiles/context.md`
 - [ ] Bigger gold set from more writers, to report variance across people
-- [x] Measure downstream gains: intent accuracy of four local models with and without normalization (see above)
+- [x] Measure downstream gains: intent accuracy of seven local models (2024 and 2026 generations) with and without normalization (see above)
 - [ ] Replace the overfit intent rules with a small model plus normalization, and grow the gold set so gains under 10 points become measurable
 - [x] Plug into Nudge's capture box (JavaScript port; context rules not ported yet)
 
