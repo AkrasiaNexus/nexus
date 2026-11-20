@@ -46,7 +46,7 @@ Most hangouts end up in a mall because nobody knows where else to go, and growin
 
 ## Data sources
 
-- Routes: Google Maps transit data for ITC buses, pulled 10 Nov 2026, for the first 10 spots. Spots added later by the daily research job, and the 30 added on 20 Nov 2026, use DARB line and stop lists from Moovit (lines 34, 54, 56, 102, 5 and N2 from Abu Dhabi Bus Station), with road distances from OpenStreetMap's OSRM. Their trip times are estimates: wait, about a minute per stop, plus walking.
+- Routes: Google Maps transit data for ITC buses, pulled 10 Nov 2026, for the first 10 spots. The 9 spots added later by the daily research job keep their own source notes in each spot's text. The 30 added on 20 Nov 2026 use DARB line and stop lists from Moovit (lines 34, 54, 56, 102, 5 and N2 from Abu Dhabi Bus Station), with road distances from OpenStreetMap's OSRM. Their trip times are estimates: wait, about a minute per stop, plus walking.
 - Fares: Abu Dhabi Mobility (admobility.gov.ae).
 - Spot details: r/abudhabi, Time Out Abu Dhabi, Visit Abu Dhabi, wow-abudhabi.com, digiflow.ae and the venues' own pages (opening hours and prices checked 20 Nov 2026). Coordinates from OpenStreetMap.
 - New spots get added by a daily research job that verifies each route before adding it.
