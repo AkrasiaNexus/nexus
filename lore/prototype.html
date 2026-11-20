@@ -168,7 +168,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         <div class="ctl">
           <label class="lbl" for="budget">Budget each <output id="budgetOut"></output></label>
           <input type="range" id="budget" min="5" max="40" step="1" value="15">
-          <p class="hint">Covers the bus both ways, entry, food and game money.</p>
+          <p class="hint">Covers travel both ways (bus, or a shared cab where no bus goes), entry, food and game money.</p>
         </div>
         <div class="ctl">
           <span class="lbl">Vibe</span>
@@ -212,7 +212,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   </section>
 
   <footer class="foot">
-    <p>Bus routes come from Google Maps transit data for ITC buses, pulled 10 Nov 2026, and every route starts at Abu Dhabi Bus Station. Each shows the first route returned, so some walks are long.</p>
+    <p>Every route starts at Abu Dhabi Bus Station. The first 10 spots use Google Maps transit data for ITC buses (10 Nov 2026); the rest use DARB line lists from Moovit (20 Nov 2026), with estimated trip times. A few spots have no direct bus and are priced as a shared cab. Check a route the first time you take it.</p>
     <p>Fares are estimates using Hafilat's AED 2 + 5 fils per km, capped at AED 5 a trip. Taxi estimates use Abu Dhabi's metered fare from admobility.gov.ae: AED 5 flag fall + AED 1.82/km, AED 12 minimum, 4 people per cab. Spot hours and prices are from wow-abudhabi.com and digiflow.ae (both checked Sept 2026). Your map and Lore Book save in this browser only.</p>
   </footer>
 </div>
@@ -281,6 +281,37 @@ const SPOTS = [
     tags:['chill'], entry:0, spend:0,
     why:"The residents' park on Reem Island, with waterfront paths and the towers lit up across the channel at night.",
     hunt:'three different dog breeds', cover:'On the waterfront edge with the towers lit up behind you.' },
+  // Added 20 Nov 2026. Bus legs from Moovit (DARB lines from Abu Dhabi Bus Station); dur is an estimate.
+  {"id": "carpet", "name": "Carpet Souk Haggle", "short": "Carpet Souk", "ar": "سوق السجاد", "lat": 24.5122, "lng": 54.3798, "km": 6.1, "dur": 31, "walk": 550, "legs": [{"line": "56", "toward": "New Mina Souq", "from": "Sultan Bin Zayed St / Abu Dhabi Bus Station", "to": "Al Mina Street / Zayed Port"}], "tags": ["chaos"], "entry": 0, "spend": 0, "why": "One of the city's oldest markets, a run of shops along Al Meena Street piled with Persian, Afghan and local rugs. You are not buying a carpet. You are finding out how low a price can go for one you will never buy.", "extra": "Be polite and walk away smiling. Shops wind down through the evening, so go early.", "hunt": "the oldest-looking rug and the loudest pattern in the souk", "cover": "Everyone sitting on a stack of rugs like it is a throne. Ask the shopkeeper first."},
+  {"id": "dates", "name": "Date Market Tasting Run", "short": "Date Market", "ar": "سوق التمور", "lat": 24.515, "lng": 54.3765, "km": 7.5, "dur": 35, "walk": 650, "legs": [{"line": "54", "toward": "Zayed Port / Fish Market", "from": "Abu Dhabi Bus Station", "to": "Fish Market"}], "tags": ["food", "chaos"], "entry": 0, "spend": 5, "why": "Mina's date stalls sit next to the fruit and vegetable market, and sellers hand out samples to anyone who looks curious. Taste every kind you can find and rank them like judges.", "extra": "Around AED 5 each buys a small bag of the winner to share (estimate). Markets run until about 10pm.", "hunt": "the darkest date, the biggest date and a seller who has been there 20 years", "cover": "Hold up your favourite date like a trophy, stall behind you."},
+  {"id": "dhows", "name": "Dhow Harbour at Dusk", "short": "Dhow Harbour", "ar": "ميناء زايد", "lat": 24.516, "lng": 54.373, "km": 7.2, "dur": 37, "walk": 800, "legs": [{"line": "54", "toward": "Zayed Port / Fish Market", "from": "Abu Dhabi Bus Station", "to": "Fish Market"}], "tags": ["sunset", "edge"], "entry": 0, "spend": 0, "why": "Wooden dhows still line the water at Mina Zayed, the old working harbour behind the fish market. Walk the quay as the light goes and the boats turn into silhouettes.", "extra": "Stay on the public quayside and keep off the boats and moorings unless a crew invites you.", "hunt": "a dhow with a name painted in English and one with a cat on deck", "cover": "Silhouettes against the masts right after sunset."},
+  {"id": "minaart", "name": "Mina Art Run", "short": "Souq Al Mina", "ar": "سوق الميناء", "lat": 24.5165, "lng": 54.379, "km": 6.3, "dur": 31, "walk": 500, "legs": [{"line": "56", "toward": "New Mina Souq", "from": "Sultan Bin Zayed St / Abu Dhabi Bus Station", "to": "St 20 / Vegetable Market"}], "tags": ["edge", "chill"], "entry": 0, "spend": 0, "why": "The Public Art Abu Dhabi Biennial has dropped free installations and murals into Souq Al Mina and Mina Zayed, on until 15 February 2027. Nearby, 421 Arts Campus runs free exhibitions in old port warehouses.", "extra": "421 is open Tuesday to Sunday, 10am to 8pm, free. The Biennial pieces are outdoors around the souq.", "hunt": "the strangest artwork and the one that would look best as an album cover", "cover": "Pose like you are part of the installation."},
+  {"id": "loop56", "name": "The 56 Loop", "short": "New Mina Souq", "ar": "سوق الميناء الجديد", "lat": 24.5195, "lng": 54.3815, "km": 6.9, "dur": 36, "walk": 150, "legs": [{"line": "56", "toward": "New Mina Souq", "from": "Sultan Bin Zayed St / Abu Dhabi Bus Station", "to": "St 20 / New Mina Souq"}], "tags": ["chaos"], "entry": 0, "spend": 0, "why": "Ride bus 56 to the very end of the line: down Sultan Bin Zayed St, through downtown and Electra, then deep into the Mina streets. Window seats only. Get off at the last stop and explore whatever is there.", "extra": "The whole route from Khalifa Park to New Mina Souq is 57 stops and about an hour.", "hunt": "the weirdest shop sign seen from the bus", "cover": "All of you at the last stop pretending you missed it."},
+  {"id": "afghan", "name": "Afghan Bread Run", "short": "Al Zahiyah", "ar": "الزاهية", "lat": 24.4905, "lng": 54.37, "km": 2.9, "dur": 22, "walk": 1000, "legs": [{"line": "N2", "toward": "Al Zahiyah Bus Stn", "from": "Abu Dhabi Bus Station", "to": "Gold Center, Sultan Bin Zayed St"}], "tags": ["food"], "entry": 0, "spend": 3, "why": "Hole-in-the-wall Afghan bakeries around the old Tourist Club area bake huge flatbreads in a tandoor while you watch, from about AED 1 a piece, cash only. Order one filled with zaatar, cheese, honey or spicy potato.", "extra": "Bring coins and small notes. AED 3 each gets you two breads (estimate).", "hunt": "the bakery with the biggest tandoor", "cover": "Everyone holding a flatbread bigger than their face."},
+  {"id": "bonna", "name": "Injera Night", "short": "Bonna Annee", "ar": "الزاهية", "lat": 24.491, "lng": 54.376, "km": 3.8, "dur": 24, "walk": 1100, "legs": [{"line": "N2", "toward": "Al Zahiyah Bus Stn", "from": "Abu Dhabi Bus Station", "to": "Gold Center, Sultan Bin Zayed St"}], "tags": ["food"], "entry": 0, "spend": 20, "why": "Bonna Annee is a small Ethiopian restaurant off Salam Street in Al Zahiyah. Everyone eats with their hands from one big injera, the spongy fermented flatbread, with spiced meat and veg on top.", "extra": "Huge portions for the price, so share platters. About AED 20 each (estimate).", "hunt": "the dish none of you can pronounce", "cover": "Hands-in over the shared platter, before anyone eats.", "maxStay": 120},
+  {"id": "hankook", "name": "Floor Seat Korean", "short": "Hankook", "lat": 24.47, "lng": 54.3745, "km": 0, "dur": 4, "walk": 300, "legs": [], "tags": ["food"], "entry": 0, "spend": 25, "why": "Hankook Korean Restaurant is right across the road from the bus station and Al Wahda Mall, with side rooms where you sit on the floor around the table. Zero travel time, so the whole evening goes on food and talking.", "extra": "About AED 25 each if you share dishes (estimate).", "hunt": "the side dish nobody ordered", "cover": "Cross-legged around the table like a family photo.", "maxStay": 120},
+  {"id": "cafeteria", "name": "Cafeteria Roulette", "short": "Al Wahda", "ar": "الوحدة", "lat": 24.469, "lng": 54.372, "km": 0, "dur": 7, "walk": 500, "legs": [], "tags": ["food", "chaos"], "entry": 0, "spend": 8, "why": "The streets around Al Wahda are full of family-run cafeterias doing sandwiches, karak and fresh juice for a few dirhams. Walk out of the bus station, pick one at random and order the cheapest thing on the menu. Repeat.", "extra": "Three rounds at about AED 3 each is a full meal (estimate).", "hunt": "a juice flavour you have never heard of", "cover": "Lined up at the counter like a police line-up.", "maxStay": 120},
+  {"id": "brutal", "name": "Brutalist Bus Station Hunt", "short": "Bus Station", "ar": "محطة الحافلات", "lat": 24.4717, "lng": 54.3776, "km": 0, "dur": 2, "walk": 200, "legs": [], "tags": ["edge"], "entry": 0, "spend": 0, "why": "You start every quest at Abu Dhabi Bus Station, and most people never look at it. The 1980s terminal and its sculptural concrete taxi canopy are protected as modern heritage. Treat it like a museum for once.", "extra": "Stay in public areas and out of the way of buses.", "hunt": "the best concrete angle and the oldest sign in the station", "cover": "Stand under the concrete canopy looking like an album cover."},
+  {"id": "culture", "name": "Cultural Foundation Night", "short": "Cultural Foundation", "ar": "المجمع الثقافي", "lat": 24.4828, "lng": 54.3574, "km": 4.1, "dur": 18, "walk": 300, "legs": [{"line": "54", "toward": "Zayed Port / Fish Market", "from": "Abu Dhabi Bus Station", "to": "Sheikh Rashid Bin Saeed Street / Hamdan Street"}], "tags": ["chill", "edge"], "entry": 0, "spend": 0, "why": "A 1981 brutalist landmark next to Qasr Al Hosn, with a free library and exhibitions. Read, browse the galleries, then walk the lit-up Al Hosn grounds outside.", "extra": "Open Saturday to Thursday 9am to 8pm, Friday 2pm to 8pm. Arrive by 7pm.", "hunt": "the oldest book you can find and the best view of the fort", "cover": "Sitting on the concrete steps with the fort behind you.", "arriveBy": 1140, "maxStay": 60},
+  {"id": "gold", "name": "Gold Centre Price Check", "short": "Gold Centre", "ar": "سوق الذهب", "lat": 24.4836, "lng": 54.3657, "km": 2.2, "dur": 15, "walk": 200, "legs": [{"line": "56", "toward": "New Mina Souq", "from": "Sultan Bin Zayed St / Abu Dhabi Bus Station", "to": "Sultan Bin Zayed Street / Madinat Zayed Shopping Centre"}], "tags": ["chaos"], "entry": 0, "spend": 0, "why": "The Gold Centre at Madinat Zayed Shopping Centre is wall-to-wall jewellery shops. Each of you guesses the price of the heaviest chain in the window, then one person politely asks. Closest guess wins.", "extra": "Window shopping only. Ask nicely and say thank you.", "hunt": "the heaviest-looking chain and the smallest ring", "cover": "Everyone pointing at the window in shock."},
+  {"id": "karak", "name": "Karak at Shay Madhboot", "short": "Shay Madhboot", "ar": "المرور", "lat": 24.4474, "lng": 54.4041, "km": 5.3, "dur": 20, "walk": 500, "legs": [{"line": "56", "toward": "Khalifa Park", "from": "Sultan Bin Zayed St / Abu Dhabi Bus Station", "to": "Sultan Bin Zayed Street / Dihan Street"}], "tags": ["chill", "food"], "entry": 0, "spend": 8, "why": "A tiny Al Muroor shop on Dihan Street built around tea: caramelised karak, Moroccan tea and stuffed parotta for a few dirhams. Order every karak they do and vote.", "extra": "About AED 8 each for two teas and a parotta (estimate).", "hunt": "the strangest tea on the menu", "cover": "Cheers with your karak cups.", "maxStay": 120},
+  {"id": "electra", "name": "Electra Street Crawl", "short": "Electra", "lat": 24.49, "lng": 54.3625, "km": 3.1, "dur": 21, "walk": 600, "legs": [{"line": "56", "toward": "New Mina Souq", "from": "Sultan Bin Zayed St / Abu Dhabi Bus Station", "to": "Zayed 1st Street / Electra Park"}], "tags": ["food", "chaos"], "entry": 0, "spend": 10, "why": "Zayed the First Street, still called Electra by everyone, is old downtown: electronics shops, tailors and cheap cafeterias. Get off at Electra Park and crawl: one snack per stop, a different cuisine each time.", "extra": "Set a group cap of AED 10 each and stick to it (estimate).", "hunt": "the oldest shop sign and a shop that sells something you cannot identify", "cover": "Lined up under the brightest neon you can find."},
+  {"id": "heritage", "name": "Heritage Village Evening", "short": "Heritage Village", "ar": "القرية التراثية", "lat": 24.479, "lng": 54.3215, "km": 8.8, "dur": 43, "walk": 900, "legs": [{"line": "34", "toward": "Emirates Palace Hotel", "from": "Sultan Bin Zayed St / Abu Dhabi Bus Station", "to": "Street 18 / Marina Mall"}], "tags": ["chill", "sunset"], "entry": 0, "spend": 0, "why": "A rebuilt old oasis village on the breakwater: a falaj water channel, a goat-hair tent, craft workshops and a campfire with coffee pots, looking back at the skyline. Free, and quiet in the evening.", "extra": "Open daily until 9pm (Fridays 3pm to 9pm). Arrive by 8pm.", "hunt": "the coffee pot, the falaj and the best skyline gap", "cover": "Sitting in the tent entrance like you live there.", "arriveBy": 1200, "maxStay": 60},
+  {"id": "beach", "name": "Corniche Gate 4 Sunset", "short": "Corniche Beach", "ar": "شاطئ الكورنيش", "lat": 24.4742, "lng": 54.3402, "km": 5.3, "dur": 29, "walk": 400, "legs": [{"line": "34", "toward": "Emirates Palace Hotel", "from": "Sultan Bin Zayed St / Abu Dhabi Bus Station", "to": "Corniche Street / Public Beach Main Entrance"}], "tags": ["sunset", "chill"], "entry": 0, "spend": 0, "why": "The Corniche's Blue Flag beach in the middle of the city. Most gates charge AED 10, but Gate 4 (Al Sahil) is free. Sit on the sand for sunset and stay for the lights.", "extra": "If you end up at a paid gate, it is AED 10 each. Swimming only where lifeguards are on duty.", "hunt": "the furthest ship on the horizon", "cover": "Backs to the camera, feet in the water, skyline on the left."},
+  {"id": "bike", "name": "Corniche Bike Relay", "short": "Corniche", "ar": "الكورنيش", "lat": 24.476, "lng": 54.345, "km": 5.3, "dur": 29, "walk": 300, "legs": [{"line": "34", "toward": "Emirates Palace Hotel", "from": "Sultan Bin Zayed St / Abu Dhabi Bus Station", "to": "Corniche Street / Public Beach Main Entrance"}], "tags": ["chaos", "sunset"], "entry": 0, "spend": 0, "why": "Careem bikes are docked along the Corniche. Grab bikes and race the waterfront cycle path toward the breakwater, swapping riders at each docking station.", "extra": "Bike hire is paid in the Careem app and is not in the cost shown; check the price before you unlock.", "hunt": "every docking station between the beach and the breakwater", "cover": "Bikes in a line, front wheels up."},
+  {"id": "khalifa", "name": "Khalifa Park Night", "short": "Khalifa Park", "ar": "حديقة خليفة", "lat": 24.4255, "lng": 54.47, "km": 14.1, "dur": 40, "walk": 300, "legs": [{"line": "56", "toward": "Khalifa Park", "from": "Sultan Bin Zayed St / Abu Dhabi Bus Station", "to": "Park Rotana Complex"}], "tags": ["chill"], "entry": 2, "spend": 0, "why": "A huge, calm park with lawns, fountains and lakes, a long way from the mall crowd. AED 2 to get in.", "extra": "Open until 10pm Sunday to Wednesday, 11pm Thursday to Saturday.", "hunt": "a duck, a fountain and the best bench", "cover": "Lying on the grass in a circle, heads in the middle, shot from above."},
+  {"id": "maqta", "name": "Al Maqta Fort Friday", "short": "Al Maqta", "ar": "قلعة المقطع", "lat": 24.4212, "lng": 54.4886, "km": 15.8, "dur": 36, "walk": 300, "legs": [{"line": "56", "toward": "Khalifa Park", "from": "Sultan Bin Zayed St / Abu Dhabi Bus Station", "to": "Al Maqtaa Village"}], "tags": ["sunset", "chill"], "entry": 0, "spend": 0, "days": [5], "arriveBy": 1155, "why": "The small fort that guarded the old crossing onto Abu Dhabi island is now a free museum, with gardens on the creek that catch the sunset. On Fridays it is open until 8pm.", "extra": "Fridays 2pm to 8pm. Other days it closes at 5pm.", "hunt": "the oldest thing in the museum and the sunset over the creek", "cover": "In the fort doorway, golden hour.", "maxStay": 45},
+  {"id": "mosque", "name": "Grand Mosque Moon Loop", "short": "Wahat Al Karama", "ar": "واحة الكرامة", "lat": 24.4142, "lng": 54.4787, "km": 16.6, "dur": 41, "walk": 400, "legs": [{"line": "54", "toward": "Al Rawdah / Zayed Grand Mosque", "from": "Abu Dhabi Bus Station", "to": "Eastern Ring Road / Sheikh Zayed Grand Mosque"}], "tags": ["chill"], "entry": 0, "spend": 0, "why": "Walk the 3 km track that loops the Sheikh Zayed Grand Mosque at night, when it glows and the track is nearly empty, then cross to Wahat Al Karama's memorial. Both are free.", "extra": "The track is open 24 hours. Wahat Al Karama is open until 10pm. Dress modestly near the mosque.", "hunt": "the angle where the mosque fits exactly in a phone frame", "cover": "Silhouettes on the track with the mosque lit up behind you."},
+  {"id": "bowl", "name": "Zayed Sports City Bowling", "short": "ZSC Bowling", "ar": "مدينة زايد الرياضية", "lat": 24.4164, "lng": 54.4542, "km": 12.2, "dur": 25, "walk": 700, "legs": [{"line": "102", "toward": "Mussafah Bus Station", "from": "Abu Dhabi Al Wahda Bus Station", "to": "Saif Ghobash Street / Zayed Sports Stadium"}], "tags": ["chaos"], "entry": 0, "spend": 30, "why": "The biggest bowling alley in Abu Dhabi, under the national stadium. One game each, loser buys karak.", "extra": "AED 30 a game Monday to Thursday, AED 40 Friday to Sunday.", "hunt": "the heaviest ball anyone can actually throw", "cover": "Everyone mid-throw at the same time."},
+  {"id": "acpark", "name": "The Air-Conditioned Park", "short": "Al Mushrif", "ar": "المشرف", "lat": 24.4365, "lng": 54.4135, "km": 6.1, "dur": 18, "walk": 400, "legs": [{"line": "102", "toward": "Mussafah Bus Station", "from": "Abu Dhabi Al Wahda Bus Station", "to": "Sheikh Rashid Bin Saeed St / Mushrif Mall"}], "tags": ["chill"], "entry": 0, "spend": 0, "why": "King Hamad Bin Isa Al Khalifa Park in Al Mushrif is the city's first air-conditioned park: a forest of shade with cooled air along the paths. Free, and strange enough to be worth seeing.", "extra": "On Sheikh Rashid Bin Saeed Street. Open until 10pm (11pm Friday and Saturday).", "hunt": "the coldest spot in the park", "cover": "Pretending to shiver in the middle of the UAE."},
+  {"id": "fox", "name": "Al Maryah Fox Watch", "short": "Al Maryah", "ar": "جزيرة الماريه", "lat": 24.5014, "lng": 54.3891, "km": 5.3, "dur": 41, "walk": 950, "legs": [{"line": "54", "toward": "Zayed Port / Fish Market", "from": "Abu Dhabi Bus Station", "to": "Sheikh Rashid Bin Saeed Street / Hamdan Street"}, {"line": "5", "toward": "Sowwah Square", "from": "Hamdan St / New York University", "to": "Sowwah Square"}], "tags": ["edge", "chill"], "entry": 0, "spend": 0, "why": "Walk the Al Maryah waterfront promenade at night and look for the Arabian red foxes that residents keep spotting in the shrubs between the towers. You might not see one. That's the quest.", "extra": "Stay on public paths and never chase or feed wildlife. Walk 6 minutes between the two buses.", "hunt": "a fox (photo or it did not happen)", "cover": "Everyone pointing at an empty bush."},
+  {"id": "trainyas", "name": "Ride the F1 Track", "short": "Yas Circuit", "ar": "حلبة مرسى ياس", "lat": 24.4723, "lng": 54.6059, "km": 34.0, "dur": 37, "walk": 200, "legs": [], "taxi": {"min": 37, "km": 34.0, "from": "Abu Dhabi Bus Station"}, "tags": ["edge", "chaos"], "entry": 0, "spend": 0, "days": [1, 3], "arriveBy": 1200, "maxStay": 120, "why": "TrainYAS opens the actual Formula 1 track at Yas Marina Circuit to walkers, runners and cyclists, with free bikes and helmets. Race your friends down the main straight.", "extra": "Mondays and Wednesdays, 6pm to 10pm, unless the track is booked. No direct bus, so this one is a taxi.", "hunt": "the start/finish line and the tunnel", "cover": "Lined up on the grid like the start of a race."},
+  {"id": "yasbay", "name": "Yas Bay Night Walk", "short": "Yas Bay", "ar": "خليج ياس", "lat": 24.4604, "lng": 54.6042, "km": 32.0, "dur": 35, "walk": 300, "legs": [], "taxi": {"min": 35, "km": 32.0, "from": "Abu Dhabi Bus Station"}, "tags": ["chill"], "entry": 0, "spend": 0, "why": "A long waterfront boardwalk on Yas Island beside Etihad Arena, busy at night with music drifting out of the restaurants. Free to walk.", "extra": "No direct bus from the station, so this one is a taxi.", "hunt": "the arena, a yacht and the busiest table", "cover": "On the boardwalk rail with the arena lit up behind you."},
+  {"id": "saadiyat", "name": "Saadiyat Gallery Hop", "short": "Saadiyat", "ar": "السعديات", "lat": 24.5345, "lng": 54.4191, "km": 11.3, "dur": 17, "walk": 500, "legs": [], "taxi": {"min": 17, "km": 11.3, "from": "Abu Dhabi Bus Station"}, "tags": ["chill", "edge"], "entry": 0, "spend": 0, "arriveBy": 1140, "maxStay": 60, "why": "Two free art spaces side by side in the Saadiyat Cultural District: Manarat Al Saadiyat's galleries and the Bassam Freiha Art Foundation. Big-museum island, zero-dirham evening.", "extra": "Manarat is open 9am to 8pm. No direct bus, so this one is a taxi.", "hunt": "the piece you would steal (you will not)", "cover": "Each of you copying the pose of a different artwork."},
+  {"id": "mamsha", "name": "Mamsha Sunset Promenade", "short": "Mamsha", "ar": "ممشى السعديات", "lat": 24.5385, "lng": 54.411, "km": 12.4, "dur": 19, "walk": 400, "legs": [], "taxi": {"min": 19, "km": 12.4, "from": "Abu Dhabi Bus Station"}, "tags": ["sunset", "chill"], "entry": 0, "spend": 0, "why": "The beachfront promenade by the Saadiyat museums. Walking it is free (the sand is mostly through beach clubs), and the sunset over the water is the point.", "extra": "No direct bus, so this one is a taxi.", "hunt": "the best sunset gap between the buildings", "cover": "Silhouettes on the promenade wall."},
+  {"id": "jubail", "name": "Jubail Mangrove Boardwalk", "short": "Jubail", "ar": "جزيرة الجبيل", "lat": 24.54, "lng": 54.487, "km": 18.6, "dur": 20, "walk": 600, "legs": [], "taxi": {"min": 20, "km": 18.6, "from": "Abu Dhabi Bus Station"}, "tags": ["chill", "sunset"], "entry": 15, "spend": 0, "arriveBy": 1200, "why": "A raised boardwalk deep into the mangroves on Jubail Island: crabs on the mud, herons in the branches and almost no city noise.", "extra": "AED 15 entry. The boardwalk is open 7am to 9pm. No direct bus, so this one is a taxi.", "hunt": "a crab, a heron and a fish jumping", "cover": "In the middle of the boardwalk with mangroves on both sides.", "maxStay": 60},
+  {"id": "qana", "name": "Al Qana Waterfront", "short": "Al Qana", "ar": "القناة", "lat": 24.402, "lng": 54.4959, "km": 18.6, "dur": 22, "walk": 400, "legs": [], "taxi": {"min": 22, "km": 18.6, "from": "Abu Dhabi Bus Station"}, "tags": ["chill", "sunset"], "entry": 0, "spend": 0, "why": "A waterfront promenade on Khor Al Maqta with a view of the Grand Mosque across the water. No entry fee to walk it.", "extra": "No direct bus, so this one is a taxi.", "hunt": "the best mosque view across the water", "cover": "Leaning on the rail with the mosque behind you."},
+  {"id": "tavern", "name": "Board Game Tavern", "short": "Table Top Tavern", "lat": 24.49, "lng": 54.36, "km": 3.2, "dur": 8, "walk": 200, "legs": [], "taxi": {"min": 8, "km": 3.2, "from": "Abu Dhabi Bus Station"}, "tags": ["chill", "chaos"], "entry": 0, "spend": 40, "why": "Table Top Tavern is a board game café near Corniche Plaza Tower in Istiqlal with a huge game library and no time limit once you're in.", "extra": "Around AED 35 to 45 each for unlimited games. Opens 4pm. A short taxi.", "hunt": "the game with the most pieces", "cover": "Everyone flipping the table (not really).", "maxStay": 120},
 ];
 const BOSSES = [
   { id:'march', name:'The Mina March', a:'mina', b:'tc', link:'walk', linkMin:45, stayA:60,
@@ -564,6 +595,10 @@ const byId = id => SPOTS.find(s => s.id === id);
 const fare = km => Math.min(5, 2 + 0.05 * km);
 const taxiFare = km => Math.max(12, 5 + 1.82 * km);
 const aed = x => 'AED ' + x.toFixed(2);
+// One-way travel per person: bus fare, or a shared cab when no bus goes there, or nothing on foot.
+const tripCost = s => s.legs.length ? fare(s.km) : s.taxi ? taxiFare(s.taxi.km) * Math.ceil(state.n / 4) / state.n : 0;
+const tripMode = s => s.legs.length ? 'by bus' : s.taxi ? 'by taxi' : 'on foot';
+const daysLabel = s => s.days.map(d => DAYS[d] + 's').join(' and ');
 const hhmm = m => { m = ((Math.round(m) % 1440) + 1440) % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
 const dur = m => m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m` : `${m}m`;
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
@@ -636,10 +671,12 @@ function planQuest(s, main) {
   const leave = s.maxStay ? Math.min(latest, arrive + s.maxStay) : latest;
   const stay = leave - arrive;
   if (stay < 45) return { fail: `Under 45 minutes there before you'd need to head home.` };
-  const cost = 2 * fare(s.km) + s.entry + s.spend + main.cost;
-  const segs = [['bus', s.dur], ['spot', stay], ['bus', s.dur], ['free', latest - leave]];
-  const sched = [[state.start, 'Leave Abu Dhabi Bus Station'], [arrive, `Arrive at ${s.short}`], [leave, 'Head for the bus home'], [leave + s.dur, 'Back at the bus station']];
-  return { arrive, leave, stay, cost, segs, sched, trips: 2 };
+  const cost = 2 * tripCost(s) + s.entry + s.spend + main.cost;
+  const go = s.legs.length || s.taxi ? 'bus' : 'walk';
+  const home = s.legs.length ? 'Head for the bus home' : s.taxi ? 'Grab a cab back' : 'Walk back';
+  const segs = [[go, s.dur], ['spot', stay], [go, s.dur], ['free', latest - leave]];
+  const sched = [[state.start, 'Leave Abu Dhabi Bus Station'], [arrive, `Arrive at ${s.short}`], [leave, home], [leave + s.dur, 'Back at the bus station']];
+  return { arrive, leave, stay, cost, segs, sched, trips: s.legs.length ? '2 by bus' : s.taxi ? '2 by cab' : 'On foot' };
 }
 
 function planBoss(b) {
@@ -656,7 +693,7 @@ function planBoss(b) {
   const segs = [['bus', A.dur], ['spot', leaveA - arriveA], [b.link === 'walk' ? 'walk' : 'bus', link], ['spot', stayB], ['bus', B.dur]];
   const sched = [[state.start, 'Leave Abu Dhabi Bus Station'], [arriveA, `Stop 1: ${A.short}`], [leaveA, b.link === 'walk' ? `Walk to ${B.short} (no bus)` : `Bus back via the station to ${B.short}`],
     [arriveB, `Stop 2: ${B.short}`], [leaveB, 'Head for the bus home'], [state.curfew, 'Home. Boss cleared.']];
-  return { arriveA, leaveA, arriveB, stayA: leaveA - arriveA, stayB, cost, segs, sched, trips: kms.length };
+  return { arriveA, leaveA, arriveB, stayA: leaveA - arriveA, stayB, cost, segs, sched, trips: `${kms.length} by bus` };
 }
 
 function rollQuest() {
@@ -687,17 +724,18 @@ function rollBoss() {
 }
 
 function legsHTML(s) {
+  if (!s.legs.length && !s.taxi) return `<li><span class="led walk">WALK</span><p>On foot from Abu Dhabi Bus Station<small>About ${Math.max(1, Math.round(s.walk / 80))} min. No bus needed.</small></p></li>`;
   return s.legs.map(l => `<li><span class="led">${l.line}</span><p>Toward ${l.toward}<small>Board at ${l.from}, get off at ${l.to}</small></p></li>`).join('');
 }
 
 function taxiHTML(s) {
   if (!s.taxi) return '';
   const cab = taxiFare(s.taxi.km), cabs = Math.ceil(state.n / 4);
-  return `<li><span class="led taxi">TAXI</span><p>Or skip the bus: ${s.taxi.min} min from ${s.taxi.from}<small>About ${aed(cab)} a cab. ${cabs} ${cabs === 1 ? 'cab' : 'cabs'} for ${state.n}, so ${aed(cab * cabs / state.n)} each, one way.</small></p></li>`;
+  return `<li><span class="led taxi">TAXI</span><p>${s.legs.length ? 'Or skip the bus' : 'No direct bus, so take a cab'}: ${s.taxi.min} min from ${s.taxi.from}<small>About ${aed(cab)} a cab. ${cabs} ${cabs === 1 ? 'cab' : 'cabs'} for ${state.n}, so ${aed(cab * cabs / state.n)} each, one way.</small></p></li>`;
 }
 
 function spotFit(s) {
-  if (!allowedToday(s)) return s.days && !s.days.includes(WEEKDAY) ? 'Thursdays only' : 'Tick 18+ to unlock';
+  if (!allowedToday(s)) return s.days && !s.days.includes(WEEKDAY) ? `${daysLabel(s)} only` : 'Tick 18+ to unlock';
   const p = planQuest(s, MAIN[0]);
   if (p.fail) return p.fail;
   if (p.cost > state.budget) return `Over budget at ${aed(p.cost)} each`;
@@ -710,12 +748,12 @@ function renderSpots() {
   const grid = document.getElementById('spotgrid');
   grid.innerHTML = sorted.map(s => {
     const why = spotFit(s);
-    const each = 2 * fare(s.km) + s.entry + s.spend;
+    const each = 2 * tripCost(s) + s.entry + s.spend;
     return `<div class="spotcard">
       <div class="row"><span class="${why ? 'nofit' : 'fit'}">${why ? 'Not tonight' : 'Fits tonight'}</span>${s.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
       <h4>${s.name}</h4>
       <p>${s.why}</p>
-      <div class="row">${s.legs.map(l => `<span class="led">${l.line}</span>`).join('')}${s.taxi ? '<span class="led taxi">TAXI</span>' : ''}<span class="meta">${s.dur} min · ${aed(each)} each by bus</span></div>
+      <div class="row">${s.legs.map(l => `<span class="led">${l.line}</span>`).join('')}${s.taxi ? '<span class="led taxi">TAXI</span>' : ''}<span class="meta">${s.dur} min ${tripMode(s)} · ${aed(each)} each</span></div>
       ${why ? `<p class="meta nofit">${why}</p>` : ''}
       <button class="btn ghost small" data-plan="${s.id}">Plan this one</button></div>`;
   }).join('');
@@ -735,7 +773,7 @@ function timelineHTML(plan) {
   const sun = SUNSET > state.start && SUNSET < state.curfew ? `<span class="sunmark" style="left:${((SUNSET - state.start) / span * 100).toFixed(2)}%" title="Sunset ${hhmm(SUNSET)}"></span>` : '';
   const rows = plan.sched.map(([t, txt]) => `<li><time>${hhmm(t)}</time><span>${txt}</span></li>`).join('');
   return `<div class="tlwrap"><div class="tl">${bars}</div>${sun}</div><ol class="sched">${rows}</ol>
-    <p class="fine">Striped = bus, amber = at the spot${plan.segs.some(s => s[0] === 'walk') ? ', teal = walking' : ''}. The dark tick is sunset.</p>`;
+    <p class="fine">Striped = getting there and back, amber = at the spot${plan.segs.some(s => s[0] === 'walk') ? ', teal = walking' : ''}. The dark tick is sunset.</p>`;
 }
 
 function npcHTML(dares) {
@@ -783,12 +821,12 @@ function render() {
       <div><span>Each</span><b>${p.fail ? '–' : aed(p.cost)}</b></div>
       <div><span>Group of ${n}</span><b>${p.fail ? '–' : aed(p.cost * n)}</b></div>
       <div><span>Time there</span><b>${p.fail ? '–' : stay}</b></div>
-      <div><span>Bus trips</span><b>${p.fail ? '–' : p.trips}</b></div></div>`;
+      <div><span>Trips</span><b>${p.fail ? '–' : p.trips}</b></div></div>`;
 
   if (q.kind === 'quest') {
     const s = q.spot;
     const badges = [s.entry ? `<span class="tag">AED ${s.entry} entry</span>` : '<span class="tag">Free entry</span>',
-      s.adult ? '<span class="tag warn">18+</span>' : '', s.days ? '<span class="tag">Thursdays</span>' : ''].join('');
+      s.adult ? '<span class="tag warn">18+</span>' : '', s.days ? `<span class="tag">${daysLabel(s)}</span>` : ''].join('');
     el.innerHTML = `<div class="qhead pop">
         <div class="eyebrow"><span class="tag kind">Quest</span>${s.tags.map(t => `<span class="tag">${t}</span>`).join('')}${badges}</div>
         <h2>${s.name}</h2>${s.ar ? `<span class="ar" lang="ar" dir="rtl">${s.ar}</span>` : ''}<p class="why">${s.why}</p></div>
@@ -919,7 +957,7 @@ function renderControls() {
   document.getElementById('explored').textContent = `${state.explored.length} of ${SPOTS.length} explored`;
 }
 
-const B = { w: 54.305, e: 54.600, s: 24.400, n: 24.528 };
+const B = { w: 54.305, e: 54.625, s: 24.400, n: 24.548 }; // wide enough for Yas and Saadiyat
 function drawMap() {
   const cv = document.getElementById('map');
   const W = cv.clientWidth, H = cv.clientHeight;

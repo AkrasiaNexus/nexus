@@ -41,9 +41,11 @@ test('every spot has complete, sane data', async () => {
     const where = `spot ${s.id}`;
     for (const key of ['name', 'short', 'why', 'hunt', 'cover']) assert.ok(typeof s[key] === 'string' && s[key].trim(), `${where}: ${key}`);
     assert.ok(s.lat >= bounds.s && s.lat <= bounds.n && s.lng >= bounds.w && s.lng <= bounds.e, `${where}: inside the map`);
-    assert.ok(s.km > 0 && s.dur > 0 && s.walk >= 0, `${where}: route numbers`);
+    assert.ok(s.km >= 0 && s.dur > 0 && s.walk >= 0, `${where}: route numbers`);
     assert.ok(s.entry >= 0 && s.spend >= 0, `${where}: costs`);
-    assert.ok(s.legs.length > 0, `${where}: at least one bus leg`);
+    // Reachable by bus, by a cab when no bus goes there, or on foot from the station.
+    const onFoot = !s.legs.length && !s.taxi;
+    assert.ok(s.legs.length > 0 ? s.km > 0 : s.taxi || (onFoot && s.km === 0 && s.walk > 0), `${where}: a way to get there`);
     for (const leg of s.legs) for (const key of ['line', 'toward', 'from', 'to']) assert.ok(leg[key], `${where}: leg ${key}`);
     assert.ok(s.tags.length && s.tags.every(t => TAGS.has(t)), `${where}: tags`);
     if (s.taxi) assert.ok(s.taxi.min > 0 && s.taxi.km > 0 && s.taxi.from, `${where}: taxi`);
@@ -55,6 +57,26 @@ test('every spot has complete, sane data', async () => {
 test('bus and taxi fares follow the published Abu Dhabi rules', async () => {
   const r = await page.evaluate(() => [fare(10), fare(0), fare(200), taxiFare(1), taxiFare(9.7)]);
   assert.deepEqual(r.map(x => +x.toFixed(2)), [2.5, 2, 5, 12, 22.65]);
+});
+
+test('day-limited spots name their own days', async () => {
+  const r = await page.evaluate(() => [spotFit({ ...SPOTS[0], days: [(WEEKDAY + 1) % 7] }), spotFit({ ...SPOTS[0], days: [(WEEKDAY + 1) % 7, (WEEKDAY + 3) % 7] })]);
+  assert.match(r[0], /^[A-Z][a-z]+days only$/);
+  assert.match(r[1], /^[A-Z][a-z]+days and [A-Z][a-z]+days only$/);
+});
+
+test('taxi-only spots split the cab, walk-only spots cost nothing to reach', async () => {
+  const r = await page.evaluate(() => {
+    const cab = { legs: [], taxi: { km: 9.7, min: 15, from: 'x' }, km: 9.7 };
+    const foot = { legs: [], km: 0, walk: 300 };
+    const bus = { legs: [{}], km: 10 };
+    state.n = 4; const four = tripCost(cab);
+    state.n = 5; const five = tripCost(cab);
+    return [four, five, tripCost(foot), tripCost(bus), tripMode(cab), tripMode(foot), tripMode(bus)];
+  });
+  assert.equal(+r[0].toFixed(2), 5.66, 'one cab shared by four');
+  assert.equal(+r[1].toFixed(2), 9.06, 'five people need two cabs');
+  assert.deepEqual(r.slice(2), [0, 2.5, 'by taxi', 'on foot', 'by bus']);
 });
 
 test('sunset times match Abu Dhabi within a few minutes', async () => {
