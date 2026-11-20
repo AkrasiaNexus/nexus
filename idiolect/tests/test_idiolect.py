@@ -5,7 +5,8 @@ from pathlib import Path
 
 from idiolect import classify, load, normalize, parse, tokenize
 from idiolect.evaluate import err, load_examples, word_accuracy
-from idiolect.learn import messages_from_claude_code, messages_from_claude_export, suggest
+from idiolect.learn import (instagram_owner, messages_from_claude_code, messages_from_claude_export,
+                            messages_from_instagram, read_messages, suggest)
 from idiolect.profile import Profile
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -152,6 +153,62 @@ class LearnTests(unittest.TestCase):
             "not json",
         ]
         self.assertEqual(messages_from_claude_code(lines), ["jus ship it"])
+
+    @staticmethod
+    def _ig_thread(*messages):
+        names = sorted({m["sender_name"] for m in messages if m["sender_name"]} | {"Me Myself"})
+        return {"participants": [{"name": n} for n in names], "messages": list(messages)}
+
+    def test_instagram_keeps_only_my_text_and_fixes_mojibake(self):
+        thread = self._ig_thread(
+            {"sender_name": "Me Myself", "content": "lowk fire ð\u009f\u0094¥"},  # 🔥 as Instagram stores it
+            {"sender_name": "Friend", "content": "their words stay out"},
+            {"sender_name": "Me Myself", "content": "Reacted â\u009d¤ to your message"},
+            {"sender_name": "Me Myself", "content": "Liked a message"},
+            {"sender_name": "Me Myself", "content": "Me Myself sent an attachment."},
+            {"sender_name": "Me Myself", "share": {"link": "https://x"}, "content": "https://www.instagram.com/reel/abc/"},
+            {"sender_name": "Me Myself", "photos": [{"uri": "a.jpg"}]},
+        )
+        self.assertEqual(messages_from_instagram([thread], "Me Myself"), ["lowk fire 🔥"])
+
+    def test_instagram_owner_is_the_name_in_every_thread(self):
+        a = self._ig_thread({"sender_name": "Friend", "content": "x"})
+        b = self._ig_thread({"sender_name": "Other", "content": "y"})
+        self.assertEqual(instagram_owner([a, b]), "Me Myself")
+        with self.assertRaises(ValueError):
+            instagram_owner([a])  # one thread can't tell you from your friend
+
+    def test_read_messages_finds_instagram_inbox_folder(self):
+        thread = self._ig_thread({"sender_name": "Me Myself", "content": "jus testing"}, {"sender_name": "Friend", "content": "no"})
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp, "your_instagram_activity", "messages", "inbox", "friend_123", "message_1.json")
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(thread), encoding="utf-8")
+            self.assertEqual(read_messages(tmp, me="Me Myself"), ["jus testing"])
+
+    def test_instagram_skips_system_lines_and_malformed_entries(self):
+        thread = self._ig_thread(
+            {"sender_name": "Me Myself", "content": "Me Myself named the group Squad"},
+            {"sender_name": "Me Myself", "content": "Me Myself added Friend to the group."},
+            {"sender_name": "Me Myself", "content": "Me Myself changed the theme to Love."},
+            {"sender_name": "Me Myself", "content": "Unsent a message", "is_unsent": True},
+            {"sender_name": "Me Myself", "content": "Video chat ended", "call_duration": 30},
+            {"sender_name": None, "content": "no sender"},
+            {"sender_name": "Me Myself", "content": 5},
+            {"sender_name": "Me Myself", "content": "alr bet"},
+        )
+        thread["participants"].append("not a dict")
+        self.assertEqual(messages_from_instagram([thread], "Me Myself"), ["alr bet"])
+        self.assertEqual(instagram_owner([thread, self._ig_thread({"sender_name": "Other", "content": "y"})]), "Me Myself")
+
+    def test_instagram_bad_file_is_skipped_not_fatal(self):
+        thread = self._ig_thread({"sender_name": "Me Myself", "content": "still works"}, {"sender_name": "Friend", "content": "no"})
+        with tempfile.TemporaryDirectory() as tmp:
+            Path(tmp, "a").mkdir()
+            Path(tmp, "a", "message_1.json").write_text(json.dumps(thread), encoding="utf-8")
+            Path(tmp, "message_2.json").write_text("{not json", encoding="utf-8")
+            Path(tmp, "message_3.json").write_text("[1, 2]", encoding="utf-8")
+            self.assertEqual(read_messages(tmp, me="Me Myself"), ["still works"])
 
 
 class EvaluateTests(unittest.TestCase):

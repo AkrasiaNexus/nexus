@@ -24,7 +24,8 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("prompt", help="print the profile as a system prompt")
     sub.add_parser("hotwords", help="print hotwords for faster-whisper")
     lrn = sub.add_parser("learn", help="suggest new profile rows from a chat export")
-    lrn.add_argument("source", help="claude.ai conversations.json, a Claude Code .jsonl, or a folder of them")
+    lrn.add_argument("source", help="claude.ai conversations.json, a Claude Code .jsonl or folder, or an Instagram export folder")
+    lrn.add_argument("--me", help="your Instagram display name, if it can't be detected")
     lrn.add_argument("--min-keyness", type=float, default=3.0)
     e = sub.add_parser("eval", help="score profiles on a gold set")
     e.add_argument("--data", default=str(HERE / "data" / "eval.jsonl"))
@@ -45,7 +46,11 @@ def main(argv: list[str] | None = None) -> None:
         print(profile.whisper_hotwords())
     elif args.cmd == "learn":
         zipf, rank = wordfreq_backend()
-        print(suggest(read_messages(args.source), zipf, rank, profile.replacements.keys(), args.min_keyness).to_markdown())
+        try:
+            messages = read_messages(args.source, args.me)
+        except ValueError as e:
+            ap.error(str(e))
+        print(suggest(messages, zipf, rank, profile.replacements.keys(), args.min_keyness).to_markdown())
     elif args.cmd == "eval":
         here = HERE / "profiles"
         generic, me = load(here / "generic.md"), load(here / "me.md")

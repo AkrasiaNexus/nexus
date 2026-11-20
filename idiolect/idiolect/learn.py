@@ -3,6 +3,7 @@
 Sources:
   - claude.ai export: conversations.json
   - Claude Code transcripts: ~/.claude/projects/**/*.jsonl
+  - Instagram "Download your information" export (JSON), your messages only
 
 Method: rank your words by keyness (how much more often you use a word than
 English in general does, in log10 units). High-keyness words are slang, names
@@ -14,6 +15,8 @@ from __future__ import annotations
 
 import json
 import math
+import re
+import sys
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -61,8 +64,69 @@ def messages_from_claude_code(lines: Iterable[str]) -> list[str]:
     return out
 
 
-def read_messages(path: str | Path) -> list[str]:
+IG_NOISE = re.compile(r"^(reacted .* to your message|liked a message|unsent a message)$", re.I | re.S)
+# Group events Instagram logs as if the actor typed them: "<name> named the group X".
+IG_EVENT = r"^({who}) (named the group|added .* to the group|left the group|removed .* from the group|changed the |set .*nickname|sent an attachment\.)"
+
+
+def _fix_mojibake(text: str) -> str:
+    # Instagram exports UTF-8 bytes as one \u00XX escape per byte.
+    try:
+        return text.encode("latin-1").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return text
+
+
+def _str(value) -> str:
+    return _fix_mojibake(value) if isinstance(value, str) else ""
+
+
+def instagram_owner(threads: list[dict]) -> str:
+    """The export owner is the only participant in every thread."""
+    sets = [{_str(p.get("name")) for p in t.get("participants", []) if isinstance(p, dict)} - {""} for t in threads]
+    sets = [s for s in sets if s]
+    common = set.intersection(*sets) if len(sets) > 1 else set()
+    if len(common) != 1:
+        raise ValueError("can't tell which participant is you; pass --me 'Your Instagram name'")
+    return common.pop()
+
+
+def messages_from_instagram(threads: list[dict], me: str) -> list[str]:
+    """Only your own typed text: no friends' messages, reactions, shares, calls, unsends or group events.
+
+    shortcut: matches on display name, so a friend with your exact display name would be counted as you.
+    """
+    event = re.compile(IG_EVENT.format(who="you|" + re.escape(me)), re.I)
+    out = []
+    for thread in threads:
+        for msg in thread.get("messages", []):
+            text = _str(msg.get("content")).strip() if isinstance(msg, dict) else ""
+            if not text or _str(msg.get("sender_name")) != me or {"share", "is_unsent", "call_duration"} & msg.keys():
+                continue
+            if not IG_NOISE.match(text) and not event.match(text):
+                out.append(text)
+    return out
+
+
+def _read_threads(files: list[Path]) -> list[dict]:
+    threads = []
+    for f in files:
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as e:
+            print(f"skipping {f}: {e}", file=sys.stderr)
+            continue
+        if isinstance(data, dict):
+            threads.append(data)
+    return threads
+
+
+def read_messages(path: str | Path, me: str | None = None) -> list[str]:
     path = Path(path)
+    ig_files = sorted(path.rglob("message_*.json")) if path.is_dir() else [path] if path.name.startswith("message_") else []
+    if ig_files:
+        threads = _read_threads(ig_files)
+        return messages_from_instagram(threads, me or instagram_owner(threads))
     if path.is_dir():
         return [m for f in sorted(path.rglob("*.jsonl")) for m in messages_from_claude_code(f.read_text(encoding="utf-8").splitlines())]
     if path.suffix == ".jsonl":
