@@ -550,3 +550,25 @@
 {"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t213", "pred": "request"}
 {"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t214", "pred": "request"}
 {"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t215", "pred": "context"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t216", "pred": "context"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t217", "pred": "pitch"}
+{"model": "Qwen3.5-4B-Q4_K_M", "condition": "profile prompt", "id": "t218", "pred": "request"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "d01", "pred": "request"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "d02", "pred": "reject"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "d03", "pred": "pitch"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "d04", "pred": "pitch"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "d05", "pred": "context"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "d06", "pred": "pitch"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "t01", "pred": "context"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "t02", "pred": "request"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "t03", "pred": "context"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "t04", "pred": "pitch"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "t05", "pred": "context"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "t06", "pred": "context"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "t07", "pred": "context"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "t08", "pred": "context"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "t09", "pred": "request"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "t10", "pred": "request"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "t11", "pred": "request"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "t12", "pred": "context"}
+{"model": "Qwen3.5-9B-Q4_K_M", "condition": "raw", "id": "t13", "pred": "context"}
