@@ -61,7 +61,6 @@ Copied from upstream at a pinned commit, after a SkillSpector v2.12.0 static sca
 | git-guardrails-claude-code | mattpocock/skills @ abeeaf95660b | flagged, reviewed: false positive |
 | to-questionnaire | mattpocock/skills @ abeeaf95660b | flagged, reviewed: false positive |
 | algorithmic-art | anthropics/skills @ e4bb5d960d87 | flagged, reviewed: false positive |
-| discernment-nudge | anthropics/skills @ e4bb5d960d87 | flagged, reviewed: false positive |
 | mcp-builder | anthropics/skills @ e4bb5d960d87 | flagged, reviewed: false positive |
 | theme-factory | anthropics/skills @ e4bb5d960d87 | flagged, reviewed: false positive |
 | webapp-testing | anthropics/skills @ e4bb5d960d87 | flagged, reviewed: false positive |
