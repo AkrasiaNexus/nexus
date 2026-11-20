@@ -1,12 +1,6 @@
 """Rule-based intent for assistant messages, applied after normalization.
 
-Labels:
-  question  asks for information or status
-  reject    turns down what the assistant proposed
-  approve   a short go-ahead
-  context   corrects, constrains or adds requirements to the current work
-  pitch     describes the user's own idea
-  request   asks the assistant to do, build or find something
+Labels and their definitions: DESCRIPTIONS below.
 """
 from __future__ import annotations
 
@@ -16,7 +10,15 @@ from dataclasses import dataclass
 from .normalize import normalize
 from .profile import Profile
 
-LABELS = ("question", "reject", "approve", "context", "pitch", "request")
+DESCRIPTIONS = {
+    "question": "asks for information or status",
+    "reject": "turns down what the assistant proposed",
+    "approve": "a short go-ahead",
+    "context": "corrects, constrains or adds requirements to the current work",
+    "pitch": "describes the user's own idea",
+    "request": "asks the assistant to do, build or find something",
+}
+LABELS = tuple(DESCRIPTIONS)
 
 QUESTION_RE = re.compile(r"^(what|how|why|where|when|which|who|is there|are there|do you|does)\b|\bwhat about\b")
 REJECT_RE = re.compile(r"^(nah|no|nope)\b|\b(these|those|that|all these)( ideas?)? (suck|sucks|are bad)\b")

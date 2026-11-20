@@ -8,6 +8,7 @@ and perfect normalization a system closes. 0 = no better than doing nothing,
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -49,6 +50,13 @@ def word_accuracy(examples: list[Example], profile: Profile) -> float:
 
 def err(system_acc: float, baseline_acc: float) -> float:
     return (system_acc - baseline_acc) / (1 - baseline_acc) if baseline_acc < 1 else 0.0
+
+
+def mcnemar_p(wins: int, losses: int) -> float:
+    """Exact two-sided McNemar test on the discordant pairs: is B fixing more than it breaks by chance?"""
+    n = wins + losses
+    tail = sum(math.comb(n, k) for k in range(min(wins, losses) + 1)) / 2 ** n
+    return min(1.0, 2 * tail)
 
 
 def intent_accuracy(examples: list[Example], profile: Profile) -> float:

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from idiolect import classify, load, normalize, parse, tokenize
 from idiolect.normalize import normalize_tokens
-from idiolect.evaluate import err, load_examples, word_accuracy
+from idiolect.evaluate import err, load_examples, mcnemar_p, word_accuracy
 from idiolect.learn import (instagram_owner, messages_from_claude_code, messages_from_claude_export,
                             messages_from_instagram, read_messages, suggest)
 from idiolect.profile import Profile
@@ -284,6 +284,12 @@ class StyleTests(unittest.TestCase):
 
 
 class EvaluateTests(unittest.TestCase):
+    def test_mcnemar_exact_two_sided(self):
+        self.assertEqual(mcnemar_p(0, 0), 1.0)
+        self.assertAlmostEqual(mcnemar_p(6, 0), 2 / 64)  # 6 wins, 0 losses
+        self.assertEqual(mcnemar_p(3, 3), 1.0)
+        self.assertAlmostEqual(mcnemar_p(1, 5), mcnemar_p(5, 1))
+
     def test_err(self):
         self.assertEqual(err(0.9, 0.9), 0.0)
         self.assertEqual(err(1.0, 0.8), 1.0)
