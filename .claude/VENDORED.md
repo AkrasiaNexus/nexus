@@ -136,3 +136,11 @@ Copied from upstream at a pinned commit, after a SkillSpector v2.12.0 static sca
 | agent: silent-failure-hunter | anthropics/claude-plugins-official (pr-review-toolkit) @ 1b9a8c736db2 | clean |
 | agent: type-design-analyzer | anthropics/claude-plugins-official (pr-review-toolkit) @ 1b9a8c736db2 | clean |
 | command: /review-pr | anthropics/claude-plugins-official (pr-review-toolkit) @ 1b9a8c736db2 | clean |
+| taste-skill | Leonxlnx/taste-skill @ f6b76575f949 | flagged, reviewed: false positive |
+| banner-design | nextlevelbuilder/ui-ux-pro-max-skill @ 2de1134dc4d1 | flagged, reviewed: false positive |
+| brand | nextlevelbuilder/ui-ux-pro-max-skill @ 2de1134dc4d1 | flagged, reviewed: false positive |
+| design | nextlevelbuilder/ui-ux-pro-max-skill @ 2de1134dc4d1 | flagged, reviewed: false positive; logo/icon scripts call api.muapi.ai / api.uberllm.dev only with your key |
+| design-system | nextlevelbuilder/ui-ux-pro-max-skill @ 2de1134dc4d1 | flagged, reviewed: false positive |
+| slides | nextlevelbuilder/ui-ux-pro-max-skill @ 2de1134dc4d1 | flagged, reviewed: false positive |
+| ui-styling | nextlevelbuilder/ui-ux-pro-max-skill @ 2de1134dc4d1 | flagged, reviewed: false positive |
+| ui-ux-pro-max | nextlevelbuilder/ui-ux-pro-max-skill @ 2de1134dc4d1 | flagged, reviewed: false positive |
