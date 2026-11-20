@@ -80,9 +80,9 @@ Rules:
 - **Model routing** already handled by router.dispatch (ollama + gemini).
 
 ## 10. Graphify
-- For codebase questions: `graphify query` / `path` / `explain` first.
-- Use `graphify-out/wiki/index.md` for navigation.
-- `graphify update .` after code changes.
+- When `graphify-out/graph.json` exists, run `graphify query "<question>"` before the first grep or source read for a codebase question, and put this rule in subagent prompts that explore code. `graphify path "<A>" "<B>"` for relationships, `graphify explain "<concept>"` for one concept, `graphify section "<heading>"` for Markdown sections.
+- Use `graphify-out/wiki/index.md` for navigation; `GRAPH_REPORT.md` only for broad architecture review.
+- `graphify update .` after code changes (AST only, no API cost). A large `graph.json` diff is expected; don't flag it.
 
 ---
 
