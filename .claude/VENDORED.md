@@ -1,0 +1,92 @@
+# Vendored skills
+
+Copied from upstream at a pinned commit, after a SkillSpector v2.12.0 static scan (`--no-llm`). Skills flagged by the scan were read by hand; every flag below was a false positive (defensive text, docs, local scripts). Each folder keeps its upstream LICENSE.
+
+| Skill | Upstream @ commit | Scan |
+|---|---|---|
+| caveman | JuliusBrussee/caveman @ a192894723a8 | clean |
+| planning-with-files | OthmanAdi/planning-with-files @ adcd0b0a0a63 | flagged, reviewed: false positive |
+| accessibility-engineering | addyosmani/agent-skills @ 8c99fa36d900 | clean |
+| api-and-interface-design | addyosmani/agent-skills @ 8c99fa36d900 | clean |
+| code-review-and-quality | addyosmani/agent-skills @ 8c99fa36d900 | clean |
+| debugging-and-error-recovery | addyosmani/agent-skills @ 8c99fa36d900 | clean |
+| deprecation-and-migration | addyosmani/agent-skills @ 8c99fa36d900 | clean |
+| documentation-and-adrs | addyosmani/agent-skills @ 8c99fa36d900 | clean |
+| frontend-ui-engineering | addyosmani/agent-skills @ 8c99fa36d900 | clean |
+| idea-refine | addyosmani/agent-skills @ 8c99fa36d900 | clean |
+| incremental-implementation | addyosmani/agent-skills @ 8c99fa36d900 | clean |
+| interview-me | addyosmani/agent-skills @ 8c99fa36d900 | clean |
+| observability-and-instrumentation | addyosmani/agent-skills @ 8c99fa36d900 | clean |
+| performance-optimization | addyosmani/agent-skills @ 8c99fa36d900 | clean |
+| planning-and-task-breakdown | addyosmani/agent-skills @ 8c99fa36d900 | clean |
+| using-agent-skills | addyosmani/agent-skills @ 8c99fa36d900 | clean |
+| ask-matt | mattpocock/skills @ abeeaf95660b | clean |
+| mp-code-review | mattpocock/skills @ abeeaf95660b | clean |
+| codebase-design | mattpocock/skills @ abeeaf95660b | clean |
+| domain-modeling | mattpocock/skills @ abeeaf95660b | clean |
+| grill-with-docs | mattpocock/skills @ abeeaf95660b | clean |
+| implement | mattpocock/skills @ abeeaf95660b | clean |
+| implement-spec | mattpocock/skills @ abeeaf95660b | clean |
+| improve-codebase-architecture | mattpocock/skills @ abeeaf95660b | clean |
+| pr | mattpocock/skills @ abeeaf95660b | clean |
+| prototype | mattpocock/skills @ abeeaf95660b | clean |
+| research | mattpocock/skills @ abeeaf95660b | clean |
+| retro | mattpocock/skills @ abeeaf95660b | clean |
+| setup-matt-pocock-skills | mattpocock/skills @ abeeaf95660b | clean |
+| tdd | mattpocock/skills @ abeeaf95660b | clean |
+| to-spec | mattpocock/skills @ abeeaf95660b | clean |
+| triage | mattpocock/skills @ abeeaf95660b | clean |
+| wayfinder | mattpocock/skills @ abeeaf95660b | clean |
+| migrate-to-shoehorn | mattpocock/skills @ abeeaf95660b | clean |
+| scaffold-exercises | mattpocock/skills @ abeeaf95660b | clean |
+| setup-pre-commit | mattpocock/skills @ abeeaf95660b | clean |
+| grill-me | mattpocock/skills @ abeeaf95660b | clean |
+| grilling | mattpocock/skills @ abeeaf95660b | clean |
+| handoff | mattpocock/skills @ abeeaf95660b | clean |
+| teach | mattpocock/skills @ abeeaf95660b | clean |
+| wait-what | mattpocock/skills @ abeeaf95660b | clean |
+| writing-for-agents | mattpocock/skills @ abeeaf95660b | clean |
+| academy-guide | anthropics/skills @ e4bb5d960d87 | clean |
+| brand-guidelines | anthropics/skills @ e4bb5d960d87 | clean |
+| canvas-design | anthropics/skills @ e4bb5d960d87 | clean |
+| doc-coauthoring | anthropics/skills @ e4bb5d960d87 | clean |
+| internal-comms | anthropics/skills @ e4bb5d960d87 | clean |
+| slack-gif-creator | anthropics/skills @ e4bb5d960d87 | clean |
+| web-artifacts-builder | anthropics/skills @ e4bb5d960d87 | clean |
+| dispatching-parallel-agents | obra/superpowers @ 22f0b463e7a5 | clean |
+| finishing-a-development-branch | obra/superpowers @ 22f0b463e7a5 | clean |
+| receiving-code-review | obra/superpowers @ 22f0b463e7a5 | clean |
+| requesting-code-review | obra/superpowers @ 22f0b463e7a5 | clean |
+| test-driven-development | obra/superpowers @ 22f0b463e7a5 | clean |
+| using-git-worktrees | obra/superpowers @ 22f0b463e7a5 | clean |
+| verification-before-completion | obra/superpowers @ 22f0b463e7a5 | clean |
+| writing-plans | obra/superpowers @ 22f0b463e7a5 | clean |
+| browser-testing-with-devtools | addyosmani/agent-skills @ 8c99fa36d900 | flagged, reviewed: false positive |
+| ci-cd-and-automation | addyosmani/agent-skills @ 8c99fa36d900 | flagged, reviewed: false positive |
+| code-simplification | addyosmani/agent-skills @ 8c99fa36d900 | flagged, reviewed: false positive |
+| constraint-driven-development | addyosmani/agent-skills @ 8c99fa36d900 | flagged, reviewed: false positive |
+| context-engineering | addyosmani/agent-skills @ 8c99fa36d900 | flagged, reviewed: false positive |
+| doubt-driven-development | addyosmani/agent-skills @ 8c99fa36d900 | flagged, reviewed: false positive |
+| git-workflow-and-versioning | addyosmani/agent-skills @ 8c99fa36d900 | flagged, reviewed: false positive |
+| security-and-hardening | addyosmani/agent-skills @ 8c99fa36d900 | flagged, reviewed: false positive |
+| shipping-and-launch | addyosmani/agent-skills @ 8c99fa36d900 | flagged, reviewed: false positive |
+| source-driven-development | addyosmani/agent-skills @ 8c99fa36d900 | flagged, reviewed: false positive |
+| spec-driven-development | addyosmani/agent-skills @ 8c99fa36d900 | flagged, reviewed: false positive |
+| diagnosing-bugs | mattpocock/skills @ abeeaf95660b | flagged, reviewed: false positive |
+| to-tickets | mattpocock/skills @ abeeaf95660b | flagged, reviewed: false positive |
+| wizard | mattpocock/skills @ abeeaf95660b | flagged, reviewed: false positive |
+| git-guardrails-claude-code | mattpocock/skills @ abeeaf95660b | flagged, reviewed: false positive |
+| to-questionnaire | mattpocock/skills @ abeeaf95660b | flagged, reviewed: false positive |
+| algorithmic-art | anthropics/skills @ e4bb5d960d87 | flagged, reviewed: false positive |
+| discernment-nudge | anthropics/skills @ e4bb5d960d87 | flagged, reviewed: false positive |
+| frontend-design | anthropics/skills @ e4bb5d960d87 | flagged, reviewed: false positive |
+| mcp-builder | anthropics/skills @ e4bb5d960d87 | flagged, reviewed: false positive |
+| theme-factory | anthropics/skills @ e4bb5d960d87 | flagged, reviewed: false positive |
+| webapp-testing | anthropics/skills @ e4bb5d960d87 | flagged, reviewed: false positive |
+| brainstorming | obra/superpowers @ 22f0b463e7a5 | flagged, reviewed: false positive |
+| diagnosing-superpowers | obra/superpowers @ 22f0b463e7a5 | flagged, reviewed: false positive |
+| executing-plans | obra/superpowers @ 22f0b463e7a5 | flagged, reviewed: false positive |
+| subagent-driven-development | obra/superpowers @ 22f0b463e7a5 | flagged, reviewed: false positive |
+| systematic-debugging | obra/superpowers @ 22f0b463e7a5 | flagged, reviewed: false positive |
+| using-superpowers | obra/superpowers @ 22f0b463e7a5 | flagged, reviewed: false positive |
+| writing-skills | obra/superpowers @ 22f0b463e7a5 | flagged, reviewed: false positive |
