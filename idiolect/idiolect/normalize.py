@@ -8,7 +8,7 @@ from __future__ import annotations
 import unicodedata
 from dataclasses import dataclass
 
-from .profile import Profile
+from .profile import END, Profile
 
 
 def _is_word(ch: str) -> bool:
@@ -52,15 +52,39 @@ class Normalized:
     changes: list[tuple[str, str]]
 
 
+def _neighbour(tokens: list[str], i: int, step: int, profile: Profile) -> set[str]:
+    """The nearest word token in one direction, as written and as normalized; punctuation is skipped."""
+    j = i + step
+    while 0 <= j < len(tokens) and not _is_word(tokens[j][0]):
+        j += step
+    if not 0 <= j < len(tokens):
+        return {END}
+    return {tokens[j], profile.replacements.get(tokens[j], tokens[j])}
+
+
+def _replace(tokens: list[str], i: int, profile: Profile) -> str:
+    tok = tokens[i]
+    if tok in profile.replacements:
+        return profile.replacements[tok]
+    rule = profile.context_rules.get(tok)
+    if rule:
+        prev, nxt = _neighbour(tokens, i, -1, profile), _neighbour(tokens, i, 1, profile)
+        if any(rule.applies(p, n) for p in prev for n in nxt):
+            return rule.standard
+    return tok
+
+
 def normalize_tokens(tokens: list[str], profile: Profile) -> list[str]:
-    return [profile.replacements.get(t, t) for t in tokens]
+    return [_replace(tokens, i, profile) for i in range(len(tokens))]
 
 
 def normalize(text: str, profile: Profile) -> Normalized:
+    spans = token_spans(text)
+    raw = [tok for tok, _, _ in spans]
     pieces, tokens, changes = [], [], []
     last = 0
-    for tok, start, end in token_spans(text):
-        new = profile.replacements.get(tok, tok)
+    for i, (tok, start, end) in enumerate(spans):
+        new = _replace(raw, i, profile)
         tokens.append(new)
         if new != tok:
             pieces.append(text[last:start])

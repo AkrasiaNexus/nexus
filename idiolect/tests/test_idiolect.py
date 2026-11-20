@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from idiolect import classify, load, normalize, parse, tokenize
+from idiolect.normalize import normalize_tokens
 from idiolect.evaluate import err, load_examples, word_accuracy
 from idiolect.learn import (instagram_owner, messages_from_claude_code, messages_from_claude_export,
                             messages_from_instagram, read_messages, suggest)
@@ -87,6 +88,55 @@ class NormalizeTests(unittest.TestCase):
 
     def test_arabic_words_are_single_tokens(self):
         self.assertEqual(tokenize("قال مرحبا!"), ["قال", "مرحبا", "!"])
+
+
+CONTEXT = """## Context rules
+| I write | Standard | Only before | Not before | Not after |
+|---|---|---|---|---|
+| its | it's | (end), like, not, fine | | |
+| ill | i'll | | effects, (end) | feel, is, its |
+"""
+
+
+class ContextRuleTests(unittest.TestCase):
+    def setUp(self):
+        self.p = parse(CONTEXT)
+
+    def norm(self, text, profile=None):
+        return normalize(text, profile or self.p).text
+
+    def test_parses_context_rules(self):
+        rule = self.p.context_rules["its"]
+        self.assertEqual((rule.standard, rule.only_before), ("it's", frozenset({"(end)", "like", "not", "fine"})))
+        self.assertEqual(self.p.context_rules["ill"].not_after, frozenset({"feel", "is", "its"}))
+
+    def test_its_becomes_its_contraction_only_before_listed_words(self):
+        self.assertEqual(self.norm("its like a buddy"), "it's like a buddy")
+        self.assertEqual(self.norm("okay its fine"), "okay it's fine")
+        self.assertEqual(self.norm("yea its"), "yea it's")
+        self.assertEqual(self.norm("the app and its own data"), "the app and its own data")
+
+    def test_ill_stays_an_adjective_after_feel_or_before_effects(self):
+        self.assertEqual(self.norm("okay ill test it"), "okay i'll test it")
+        self.assertEqual(self.norm("i feel ill today"), "i feel ill today")
+        self.assertEqual(self.norm("no ill effects"), "no ill effects")
+        self.assertEqual(self.norm("he is ill"), "he is ill")
+
+    def test_naming_the_words_changes_nothing(self):
+        self.assertEqual(self.norm("go do that ai test and its ill fix"), "go do that ai test and its ill fix")
+
+    def test_punctuation_is_skipped_when_finding_neighbours(self):
+        self.assertEqual(self.norm("its, like, whatever"), "it's, like, whatever")
+        self.assertEqual(self.norm("yea its."), "yea it's.")
+
+    def test_plain_replacement_beats_context_rule_and_later_profile_wins(self):
+        plain = parse("## Typos\n| I write | Correct |\n|---|---|\n| its | it's |\n")
+        self.assertEqual(self.norm("its own", self.p.merged(plain)), "it's own")
+        override = parse("## Context rules\n| a | b | c | d | e |\n|---|---|---|---|---|\n| its | it's | own | | |\n")
+        self.assertEqual(self.norm("its own", self.p.merged(override)), "it's own")
+
+    def test_tokens_api_matches_text_api(self):
+        self.assertEqual(normalize_tokens(tokenize("okay ill go, its fine"), self.p), ["okay", "i'll", "go", ",", "it's", "fine"])
 
 
 class IntentTests(unittest.TestCase):

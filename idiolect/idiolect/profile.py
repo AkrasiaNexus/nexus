@@ -9,6 +9,21 @@ ROW_RE = re.compile(r"^\|(.+)\|\s*$")
 SEPARATOR_RE = re.compile(r"^\|[\s:|-]+\|\s*$")
 
 
+END = "(end)"
+
+
+@dataclass(frozen=True)
+class ContextRule:
+    """Replace `written` with `standard` only when the neighbouring words allow it. Empty only_before = any."""
+    standard: str
+    only_before: frozenset[str] = frozenset()
+    not_before: frozenset[str] = frozenset()
+    not_after: frozenset[str] = frozenset()
+
+    def applies(self, prev: str, nxt: str) -> bool:
+        return (not self.only_before or nxt in self.only_before) and nxt not in self.not_before and prev not in self.not_after
+
+
 @dataclass(frozen=True)
 class Profile:
     text: str = ""
@@ -16,6 +31,7 @@ class Profile:
     meanings: dict[str, str] = field(default_factory=dict)
     cues: tuple[tuple[str, str], ...] = ()
     hotwords: tuple[str, ...] = ()
+    context_rules: dict[str, ContextRule] = field(default_factory=dict)
 
     def merged(self, other: "Profile") -> "Profile":
         """Combine two profiles; entries in `other` win."""
@@ -25,6 +41,7 @@ class Profile:
             meanings={**self.meanings, **other.meanings},
             cues=other.cues + tuple(c for c in self.cues if c not in other.cues),
             hotwords=tuple(dict.fromkeys(self.hotwords + other.hotwords)),
+            context_rules={**self.context_rules, **other.context_rules},
         )
 
     def prompt(self) -> str:
@@ -53,6 +70,18 @@ def _rows(lines: list[str]) -> list[list[str]]:
     return [[cell.strip() for cell in line.strip().strip("|").split("|")] for line in body]
 
 
+def _words(cell: str) -> frozenset[str]:
+    return frozenset(w.strip().lower() for w in cell.split(",") if w.strip())
+
+
+def _context_rules(lines: list[str]) -> dict[str, ContextRule]:
+    rules = {}
+    for row in _rows(lines):
+        written, standard, *conds = row + ["", "", ""]
+        rules[written.lower()] = ContextRule(standard.lower(), *(_words(c) for c in conds[:3]))
+    return rules
+
+
 def parse(text: str) -> Profile:
     sections = _sections(text)
     replacements: dict[str, str] = {}
@@ -66,7 +95,8 @@ def parse(text: str) -> Profile:
     cues = tuple((phrase.lower(), intent.lower()) for phrase, intent, *_ in _rows(sections.get("intent cues", [])))
     hot_lines = " ".join(line.strip("-* ").strip() for line in sections.get("hotwords", []) if line.strip())
     hotwords = tuple(w.strip() for w in hot_lines.split(",") if w.strip())
-    return Profile(text=text.strip(), replacements=replacements, meanings=meanings, cues=cues, hotwords=hotwords)
+    return Profile(text=text.strip(), replacements=replacements, meanings=meanings, cues=cues, hotwords=hotwords,
+                   context_rules=_context_rules(sections.get("context rules", [])))
 
 
 def load(*paths: str | Path) -> Profile:

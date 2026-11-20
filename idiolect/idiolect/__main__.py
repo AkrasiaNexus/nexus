@@ -12,7 +12,7 @@ from .style import style_report
 
 HERE = Path(__file__).resolve().parent.parent
 PRIVATE_MIN_COUNT = 3  # below this, a word is likely a name or a one-off
-DEFAULT_PROFILES = [str(HERE / "profiles" / "generic.md"), str(HERE / "profiles" / "me.md")]
+DEFAULT_PROFILES = [str(HERE / "profiles" / name) for name in ("generic.md", "context.md", "me.md")]
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -61,19 +61,20 @@ def main(argv: list[str] | None = None) -> None:
             print(style_report(messages, profile))
     elif args.cmd == "eval":
         here = HERE / "profiles"
-        generic, me = load(here / "generic.md"), load(here / "me.md")
+        generic, context, me = load(here / "generic.md"), load(here / "context.md"), load(here / "me.md")
         examples = load_examples(args.data)
         print(report(examples, {
             "leave as is": load(),
             "generic slang list": generic,
             "personal v0": me,
             "generic + personal v0": generic.merged(me),
+            "generic + context rules + personal v0": generic.merged(context).merged(me),
         }))
         try:
             zipf, rank = wordfreq_backend()
         except SystemExit:
             return
-        print(learner_report(examples, generic.merged(me), zipf, rank))
+        print(learner_report(examples, generic.merged(context).merged(me), zipf, rank))
 
 
 if __name__ == "__main__":

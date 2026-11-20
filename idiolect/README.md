@@ -24,22 +24,32 @@ $ python -m idiolect intent "nah these suck"
 
 Scored the way the **MultiLexNorm** shared task (WNUT 2021) scores lexical normalization: word accuracy against hand-labelled gold, and **ERR** (error reduction rate), the share of the gap between "leave the text as is" and perfect that a system closes.
 
-The gold set is 19 real messages from one writer ([`data/eval.jsonl`](data/eval.jsonl)), labelled token by token, plus an intent label per message:
+The gold set is 37 real messages from one writer ([`data/eval.jsonl`](data/eval.jsonl)), labelled token by token, plus an intent label per message:
 - **dev** (6 messages): written *before* the personal profile existed. The profile was built from these.
 - **test** (13 messages): written *after* the profile was committed (`cc9f7dc`), so the profile never saw them. Git history proves the order.
+- **test2** (18 messages): written ten days later, and labelled and committed (`e34a8c4`) *before* the context rules existed.
 
-| Profile | dev acc | dev ERR | dev intent | test acc | test ERR | test intent |
+| Profile | dev acc | dev ERR | test acc | test ERR | test2 acc | test2 ERR |
 |---|---|---|---|---|---|---|
-| leave as is | 88.3% | +0.00 | 83% | 85.1% | +0.00 | 85% |
-| generic slang list (46 entries) | 93.5% | +0.44 | 100% | 93.8% | +0.59 | 100% |
-| personal v0 (19 entries) | 97.9% | +0.82 | 83% | 94.5% | +0.63 | 100% |
-| **generic + personal v0** | **99.0%** | **+0.91** | 83% | **95.7%** | **+0.71** | 100% |
+| leave as is | 88.3% | +0.00 | 85.1% | +0.00 | 86.9% | +0.00 |
+| generic slang list (46 entries) | 93.5% | +0.44 | 93.8% | +0.59 | 90.8% | +0.30 |
+| personal v0 (19 entries) | 97.9% | +0.82 | 94.5% | +0.63 | 91.2% | +0.33 |
+| generic + personal v0 | 99.0% | +0.91 | 95.7% | +0.71 | 92.4% | +0.42 |
+| **generic + context rules + personal v0** | **99.3%** | **+0.94** | **97.2%** | **+0.81** | **93.2%** | **+0.48** |
 
 What it shows:
-- **A 19-entry personal profile beats a 46-entry generic list on unseen messages** (ERR 0.63 vs 0.59), and stacking the two is best (0.71).
-- **Ambiguous forms need the person.** This writer always means "it's" by *its* and "I'll" by *ill*. A generic tool can't safely make that change, but a personal profile can.
-- **A personal rule can be wrong.** v0 said "i wanna build" means *request*, which mislabels a dev message that is really pitching an idea. The table shows it as the 83% dev intent score. Reporting that beats tuning it away.
-- Intent accuracy is optimistic: the intent rules were written with all 19 messages visible. Normalization isn't affected, because the profile predates the test split.
+- **A 19-entry personal profile beats a 46-entry generic list on unseen messages** (test ERR 0.63 vs 0.59), and stacking the two is better again.
+- **Context rules fix words that are also real English words.** "its" and "ill" were the biggest error left: this writer means "it's" and "I'll", but a plain find-and-replace would break "its own" and "feel ill". [`profiles/context.md`](profiles/context.md) changes them only when the neighbouring word makes it clear. Across all 37 messages it fixed 10 tokens and broke none, and it left "do the **its ill** fix" alone, where the words are being named. The one miss is "its aigh", because "aigh" (alright) isn't in any profile yet.
+- **The profile ages.** On test2, ten days on, ERR drops to 0.48. Most of the remaining errors are new slang ("alr", "ion", "idw", "wtv") and new typos. That is the case for re-running `learn` regularly.
+- Caveats: the context word lists come from English grammar, but the author had seen dev and test while writing them. test2 was labelled before the rules were written, though the same author had read those messages.
+
+### Intent
+
+| Intent | dev | test | test2 |
+|---|---|---|---|
+| hand-written rules, generic + personal | 83% | 100% | **39%** |
+
+The rule-based intent classifier is **overfit**. Its rules were written with dev and test visible, and on messages it never saw it gets only 7 of 18. Commands like "scrap", "trim" and "remove" match no request rule. The rules are left untuned on purpose, so test2 stays clean. See [Does it help a small model?](#does-it-help-a-small-model) for whether a local LLM does better, with and without Idiolect.
 
 Reproduce: `python -m idiolect eval`
 
@@ -78,9 +88,16 @@ On the held-out test messages, the learner surfaced **8 of the 14** word types t
 |---|---|
 | can we build | request |
 
+## Context rules
+| I write | Standard | Only before | Not before | Not after |
+|---|---|---|---|---|
+| ill | i'll | | effects, (end) | feel, is, very |
+
 ## Hotwords
 Jarvis, Nexus, forge_change
 ```
+
+Context rules apply only when the nearest word (punctuation skipped, `(end)` = none) passes all three columns; an empty column allows anything. A plain Slang or Typos entry for the same word wins.
 
 Prose sections such as "How to read me" are ignored by the parser and kept in the prompt. Load several profiles and later ones win: `load("profiles/generic.md", "profiles/me.md")`.
 
@@ -89,7 +106,7 @@ Prose sections such as "How to read me" are ignored by the parser and kept in th
 ```python
 from idiolect import load, normalize, classify
 
-me = load("profiles/generic.md", "profiles/me.md")
+me = load("profiles/generic.md", "profiles/context.md", "profiles/me.md")
 system_prompt = me.prompt()                  # any model
 clean = normalize(user_text, me).text        # before a small local model
 route = classify(user_text, me).label        # question / reject / approve / context / pitch / request
@@ -111,14 +128,14 @@ Voice: pass `me.whisper_hotwords()` as faster-whisper's `hotwords` (or `initial_
 python -m unittest discover -s tests
 ```
 
-28 tests: profile parsing and merging, Unicode-safe tokenization (Arabic, accents, emoji), splice-in-place output, multi-word expansion, intent labels and personal-cue precedence, all three chat export formats (claude.ai, Claude Code, Instagram), the learner's typo and slang logic, private mode leaking no sentences, ERR maths, gold-alignment validation, and a regression check that the headline result still holds.
+35 tests: profile parsing and merging, context rules (including naming a word without changing it), Unicode-safe tokenization (Arabic, accents, emoji), splice-in-place output, multi-word expansion, intent labels and personal-cue precedence, all three chat export formats (claude.ai, Claude Code, Instagram), the learner's typo and slang logic, private mode leaking no sentences, ERR maths, gold-alignment validation, and a regression check that the headline result still holds.
 
 ## Limitations and next steps
 
-- [ ] Context-aware handling of real-word forms ("its", "ill") with a small sequence model or an LLM pass
+- [x] Context-aware handling of real-word forms ("its", "ill"): rule table in `profiles/context.md`
 - [ ] Bigger gold set from more writers, to report variance across people
 - [ ] Measure downstream gains: intent accuracy of a small local model with and without the normalization pass
-- [ ] Plug into Nudge's capture box
+- [x] Plug into Nudge's capture box (JavaScript port; context rules not ported yet)
 
 ## License
 
