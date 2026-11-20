@@ -184,12 +184,6 @@ Strong success criteria = loop independently. Weak criteria = stop and ask.
 
 ---
 
-## Project context: "Verdict" (financial-literacy club product)
-Side project explored in sessions — a browser extension that audits online checkouts: catches dark patterns (fake timers, drip pricing, pre-ticked add-ons, free-trial traps), shows true cost in work-hours, checks if a "deal" is real, and teaches as you go.
-- Brand: ink `#0B1220` + green "honest" signal `#19E39A` + red "flagged" `#FF5A5F`; fonts Sora / Manrope / JetBrains Mono.
-- Live prototype artifact: https://claude.ai/artifact/SreKDLXgPY81yz7Q7bYefY
-- Logo: still being chosen (not a checkmark — user finds those basic).
-
 ## Project context: "Lore" (sidequest app, Abu Dhabi first)
 Turns friend hangouts into quests: niche cheap spot + real bus route + games, inside a 4–5pm to 10:30pm window. Start Abu Dhabi, expand later.
 - Spots + routes live in `lore/prototype.html` (SPOTS array). User loves them — never delete spots, only add.
@@ -200,7 +194,7 @@ Turns friend hangouts into quests: niche cheap spot + real bus route + games, in
 - Lore ecosystem: Majlis (`majlis/`, RAPTOR router for fairest group meeting point over GTFS) and Campfire (`campfire/`, CRDT sync behind Lore's shared Lore Book). Campfire is inlined into lore/prototype.html between `/* campfire:start */` markers by `node campfire/tools/bundle.js lore/prototype.html` — never hand-edit that block.
 
 ## Portfolio build mode (standing order)
-- Goal: projects that impress recruiters/college admissions. Each project folder (lore/, nudge/, idiolect/, verdict/, ...) is split into its own repo later — keep each self-contained with README + LICENSE (MIT, "AkrasiaNexus") + tests.
+- Goal: projects that impress recruiters/college admissions. Each project folder (lore/, nudge/, idiolect/, majlis/, campfire/, ...) is split into its own repo later — keep each self-contained with README + LICENSE (MIT, "AkrasiaNexus") + tests.
 - Per project: research first (does it exist? what's the gap?) → plan → build fully → test → commit. No empty scaffolds; no todo/weather/clone apps.
 - New project picks: credibility that holds up for 1–2 years (fundamentals, real problems, verifiable results), not trend-chasing; creativity is key.
 - When asked to build "until the limit", keep going without stopping to check in.
