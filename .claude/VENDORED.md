@@ -144,3 +144,4 @@ Copied from upstream at a pinned commit, after a SkillSpector v2.12.0 static sca
 | slides | nextlevelbuilder/ui-ux-pro-max-skill @ 2de1134dc4d1 | flagged, reviewed: false positive |
 | ui-styling | nextlevelbuilder/ui-ux-pro-max-skill @ 2de1134dc4d1 | flagged, reviewed: false positive |
 | ui-ux-pro-max | nextlevelbuilder/ui-ux-pro-max-skill @ 2de1134dc4d1 | flagged, reviewed: false positive |
+| claude-hud (status line, .claude/hud) | jarrodwatts/claude-hud @ bf23142cd2e3 | flagged, reviewed: credential-path guards and maintainer probes only; no network |
