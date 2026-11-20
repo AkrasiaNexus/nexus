@@ -129,3 +129,10 @@ Copied from upstream at a pinned commit, after a SkillSpector v2.12.0 static sca
 | wcag-audit-patterns | wshobson/agents (accessibility-compliance) @ 42203085cfc5 | false positives only |
 | agent: ui-visual-validator | wshobson/agents (accessibility-compliance) @ 42203085cfc5 | false positives only |
 | command: /accessibility-audit | wshobson/agents (accessibility-compliance) @ 42203085cfc5 | false positives only |
+| agent: prt-code-reviewer | anthropics/claude-plugins-official (pr-review-toolkit) @ 1b9a8c736db2 | clean |
+| agent: prt-code-simplifier | anthropics/claude-plugins-official (pr-review-toolkit) @ 1b9a8c736db2 | clean |
+| agent: comment-analyzer | anthropics/claude-plugins-official (pr-review-toolkit) @ 1b9a8c736db2 | clean |
+| agent: pr-test-analyzer | anthropics/claude-plugins-official (pr-review-toolkit) @ 1b9a8c736db2 | clean |
+| agent: silent-failure-hunter | anthropics/claude-plugins-official (pr-review-toolkit) @ 1b9a8c736db2 | clean |
+| agent: type-design-analyzer | anthropics/claude-plugins-official (pr-review-toolkit) @ 1b9a8c736db2 | clean |
+| command: /review-pr | anthropics/claude-plugins-official (pr-review-toolkit) @ 1b9a8c736db2 | clean |
