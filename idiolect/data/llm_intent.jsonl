@@ -331,3 +331,11 @@
 {"model": "qwen2.5-3b-instruct-q4_k_m", "condition": "profile prompt", "id": "t216", "pred": "context"}
 {"model": "qwen2.5-3b-instruct-q4_k_m", "condition": "profile prompt", "id": "t217", "pred": "request"}
 {"model": "qwen2.5-3b-instruct-q4_k_m", "condition": "profile prompt", "id": "t218", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002", "condition": "raw", "id": "d01", "pred": "pitch"}
+{"model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002", "condition": "raw", "id": "d02", "pred": "reject"}
+{"model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002", "condition": "raw", "id": "d03", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002", "condition": "raw", "id": "d04", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002", "condition": "raw", "id": "d05", "pred": "request"}
+{"model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002", "condition": "raw", "id": "d06", "pred": "pitch"}
+{"model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002", "condition": "raw", "id": "t01", "pred": "context"}
+{"model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002", "condition": "raw", "id": "t02", "pred": "context"}
