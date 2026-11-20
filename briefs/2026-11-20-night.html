@@ -1,0 +1,131 @@
+<title>Night Shift Brief, 20 Nov</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: a single reading column; a dawn-coloured summary up top, then one section per project, then what needs you. */
+:root {
+  --bg: #f6f3ee; --surface: #ffffff; --ink: #1b1630; --muted: #645d78; --line: #e2dcd2;
+  --dawn: #ff7a45; --dawn-2: #ffb347; --violet: #5b3df5; --ok: #1f8a5b; --warn: #b45309;
+  --display: "Bricolage Grotesque", "DM Sans", system-ui, sans-serif;
+  --body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #120f1d; --surface: #1c1830; --ink: #f1edfa; --muted: #a9a1c2; --line: #2e2848;
+  --dawn: #ff8a5c; --dawn-2: #ffc46b; --violet: #9d8bff; --ok: #4fd39a; --warn: #f5a524; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #120f1d; --surface: #1c1830; --ink: #f1edfa; --muted: #a9a1c2; --line: #2e2848;
+  --dawn: #ff8a5c; --dawn-2: #ffc46b; --violet: #9d8bff; --ok: #4fd39a; --warn: #f5a524; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.6 var(--body); }
+.wrap { max-width: 760px; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 28px; }
+.hero { border-radius: 24px; padding: 24px; color: #1b1630; background: linear-gradient(135deg, var(--dawn-2), var(--dawn)); display: flex; flex-direction: column; gap: 10px; }
+.hero .k { font: 500 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; opacity: .75; }
+.hero h1 { font: 800 clamp(28px, 6vw, 40px)/1.05 var(--display); letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+.hero p { margin: 0; font-size: 17px; max-width: 60ch; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 6px; }
+.tile { background: rgba(255, 255, 255, .55); border-radius: 14px; padding: 10px 12px; }
+.tile b { display: block; font: 800 26px/1.1 var(--display); font-variant-numeric: tabular-nums; }
+.tile span { font-size: 13px; }
+section { display: flex; flex-direction: column; gap: 10px; }
+h2 { font: 700 22px/1.2 var(--display); margin: 0; letter-spacing: -.01em; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+h2 a { font: 500 13px var(--mono); color: var(--violet); }
+p, ul { margin: 0; max-width: 65ch; }
+ul { padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+a { color: var(--violet); }
+code { font: 500 13px var(--mono); background: var(--surface); border: 1px solid var(--line); padding: 1px 6px; border-radius: 6px; overflow-wrap: anywhere; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font: 500 12px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+tr:last-child td { border-bottom: 0; }
+tr.best td { font-weight: 700; color: var(--ok); }
+.todo { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+.todo ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 10px; max-width: 65ch; }
+.risk li::marker { color: var(--warn); }
+.muted { color: var(--muted); font-size: 14px; }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <span class="k">Night shift · Fri 20 Nov 2026</span>
+    <h1>Lore got 30 new spots, Nudge got a face, and newer AI models read you way better.</h1>
+    <p>Everything below is committed and pushed to <code>claude/zen-ramanujan-ouxg54</code>. Nothing was deleted.</p>
+    <div class="tiles">
+      <div class="tile"><b>49</b><span>Lore spots live (19 → 49)</span></div>
+      <div class="tile"><b>30/37</b><span>best AI intent score (Gemma 4 12B)</span></div>
+      <div class="tile"><b>10 / 0</b><span>its/ill words fixed / broken</span></div>
+      <div class="tile"><b>40</b><span>Idiolect tests passing</span></div>
+    </div>
+  </header>
+
+  <section>
+    <h2>Lore <a href="https://claude.ai/artifact/LwNwhfV2J2aWaz7CTd35DH">open Lore</a></h2>
+    <p>30 new spots and sidequests, each with real opening hours and prices checked tonight. 38 of the 49 have real bus routes from Abu Dhabi Bus Station, 8 have no direct bus and are priced as a shared cab, and 3 are a walk from the station.</p>
+    <ul>
+      <li><b>Mina:</b> Carpet Souk haggle, Dhow Harbour at dusk, the Public Art Biennial plus 421 (until 15 Feb 2027), and riding bus 56 to the end of the line.</li>
+      <li><b>Food:</b> Afghan tandoor bread from AED 1, Ethiopian injera, floor-seat Korean across from the bus station, cafeteria roulette, Shay Madhboot karak, Zahrat Lebnan shawarma (since 1986), an Electra Street crawl.</li>
+      <li><b>Edge:</b> riding the actual F1 track (free bikes, Mon and Wed 6–10pm), a fox watch on Al Maryah, a brutalist bus-station hunt, Masdar after dark.</li>
+      <li><b>Chill and sunset:</b> the free Gate 4 at Corniche Beach, the 34 sunset ride, Heritage Village, Al Maqta Fort on Fridays, a Grand Mosque night loop, Jubail mangroves, Al Qana, Saadiyat galleries, Mamsha.</li>
+    </ul>
+    <p class="muted">Your daily spot task had added 9 spots straight to the live page but never to the repo. I merged them into the repo so the two match again. Three of my new picks duplicated theirs, so I kept theirs and swapped mine for fresh spots. Reddit blocks this server's IP, so I read r/abudhabi through a licensed data provider instead.</p>
+  </section>
+
+  <section>
+    <h2>Nudge <a href="https://claude.ai/artifact/Eig4tD3yVEsSwHn3iTywbf">open Nudge</a></h2>
+    <ul>
+      <li>One AI secretary does everything: add, drop ("nah i dont wanna do this anymore"), move, and squeeze things in around your fixed schedule.</li>
+      <li>Before it plans a new goal it asks how much time a day and by when, then gives it a priority. High-priority goals get the good slots.</li>
+      <li>Redesigned: a mascot that reacts (thinking, happy, waving bye), a next-up countdown, quest cards with priority flames, and the week as tall time-tracks. There's a mic button and an Undo for every change.</li>
+      <li>Your plan saves in a private space only you can read, even from other viewers of the page.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Idiolect, the slang interpreter</h2>
+    <ul>
+      <li><b>its/ill fix:</b> context rules fixed 10 words and broke none, and they leave "do that ai test and <i>its ill</i> fix" alone, where you're naming the words.</li>
+      <li><b>Instagram learner:</b> it reads only your own messages, and private mode prints word counts and style stats with no sentences ever. Your DMs never leave your laptop.</li>
+      <li><b>AI test:</b> seven local models labelled your messages. Your old hand-written rules turned out to be overfit (100% on old messages, 7/18 on new ones).</li>
+    </ul>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Model</th><th>As typed</th><th>Cleaned by Idiolect</th><th>Your profile in prompt</th><th>Unseen 18, best</th></tr></thead>
+        <tbody>
+          <tr><td>Hand-written rules</td><td></td><td>25/37</td><td></td><td>7/18</td></tr>
+          <tr><td>Qwen2.5 7B (2024)</td><td>20/37</td><td>22/37</td><td>17/37</td><td>9/18</td></tr>
+          <tr><td>Qwen3.5 4B (2026)</td><td>25/37</td><td>27/37</td><td>24/37</td><td>10/18</td></tr>
+          <tr><td>Qwen3.5 9B (2026)</td><td>24/37</td><td>25/37</td><td>24/37</td><td>10/18</td></tr>
+          <tr class="best"><td>Gemma 4 12B (2026)</td><td>27/37</td><td>27/37</td><td>30/37</td><td>12/18</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted">Takeaway: a current model plus your profile beats any amount of rules. For your Mac, Gemma 4 12B with the profile in the prompt is the setup to try. The full table with all 7 models is in the Idiolect README.</p>
+  </section>
+
+  <section class="todo">
+    <h2>Your move</h2>
+    <ol>
+      <li><b>Instagram export:</b> when Meta's email lands, unzip it on your laptop and run <code>python -m idiolect learn --private path/to/export</code>. Skim the output, then paste me what you're happy to share.</li>
+      <li><b>Tell me your Mac's RAM.</b> With 16 GB, run Gemma 4 12B; with 32 GB or more, try Qwen3.8-27B. The eval tool already uses the Mac's GPU.</li>
+      <li><b>Try Nudge:</b> allow Claude and the mic once when it asks, then dump something like "i wanna learn guitar".</li>
+      <li><b>Send Nudge UI references</b> whenever you have them.</li>
+      <li><b>Lore is private:</b> share it from the page's Share menu if your friends should open it.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Risks and things I couldn't check</h2>
+    <ul class="risk">
+      <li>Trip times for the 30 new Lore spots are estimates (wait + about a minute per stop + walking), and the routes are untested in real life. Check one the first time you ride it.</li>
+      <li>The F1 track nights and Masdar details come from social posts and listings, not official schedules.</li>
+      <li>I couldn't test Nudge's private save from here, because its storage is private even from me. If your plan doesn't stick after a reload, tell me.</li>
+      <li>Your daily Lore task still publishes to the live page directly. The publish system blocks it from overwriting newer work, but the repo will drift again unless I sync it.</li>
+      <li>I didn't malware-scan <code>llama-cpp-python</code>; it was installed only in a throwaway scratch environment, not your repo.</li>
+    </ul>
+  </section>
+</div>
