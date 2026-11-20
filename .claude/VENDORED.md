@@ -90,3 +90,42 @@ Copied from upstream at a pinned commit, after a SkillSpector v2.12.0 static sca
 | systematic-debugging | obra/superpowers @ 22f0b463e7a5 | flagged, reviewed: false positive |
 | using-superpowers | obra/superpowers @ 22f0b463e7a5 | flagged, reviewed: false positive |
 | writing-skills | obra/superpowers @ 22f0b463e7a5 | flagged, reviewed: false positive |
+| javascript-testing-patterns | wshobson/agents (javascript-typescript) @ 42203085cfc5 | false positives only |
+| modern-javascript-patterns | wshobson/agents (javascript-typescript) @ 42203085cfc5 | false positives only |
+| nodejs-backend-patterns | wshobson/agents (javascript-typescript) @ 42203085cfc5 | false positives only |
+| typescript-advanced-types | wshobson/agents (javascript-typescript) @ 42203085cfc5 | false positives only |
+| agent: javascript-pro | wshobson/agents (javascript-typescript) @ 42203085cfc5 | false positives only |
+| agent: typescript-pro | wshobson/agents (javascript-typescript) @ 42203085cfc5 | false positives only |
+| command: /typescript-scaffold | wshobson/agents (javascript-typescript) @ 42203085cfc5 | false positives only |
+| async-python-patterns | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| python-anti-patterns | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| python-background-jobs | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| python-code-style | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| python-configuration | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| python-design-patterns | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| python-error-handling | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| python-observability | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| python-packaging | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| python-performance-optimization | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| python-project-structure | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| python-resilience | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| python-resource-management | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| python-testing-patterns | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| python-type-safety | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| uv-package-manager | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| agent: django-pro | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| agent: fastapi-pro | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| agent: python-pro | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| command: /python-scaffold | wshobson/agents (python-development) @ 42203085cfc5 | false positives only |
+| go-concurrency-patterns | wshobson/agents (systems-programming) @ 42203085cfc5 | false positives only |
+| memory-safety-patterns | wshobson/agents (systems-programming) @ 42203085cfc5 | false positives only |
+| rust-async-patterns | wshobson/agents (systems-programming) @ 42203085cfc5 | false positives only |
+| agent: c-pro | wshobson/agents (systems-programming) @ 42203085cfc5 | false positives only |
+| agent: cpp-pro | wshobson/agents (systems-programming) @ 42203085cfc5 | false positives only |
+| agent: golang-pro | wshobson/agents (systems-programming) @ 42203085cfc5 | false positives only |
+| agent: rust-pro | wshobson/agents (systems-programming) @ 42203085cfc5 | false positives only |
+| command: /rust-project | wshobson/agents (systems-programming) @ 42203085cfc5 | false positives only |
+| screen-reader-testing | wshobson/agents (accessibility-compliance) @ 42203085cfc5 | false positives only |
+| wcag-audit-patterns | wshobson/agents (accessibility-compliance) @ 42203085cfc5 | false positives only |
+| agent: ui-visual-validator | wshobson/agents (accessibility-compliance) @ 42203085cfc5 | false positives only |
+| command: /accessibility-audit | wshobson/agents (accessibility-compliance) @ 42203085cfc5 | false positives only |
