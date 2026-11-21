@@ -64,6 +64,22 @@ const SAID = {
   },
 };
 
+// One tool call as the model sent it, read defensively: Ollama's native API sends arguments as
+// an object, OpenAI-style endpoints and some models send a JSON string, and a malformed call
+// can arrive with no function at all. Unread, a string made every booking fail validation.
+function readCall(call) {
+  const raw = call?.function?.arguments;
+  let args = raw;
+  if (typeof raw === "string") {
+    try {
+      args = JSON.parse(raw);
+    } catch {
+      args = {};
+    }
+  }
+  return { name: call?.function?.name ?? null, args: args && typeof args === "object" ? args : {} };
+}
+
 // One line per call, or null if any of them is not code's to speak for.
 function confirm(calls, results) {
   try {
@@ -71,9 +87,10 @@ function confirm(calls, results) {
     for (const [i, call] of calls.entries()) {
       const result = results[i];
       if (!result || result.error || result.blocked) return null;
-      const say = SAID[call.function.name];
+      const { name, args } = readCall(call);
+      const say = SAID[name];
       if (!say) return null;
-      const line = say(call.function.arguments ?? {}, result);
+      const line = say(args, result);
       if (!line) return null;
       lines.push(line);
     }
@@ -307,15 +324,16 @@ export async function runTurn(messages, tools, { signal } = {}) {
     let ask = null;
     const results = [];
     for (const call of toolCalls) {
-      const tool = tools.find((t) => t.function.name === call.function.name);
+      const { name, args } = readCall(call);
+      const tool = tools.find((t) => t.function.name === name);
       let result;
       try {
-        result = tool ? tool.run(call.function.arguments ?? {}) : { error: `no tool called ${call.function.name}` };
+        result = tool ? tool.run(args) : { error: `no tool called ${name}` };
       } catch (e) {
         result = { error: e.message };
       }
       if (result?.blocked) ask = result.ask;
-      else if (tool && !result?.error) changes.push(call.function.name);
+      else if (tool && !result?.error) changes.push(name);
       results.push(result);
       thread.push({ role: "tool", content: JSON.stringify(result) });
     }

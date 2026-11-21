@@ -751,3 +751,31 @@ test("moving and removing are confirmed too", async () => {
   assert.equal((await runTurn([{ role: "user", content: "drop that session" }], api)).text, "removed that session.");
   restore();
 });
+
+test("arguments sent as a JSON string are read, so a booking works on any model", async () => {
+  // Ollama's native API sends an object; OpenAI-style endpoints and some models send a string.
+  // Unread, every booking failed validation and silently nothing was booked.
+  const { sent, restore } = stubReplies({
+    message: { content: "", tool_calls: [{ function: { name: "schedule_block", arguments: JSON.stringify({ title: "Rust", date: TODAY, start: "19:00", minutes: 60 }) } }] },
+  });
+  const { api, booked } = tools();
+
+  const { text } = await runTurn([{ role: "user", content: "book rust 7pm" }], api);
+
+  assert.equal(booked.length, 1, "it was booked");
+  assert.equal(text, "booked rust tue 19:00.", "and the confirmation reads the parsed arguments, not the string");
+  assert.equal(sent.length, 1);
+  restore();
+});
+
+test("a malformed tool call goes back to the model as an error instead of crashing the turn", async () => {
+  for (const broken of [{}, { function: null }, { function: { arguments: {} } }]) {
+    const { restore } = stubReplies({ message: { content: "", tool_calls: [broken] } }, says("couldn't do that one."));
+    const { api } = tools();
+
+    const { text } = await runTurn([{ role: "user", content: "x" }], api);
+
+    assert.equal(text, "couldn't do that one.", JSON.stringify(broken));
+    restore();
+  }
+});

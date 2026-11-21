@@ -82,3 +82,24 @@ test("a turn that timed out says so, rather than claiming ollama is down", async
   await assert.rejects(chat([], [], { signal }), (e) => !(e instanceof OllamaDown) && /too long/.test(e.message));
   restore();
 });
+
+test("a failure says what Ollama said, because on a 16GB Mac that is usually memory", async () => {
+  const restore = stubFetch(async () => ({ ok: false, status: 500, json: async () => ({ error: "model requires more system memory (8.1 GiB) than is available (6.2 GiB)" }) }));
+
+  await assert.rejects(chat([{ role: "user", content: "hi" }], []), /ollama failed: model requires more system memory/);
+  restore();
+});
+
+test("a failure with no reason still says something readable", async () => {
+  const restore = stubFetch(async () => ({ ok: false, status: 502, json: async () => { throw new SyntaxError("not json"); } }));
+
+  await assert.rejects(chat([{ role: "user", content: "hi" }], []), /^Error: ollama returned 502$/);
+  restore();
+});
+
+test("a reply that is not JSON is a readable error, not a SyntaxError", async () => {
+  const restore = stubFetch(async () => ({ ok: true, status: 200, json: async () => JSON.parse("<html>proxy error</html>") }));
+
+  await assert.rejects(chat([{ role: "user", content: "hi" }], []), (e) => !(e instanceof SyntaxError) && /unreadable/.test(e.message));
+  restore();
+});
