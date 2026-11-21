@@ -39,7 +39,7 @@ It is for personal use. The name is Donna Paulsen, from Suits.
   survives; the new plan data lives under `donna_plan`.
 
 ## What is built and verified
-65 unit tests pass (`cd donna && node --test "test/*.test.js"` — note the 6 Playwright e2e
+75 unit tests pass (`cd donna && node --test "test/*.test.js"` — note the 6 Playwright e2e
 tests need a browser; see Unverified).
 
 | Area | Files |
@@ -51,6 +51,7 @@ tests need a browser; see Unverified).
 | Donna's voice | `src/lib/nudgeMessages.js` |
 | Local model client | `src/lib/ollama.js` (`num_ctx` pinned to 8192) |
 | Refuse-until-confirmed guard | `src/lib/pushback.js` |
+| Planner loop: tools, prompt, turn loop | `src/lib/planner.js` |
 | Plan state (blocks + fixed) | `src/stores/planStore.js` |
 | The side panel | `src/components/Panel.jsx` |
 | Panel window, edge anchoring | `src-tauri/src/main.rs` (`anchor_right`, `announce`) |
@@ -63,9 +64,10 @@ Two deliberate design points worth keeping:
   Mac, which silently truncates the profile and the plan with no error.
 
 ## Next, in order
-1. **The planner loop.** Tool definitions (port from the prototype's `TOOLS`), the system prompt
-   with the Idiolect profile in it, and the conversation turn loop calling `chat()` from
-   `src/lib/ollama.js`. Wire `requiresConfirmation` so Donna asks before booking over a deadline.
+1. **Wire `planner.js` into the panel.** It is built and unit-tested but nothing calls it yet:
+   the panel's input still goes straight to `itemStore.add`. `createTools` wants callbacks onto
+   `planStore` and `itemStore`, and `systemPrompt` wants `profile.md` (import it with `?raw`,
+   as `itemStore` already does).
 2. **First real run against Gemma 4.** Nothing has touched a real model yet. Expect the tool-call
    format to need fixing: Ollama lists `tools` as a gemma4 capability but it is unproven here.
 3. **Run the app on the Mac**: `cd donna && npm run tauri dev`. Check the panel anchors to the
