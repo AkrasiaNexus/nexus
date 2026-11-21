@@ -157,10 +157,10 @@ test("the orb rests as a circle on a transparent page, and opens on a click", as
     getComputedStyle(document.body).backgroundColor,
   ]);
   assert.deepEqual(transparent, ["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0)"], "an opaque page makes the round window a square");
-  assert.equal(await page.getByPlaceholder(/tell donna/).count(), 0, "nothing but the circle at rest");
+  assert.equal(await page.getByLabel("Tell Donna").count(), 0, "nothing but the circle at rest");
 
   await page.getByRole("button", { name: "Ask Donna" }).click();
-  await assert.doesNotReject(page.getByPlaceholder(/tell donna/).waitFor());
+  await assert.doesNotReject(page.getByLabel("Tell Donna").waitFor());
 
   await page.close();
 });
@@ -209,7 +209,7 @@ test("the orb hands the blurt to Donna, stays responsive while she thinks, and h
   await page.goto(base + "?view=orb");
   await page.getByRole("button", { name: "Ask Donna" }).click();
 
-  const input = page.getByPlaceholder(/tell donna/);
+  const input = page.getByLabel("Tell Donna");
   await input.fill("learn rust 30 mins a day till dec 5");
   await input.press("Enter");
 
@@ -236,8 +236,10 @@ test("with Ollama down the orb says how to fix it instead of hanging", async () 
   await page.goto(base + "?view=orb");
   await page.getByRole("button", { name: "Ask Donna" }).click();
 
-  const input = page.getByPlaceholder(/tell donna/);
-  await input.fill("gym at 6");
+  const input = page.getByLabel("Tell Donna");
+  // deliberately vague: anything with a clock time on it books instantly and never
+  // reaches the model, which is the whole point of the fast path.
+  await input.fill("i wanna get better at rust");
   await input.press("Enter");
 
   await assert.doesNotReject(page.getByText(/ollama isn't running/).waitFor());

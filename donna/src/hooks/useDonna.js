@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { createTools, runTurn, systemPrompt } from "../lib/planner";
+import { parseReminder } from "../lib/remind";
 import { planStore } from "../stores/planStore";
 import { itemStore } from "../stores/itemStore";
 import profileText from "../lib/profile.md?raw";
@@ -37,6 +38,17 @@ export function useDonna() {
 
   async function say(text) {
     if (busyRef.current) return false;
+
+    // "remind me to X in 20 mins" is a two-minute job, not a session. It reads the text
+    // and saves it — no model, and nothing added to the week.
+    const reminder = parseReminder(text);
+    if (reminder?.at) {
+      planStore.remind(reminder.text, reminder.at);
+      const mins = Math.max(1, Math.round((reminder.at - Date.now()) / 60_000));
+      answer(text, `got it. ${reminder.text.toLowerCase()} — i'll say in ${mins} min${mins === 1 ? "" : "s"}.`);
+      return true;
+    }
+
     busyRef.current = true;
     setBusy(true);
 
@@ -59,10 +71,11 @@ export function useDonna() {
     return true;
   }
 
-  // An answer Donna already knows (the daily brief) goes straight in: no model, no wait.
-  function tell(question, answer) {
-    setThread((prev) => [...prev, { role: "user", content: question }, { role: "assistant", content: answer }].slice(-HISTORY_LIMIT));
+  // An answer Donna already knows goes straight in: no model, no wait.
+  function answer(question, said) {
+    setThread((prev) => [...prev, { role: "user", content: question }, { role: "assistant", content: said }].slice(-HISTORY_LIMIT));
   }
+  const tell = answer;
 
   return { thread, busy, say, tell };
 }

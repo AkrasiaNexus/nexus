@@ -67,3 +67,4 @@ test("something that went overdue yesterday still counts", () => {
   assert.equal(requiresConfirmation([yesterday], TODAY), true);
   assert.match(objection([yesterday], TODAY), /already overdue/);
 });
+

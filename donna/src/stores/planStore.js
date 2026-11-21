@@ -5,7 +5,7 @@ import { blockStartMs } from "../lib/reminders";
 
 // New data, so a new key: `nudge_items` still holds the dumped thoughts.
 const STORAGE_KEY = "donna_plan";
-const EMPTY = { blocks: [], fixed: [], sweptOn: null };
+const EMPTY = { blocks: [], fixed: [], reminders: [], sweptOn: null };
 
 function load() {
   try {
@@ -63,6 +63,17 @@ export const planStore = {
       if (slot) return slot;
     }
     return null;
+  },
+
+  // A two-minute job, not a calendar block: it takes no room in the week.
+  remind(text, at) {
+    const reminder = { id: crypto.randomUUID(), text, at, done: false };
+    commit({ ...plan, reminders: [...plan.reminders, reminder] });
+    return reminder;
+  },
+
+  completeReminder(id) {
+    commit({ ...plan, reminders: plan.reminders.map((r) => (r.id === id ? { ...r, done: true } : r)) });
   },
 
   undo(id) {

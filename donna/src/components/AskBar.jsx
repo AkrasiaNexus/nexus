@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Mic } from "lucide-react";
 import { useDonna } from "../hooks/useDonna";
+import { useDictation } from "../hooks/useDictation";
 import { planStore } from "../stores/planStore";
 import { itemStore } from "../stores/itemStore";
 import { dailyBrief } from "../lib/brief";
@@ -11,6 +12,7 @@ import { today, nowMin } from "../lib/time";
 export default function AskBar() {
   const { thread, busy, say, tell } = useDonna();
   const [text, setText] = useState("");
+  const mic = useDictation((spoken) => { setText(""); say(spoken); });
 
   const last = thread.at(-1);
   const answer = last && last.role !== "user" ? last : null;
@@ -44,25 +46,27 @@ export default function AskBar() {
           </span>
         ) : answer ? (
           <p className={answer.role === "error" ? "text-donna-red" : "text-donna-text"}>{answer.content}</p>
-        ) : (
-          <p className="text-donna-faint">tell donna what you're thinking, or ask what today looks like.</p>
-        )}
+        ) : null}
       </div>
 
       <form onSubmit={submit} className="flex items-center gap-2 rounded-lg border border-donna-border bg-donna-surface px-3 py-2">
         <input
           id="ask"
-          value={text}
+          value={mic.listening && mic.heard ? mic.heard : text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="tell donna…"
+          aria-label="Tell Donna"
           className="flex-1 min-w-0 bg-transparent text-[13.5px] outline-none placeholder:text-donna-faint"
         />
         <button
           type="button"
-          aria-label="Talk to Donna"
-          title="voice — not wired up yet"
-          disabled
-          className="p-1.5 rounded text-donna-faint cursor-not-allowed"
+          onClick={mic.toggle}
+          disabled={!mic.supported}
+          aria-pressed={mic.listening}
+          aria-label={mic.supported ? "Talk to Donna" : "Dictation isn't available in this window"}
+          title={mic.supported ? "hold a thought and say it" : "dictation isn't available here"}
+          className={`p-1.5 rounded transition-colors ${
+            !mic.supported ? "text-donna-faint/50 cursor-not-allowed" : mic.listening ? "text-donna-text bg-donna-raised" : "text-donna-muted hover:text-donna-text"
+          }`}
         >
           <Mic size={15} />
         </button>

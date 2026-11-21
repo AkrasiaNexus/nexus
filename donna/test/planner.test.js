@@ -389,3 +389,24 @@ test("a goal longer than the booking horizon says the rest is not booked yet", a
 
   assert.match(result.note, /first 14 days/);
 });
+
+test("booking over a session is refused with what it would cost, not silently replaced", async () => {
+  const rust = { id: "g1", title: "Learn Rust", status: "active", deadline: `${TODAY}T23:00:00` };
+  const session = { id: "b1", itemId: "g1", title: "Rust", date: TODAY, start: "19:00", minutes: 60, done: false };
+  const { restore } = stubReplies(
+    toolCall("schedule_block", { title: "Valorant", date: TODAY, start: "19:00", minutes: 60, confirmed: true }),
+    says("fine, swapped."),
+  );
+  const { api, booked } = tools({ items: [rust], blocks: [session] });
+
+  const blockedRun = api.find((t) => t.function.name === "schedule_block").run;
+  const refusal = blockedRun({ title: "Valorant", date: TODAY, start: "19:00", minutes: 60 });
+
+  assert.equal(refusal.blocked, true);
+  assert.match(refusal.ask, /learn rust/i, "it names what gets displaced");
+  assert.equal(booked.length, 0);
+
+  await runTurn([{ role: "user", content: "valorant at 7, yes im sure" }], api);
+  assert.equal(booked.length, 1, "confirmed goes through");
+  restore();
+});

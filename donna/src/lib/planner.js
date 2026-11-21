@@ -2,6 +2,7 @@ import { chat } from "./ollama.js";
 import { today, addDays, ymd, fromMin, nowMin, toMin, isYmd, WEEKDAYS } from "./time.js";
 import { freeSlots, goalSessions, DAY_START, DAY_END, MAX_GOAL_DAYS } from "./schedule.js";
 import { requiresConfirmation, objection } from "./pushback.js";
+import { displacementCost } from "./pressure.js";
 
 const MAX_TOOL_ROUNDS = 6;
 const DAY_MINUTES = 24 * 60;
@@ -144,6 +145,12 @@ export function createTools({ plan, items, onSchedule, onRemoveGoal, onSetFixed,
         const others = items().filter((i) => i.id !== block.goal_id);
         if (!confirmed && requiresConfirmation(others, block.date)) {
           return { blocked: true, ask: objection(others, block.date) };
+        }
+        // Nothing already booked is replaced without saying what replacing it costs: the
+        // session it lands on, and whether that goal still has days to make the session up.
+        if (!confirmed) {
+          const cost = displacementCost(plan(), items(), block);
+          if (cost) return { blocked: true, ask: cost.warning };
         }
         return onSchedule(block);
       },

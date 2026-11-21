@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { dueNudges } from "../lib/nudges";
 import { dueReminders, blockStartMs } from "../lib/reminders";
+import { dueRemindersAt } from "../lib/remind";
 import { getNudgeMessage, getReminderMessage } from "../lib/nudgeMessages";
 import { notify, revealOrb } from "../lib/notify";
 import { planStore } from "../stores/planStore";
@@ -25,14 +26,22 @@ export function useNudgeTicker(items) {
     function tick() {
       const now = Date.now();
       const since = readLastCheck();
-      const { blocks } = planStore.getAll();
+      const { blocks, reminders } = planStore.getAll();
 
-      const reminders = dueReminders(blocks, since, now);
-      for (const block of reminders) {
+      const sessionReminders = dueReminders(blocks, since, now);
+      for (const block of sessionReminders) {
         notify("Donna", getReminderMessage(block.title, Math.round((blockStartMs(block) - now) / MINUTE_MS)));
       }
-      // The panel appears unfocused, so it never swallows what you're typing elsewhere.
-      if (reminders.length) revealOrb();
+      // A two-minute job you asked to be reminded of fires even if slept through:
+      // forgetting it is the whole reason it exists.
+      const nudged = dueRemindersAt(reminders, since, now);
+      for (const r of nudged) {
+        notify("Donna", r.text);
+        planStore.completeReminder(r.id);
+      }
+
+      // The orb appears unfocused, so it never swallows what you're typing elsewhere.
+      if (sessionReminders.length || nudged.length) revealOrb();
 
       // Deadline check-ins still cover anything that hasn't been given a time yet.
       const scheduled = new Set(blocks.filter((b) => !b.done).map((b) => b.itemId));
