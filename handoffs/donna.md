@@ -1,35 +1,96 @@
 # Donna handoff
 
+Rewritten 21 Nov 2026, after the user pivoted the product away from a web planner.
+Branch: `claude/serene-davinci-c0ox6c`. Work only in `donna/`.
+
 ## Goal (user's words)
-"its jus my very own secertary i jus give it whatever im thinking about and it shedules it remembers it plans it squeezes it in my shedule". "it should be one model handling everything basically jus a ai planner cuz ill be like oh wait i dont wanna do this anymore and then it should rmoe that goal". It's for personal use.
+"its jus my very own secertary i jus give it whatever im thinking about and it shedules it
+remembers it plans it squeezes it in my shedule". Then the pivot:
 
-## There are two Donnas
-1. **The desktop app**, `donna/` (Tauri 2 + React 19 + Vite + Tailwind):
-   - Tray icon, a Ctrl/Cmd+Shift+N capture popup, a rule-based parser (`src/lib/parser.js`), check-ins at 25/50/75/100% of the deadline, and native notifications.
-   - A JavaScript port of Idiolect's normalizer (`src/lib/idiolect.js`), checked against `test/fixtures/idiolect-conformance.json`.
-   - Tests: `cd donna && npm test` passes 22/22 (unit + Playwright e2e).
-2. **The AI planner prototype**, `donna/prototype/donna-planner.html`, live at https://claude.ai/artifact/Eig4tD3yVEsSwHn3iTywbf (version 3):
-   - One Claude model, through the artifact `sample` capability with page tools, does all the planning.
-   - Tools: `add_goal`, `update_goal`, `remove_goal`, `find_free_slots`, `schedule_block`, `move_block`, `remove_block`, `set_fixed`, `remove_fixed`, `remember`.
-   - It must ask for **minutes per day and a deadline** before adding a goal, then set a priority (high, medium or low). High-priority goals get the good slots.
-   - Data: a private per-user doc in artifact `db` at `data/users/<id>/planner`. It falls back to `localStorage` when there's no db.
-   - Capabilities declared: `sample`, `db`, `user`, `dictation`.
-   - **Design** (v3, "make it exciting, not ChatGPT with a calendar"):
-     - a mascot secretary with moods (thinking, happy, bye, sad) and a speech bubble
-     - a next-up countdown card
-     - quest-board goal cards with priority flames and progress rings
-     - the week as tall time-tracks
-     - a pinned "dump it" bar with a mic
-     - Undo for every change
-   - **Source layout:** logic in the middle of the file; render functions and wiring in the tail. Syntax-check the extracted `<script>` with `node --check`.
+> "i dont want a website i want a silent background app which only gets activated when i press
+> a shortcut and then on the side it gives me short reminders like oh u gotta start working on
+> the project in the next 5 mins or ur cooked type shi"
 
-## Next
-- **The user is designing the UI and will send references.** Build on those references when they arrive.
-- **Not verified:** whether the private db save persists across reloads. Claude can't read a user's private subtree, so ask the user to check.
-- **The desktop app and the prototype have diverged.** Decide with the user whether the AI planner replaces the rule-based parser in the Tauri app (it would need a model: Claude API, or a local model on the user's Mac).
-- **Model notes from the Idiolect eval:**
-  - For the user's messages, Gemma 4 12B with the Idiolect profile in the prompt scored 30/37 on intent (best).
-  - Qwen3.5 4B with normalization scored 27/37.
-  - The user's Mac RAM is still unknown; the user was asked.
-- **Roadmap from the README:** phone/laptop sync, voice capture, Snooze/Done actions on notifications.
-- **Idiolect's v1 profile** (`idiolect/profiles/me.md`) is the best description of how to read the user. The prototype's prompt has a short inline version (`HOW_I_WRITE`).
+And on how the planning should behave:
+
+> "sometimes i tell u when some things are and sometimes i jus wanna do random things so that
+> u plan it urself if i dont give a time... if something is a priotory and then i say yo i wanna
+> do this in 5 mins u say shi like oh thats not a good idea cuz u have this due today better
+> finish this off... and u check in at the end of the day to check if i missed anything if i did
+> then u move it to the first thing i do next day cuz its backlog"
+
+It is for personal use. The name is Donna Paulsen, from Suits.
+
+## Decisions already taken (don't relitigate)
+- **The Tauri desktop app is the product.** The web planner at
+  `donna/prototype/donna-planner.html` is now a reference for the scheduling model only.
+- **Brand vs domain split:** the product is Donna; a *nudge* is still the escalating
+  check-in she sends. `dueNudges`, `getNudgeSchedule`, `useNudgeTicker`, `item.nudges`,
+  `nudges.js` keep the word on purpose. Don't "finish the rename".
+- **The brain is local Ollama**, `gemma4:12b`, on the user's 16GB M4 Mac. No API key, nothing
+  leaves the machine. The user has pulled the model and `ollama serve` works.
+- **Pushback is refuse-until-confirmed**, not a passive warning.
+- **No fine-tuning.** The user asked; it was roasted and dropped. The Idiolect eval set is 37
+  examples, which is a prompt, not a dataset, and the measured 30/37 came from putting the
+  profile *in the prompt*. Revisit only with thousands of examples.
+- The 900x700 main window was **kept** (tray → "Open Donna"), but it is no longer the daily
+  surface. The user did not ask for it to be deleted.
+- localStorage keys `nudge_items` / `nudge_last_check` kept deliberately so existing data
+  survives; the new plan data lives under `donna_plan`.
+
+## What is built and verified
+65 unit tests pass (`cd donna && node --test "test/*.test.js"` — note the 6 Playwright e2e
+tests need a browser; see Unverified).
+
+| Area | Files |
+|---|---|
+| Clock times, local dates | `src/lib/time.js` |
+| Free slots, clash detection | `src/lib/schedule.js` |
+| Reminders before a session starts | `src/lib/reminders.js` (`LEAD_MINUTES = 5`) |
+| End-of-day sweep → backlog | `src/lib/backlog.js` |
+| Donna's voice | `src/lib/nudgeMessages.js` |
+| Local model client | `src/lib/ollama.js` (`num_ctx` pinned to 8192) |
+| Refuse-until-confirmed guard | `src/lib/pushback.js` |
+| Plan state (blocks + fixed) | `src/stores/planStore.js` |
+| The side panel | `src/components/Panel.jsx` |
+| Panel window, edge anchoring | `src-tauri/src/main.rs` (`anchor_right`, `announce`) |
+
+Two deliberate design points worth keeping:
+- **The shortcut takes focus; a reminder does not.** `toggle_panel` focuses because the user
+  pressed it to type. The `announce` command reveals the panel unfocused so it never swallows
+  keystrokes meant for another app.
+- **`num_ctx` is pinned to 8192.** Ollama sizes context from free VRAM and picks 4096 on a 16GB
+  Mac, which silently truncates the profile and the plan with no error.
+
+## Next, in order
+1. **The planner loop.** Tool definitions (port from the prototype's `TOOLS`), the system prompt
+   with the Idiolect profile in it, and the conversation turn loop calling `chat()` from
+   `src/lib/ollama.js`. Wire `requiresConfirmation` so Donna asks before booking over a deadline.
+2. **First real run against Gemma 4.** Nothing has touched a real model yet. Expect the tool-call
+   format to need fixing: Ollama lists `tools` as a gemma4 capability but it is unproven here.
+3. **Run the app on the Mac**: `cd donna && npm run tauri dev`. Check the panel anchors to the
+   right edge and that `focused(false)` holds on macOS — on some platforms a repeated `show()`
+   re-raises the app.
+4. The user is designing panel UI and will send references. Build on those when they arrive.
+
+## Unverified / risks
+- **The 6 Playwright e2e tests have never been run.** The cloud container has no matching
+  `chrome-headless-shell`. Run `npm test` on the Mac. The README says 56 tests; that is 50 unit
+  (verified at the time) + 6 e2e (unverified). It now says 56 but there are 65 unit tests —
+  **update the README count** once the e2e tests actually run.
+- **No real model call has happened.** `ollama.js` is tested against a stubbed `fetch`.
+- The Tauri `identifier` changed to `app.donna.desktop` during the rename, so the macOS app-data
+  directory changed with it. Any desktop localStorage from before the rename will not carry over.
+- `portfolio/index.html` links to `.../tree/claude/zen-ramanujan-ouxg54/donna`, a branch where
+  that folder is still called `nudge/`. The link 404s until this branch merges.
+- 4 orphan `nudge/` references linger in generated `graphify-out/graph.json`; `--force` would
+  not purge them. Cosmetic.
+
+## Environment notes
+- **Cloud sessions cannot reach the user's Mac folder.** `~/Projects` on the computer "Asus" is in
+  their Remote Control list but is reported `not_available` to cloud sessions. Run Claude Code
+  natively on the Mac instead.
+- Tauri Linux build deps (`libwebkit2gtk-4.1-dev` and friends) are **not** preinstalled in the
+  cloud container; `apt-get install` them before `cargo check`.
+- Playwright in the container: launch with `executablePath: '/opt/pw-browsers/chromium'` and
+  `--no-sandbox`; the bundled headless shell build does not match the installed Playwright.
