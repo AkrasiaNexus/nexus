@@ -1,6 +1,7 @@
 import { toMin, fromMin } from "./time.js";
 import { freeSlots, DAY_START, DAY_END } from "./schedule.js";
 import { pendingDeadlines } from "./pushback.js";
+import { dueSoonest } from "./research.js";
 
 // Which goals have time booked ahead of them. A session already ticked off is spent, so
 // it no longer counts as cover.
@@ -23,7 +24,7 @@ const list = (parts) =>
 
 // Everything the daily brief needs is already known: free gaps, deadlines, booked sessions.
 // Computing it keeps the answer instant and correct, instead of asking a 12B to read a list.
-export function dailyBrief({ items, plan, date, nowMinutes }) {
+export function dailyBrief({ items, plan, date, nowMinutes, newFindings }) {
   const after = Math.max(DAY_START, nowMinutes);
   const free = freeSlots(plan, date, USABLE_MINUTES, after, DAY_END, false)
     .map(({ start, end }) => ({ start, end, minutes: span({ start, end }) }));
@@ -43,13 +44,21 @@ export function dailyBrief({ items, plan, date, nowMinutes }) {
     .sort((a, b) => toMin(a.start) - toMin(b.start))
     .map((b) => ({ ...b, priority: priorityOf(b) }));
 
-  return { free, freeMinutes, due, next, text: say({ free, freeMinutes, due, next }) };
+  // What she turned up overnight leads: it is the one thing in here you could not have
+  // known yourself, and the deadlines on it are other people's, not yours to move.
+  const found = newFindings === undefined ? null : dueSoonest(newFindings, date);
+
+  return { free, freeMinutes, due, next, found, text: say({ free, freeMinutes, due, next, found }) };
 }
 
-function say({ free, freeMinutes, due, next }) {
-  if (!free.length && !next.length) return "day's gone. nothing left to squeeze in.";
+function say({ free, freeMinutes, due, next, found }) {
+  const opener = found === null ? [] : found.length
+    ? [`found ${found.length} overnight: ${found.map((f) => f.deadline ? `${f.title} (closes ${f.deadline})` : f.title).join(", ")}.`]
+    : ["found nothing new last night."];
 
-  const lines = [];
+  if (!free.length && !next.length) return [...opener, "day's gone. nothing left to squeeze in."].join(" ");
+
+  const lines = [...opener];
 
   if (free.length) {
     lines.push(`${hours(freeMinutes)} free — ${list(free.map((f) => `${f.start}–${f.end}`))}.`);

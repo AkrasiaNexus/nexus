@@ -5,6 +5,8 @@ import { dueRemindersAt } from "../lib/remind";
 import { getNudgeMessage, getReminderMessage } from "../lib/nudgeMessages";
 import { notify, revealOrb } from "../lib/notify";
 import { planStore } from "../stores/planStore";
+import { shouldResearch, researchOnce } from "../lib/nightly";
+import { today, nowMin } from "../lib/time";
 
 const LAST_CHECK_KEY = "nudge_last_check";
 const TICK_MS = 60_000;
@@ -50,6 +52,15 @@ export function useNudgeTicker(items) {
       }
 
       planStore.sweep(itemsRef.current);
+
+      // She works while you're asleep. Fire and forget: the tick must not wait on a search,
+      // and a night that turns up nothing is still a night that ran.
+      const plan = planStore.getAll();
+      if (shouldResearch(plan, today(), nowMin())) {
+        researchOnce({ items: itemsRef.current, memories: plan.memories, findings: plan.findings })
+          .then(({ found }) => planStore.recordFindings(today(), found))
+          .catch(() => planStore.recordFindings(today(), []));
+      }
 
       try {
         localStorage.setItem(LAST_CHECK_KEY, String(now));

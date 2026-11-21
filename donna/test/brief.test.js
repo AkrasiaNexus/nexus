@@ -187,3 +187,35 @@ test("a goal with no priority set behaves like a middling one", () => {
   assert.equal(brief.next[0].priority, "medium");
   assert.doesNotMatch(brief.text, /matters|low priority/i);
 });
+
+const finding = (overrides = {}) => ({ id: "f1", title: "MIT PRIMES 2026", url: "https://example.com/primes", deadline: "2099-02-01", note: "Free research program", foundOn: DATE, ...overrides });
+
+test("last night's findings lead the brief, closest deadline first", () => {
+  const findings = [finding({ id: "far", title: "Later thing", deadline: "2099-05-01" }), finding({ id: "soon", title: "MIT PRIMES" })];
+
+  const brief = dailyBrief({ items: [], plan: plan({ findings }), date: DATE, nowMinutes: 9 * 60, newFindings: findings });
+
+  assert.match(brief.text, /found 2/i);
+  assert.ok(brief.text.indexOf("MIT PRIMES") < brief.text.indexOf("Later thing"), "the one closing first");
+});
+
+test("a night with nothing new says so and gets on with the day", () => {
+  const brief = dailyBrief({ items: [], plan: plan({ findings: [] }), date: DATE, nowMinutes: 9 * 60, newFindings: [] });
+
+  assert.match(brief.text, /nothing new|found nothing/i);
+  assert.match(brief.text, /free|day's gone|booked|nothing booked/i, "the day still gets briefed");
+});
+
+test("a finding whose deadline has passed is not read out as news", () => {
+  const stale = finding({ deadline: "2000-01-01" });
+
+  const brief = dailyBrief({ items: [], plan: plan({ findings: [stale] }), date: DATE, nowMinutes: 9 * 60, newFindings: [stale] });
+
+  assert.doesNotMatch(brief.text, /MIT PRIMES/);
+});
+
+test("with no research run at all the brief says nothing about it either way", () => {
+  const brief = dailyBrief({ items: [], plan: plan(), date: DATE, nowMinutes: 9 * 60 });
+
+  assert.doesNotMatch(brief.text, /found|nothing new/i);
+});

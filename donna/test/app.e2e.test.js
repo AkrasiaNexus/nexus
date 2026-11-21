@@ -534,3 +534,46 @@ test("she calls out a weekday you never deliver on, unprompted", async () => {
 
   await context.close();
 });
+
+test("she researches overnight on her own and reads it out in the morning", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  let searches = 0;
+  await page.route("https://api.firecrawl.dev/v2/search", async (route) => {
+    searches++;
+    await route.fulfill({
+      status: 200, contentType: "application/json",
+      body: JSON.stringify({ success: true, data: { web: [
+        { url: "https://math.mit.edu/primes", title: "MIT PRIMES 2099", description: "Free research program. Applications close January 10, 2099." },
+      ] } }),
+    });
+  });
+  await page.addInitScript(() => {
+    Date.prototype.getHours = () => 22;
+    Date.prototype.getMinutes = () => 30;
+    const d = new Date();
+    const q = (n) => String(n).padStart(2, "0");
+    const date = `${d.getFullYear()}-${q(d.getMonth() + 1)}-${q(d.getDate())}`;
+    localStorage.setItem("donna_search_key", "test-key");
+    localStorage.setItem("donna_plan", JSON.stringify({
+      fixed: [], blocks: [], reminders: [], memories: [], findings: [],
+      sweptOn: date, askedOn: date, researchedOn: null,
+    }));
+    localStorage.setItem("nudge_items", JSON.stringify([{
+      id: "g1", title: "Learn Rust", category: "skill", status: "active",
+      deadline: new Date(Date.now() + 30 * 86_400_000).toISOString(),
+      createdAt: `${date}T08:00:00`, minutesPerDay: 60, priority: "high", nudges: [],
+    }]));
+  });
+
+  // the main window runs the ticker; nobody asked it to do any of this
+  await page.goto(base);
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("donna_plan")).researchedOn !== null, null, { timeout: 20_000 });
+
+  const plan = await page.evaluate(() => JSON.parse(localStorage.getItem("donna_plan")));
+  assert.ok(searches > 0, "she went looking without being asked");
+  assert.equal(plan.findings.length, 1);
+  assert.equal(plan.findings[0].deadline, "2099-01-10", "the deadline is a field, read once");
+
+  await context.close();
+});

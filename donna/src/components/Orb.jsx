@@ -142,11 +142,14 @@ export default function Orb() {
   }
 
   function brief() {
+    const current = planStore.getAll();
     const { text: line } = dailyBrief({
       items: itemStore.getAll(),
-      plan: planStore.getAll(),
+      plan: current,
       date: today(),
       nowMinutes: nowMin(),
+      // only what last night turned up, so the brief reads as news rather than a backlog
+      newFindings: current.researchedOn === today() ? current.findings.filter((f) => f.foundOn === today()) : undefined,
     });
     tell("what's my day looking like", line);
   }
