@@ -12,15 +12,15 @@
 /* Layout: a one-page portfolio. Hero with proof numbers, the Lore system diagram, then one card per project: problem, proof, stack, links. */
 :root{
   --bg:#F6F6F3; --surface:#FFFFFF; --surface-2:#EEEEE9; --fg:#14161A; --muted:#5D626C; --line:#DCDCD5;
-  --lore:#C27803; --idiolect:#2563EB; --nudge:#7C3AED; --majlis:#C2410C; --campfire:#0E8A80;
+  --lore:#C27803; --idiolect:#2563EB; --donna:#7C3AED; --majlis:#C2410C; --campfire:#0E8A80;
   --display:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0F1113; --surface:#171A1E; --surface-2:#20242A; --fg:#ECEDEF; --muted:#9AA0AB; --line:#2B3038;
-  --lore:#FBBF24; --idiolect:#60A5FA; --nudge:#A78BFA; --majlis:#FB923C; --campfire:#2DD4BF; color-scheme:dark}}
+  --lore:#FBBF24; --idiolect:#60A5FA; --donna:#A78BFA; --majlis:#FB923C; --campfire:#2DD4BF; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0F1113; --surface:#171A1E; --surface-2:#20242A; --fg:#ECEDEF; --muted:#9AA0AB; --line:#2B3038;
-  --lore:#FBBF24; --idiolect:#60A5FA; --nudge:#A78BFA; --majlis:#FB923C; --campfire:#2DD4BF; color-scheme:dark}
+  --lore:#FBBF24; --idiolect:#60A5FA; --donna:#A78BFA; --majlis:#FB923C; --campfire:#2DD4BF; color-scheme:dark}
 *{box-sizing:border-box}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 var(--body)}
@@ -98,7 +98,7 @@ footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font-si
   <section aria-labelledby="sys">
     <div class="sec-h"><h2 id="sys">One app, two engines</h2><p>Lore is the product. Majlis and Campfire are standalone libraries I built to give it things no off-the-shelf tool did.</p></div>
     <div class="system">
-      <svg viewBox="0 0 760 210" role="img" aria-label="Diagram: Majlis tells Lore where friends should meet; Campfire syncs Lore's shared Lore Book; Idiolect powers Nudge.">
+      <svg viewBox="0 0 760 210" role="img" aria-label="Diagram: Majlis tells Lore where friends should meet; Campfire syncs Lore's shared Lore Book; Idiolect powers Donna.">
         <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor" style="color:var(--muted)"/></marker></defs>
         <rect class="node" x="290" y="70" width="180" height="70" rx="12"/>
         <rect x="290" y="70" width="6" height="70" rx="3" style="fill:var(--lore)"/>
@@ -113,10 +113,10 @@ footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font-si
         <path class="edge" d="M220 158 C 255 158, 262 122, 288 118"/>
         <rect class="node" x="560" y="80" width="180" height="52" rx="12"/><rect x="560" y="80" width="6" height="52" rx="3" style="fill:var(--idiolect)"/>
         <text x="580" y="111">Idiolect</text>
-        <rect class="node" x="560" y="146" width="180" height="52" rx="12"/><rect x="560" y="146" width="6" height="52" rx="3" style="fill:var(--nudge)"/>
-        <text x="580" y="177">Nudge</text>
+        <rect class="node" x="560" y="146" width="180" height="52" rx="12"/><rect x="560" y="146" width="6" height="52" rx="3" style="fill:var(--donna)"/>
+        <text x="580" y="177">Donna</text>
         <path class="edge" d="M740 106 C 760 106, 760 170, 742 172" style="opacity:.6"/>
-        <text class="sub" x="560" y="206">Idiolect powers Nudge</text>
+        <text class="sub" x="560" y="206">Idiolect powers Donna</text>
       </svg>
     </div>
   </section>
@@ -177,11 +177,11 @@ footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font-si
           </div>
         </article>
 
-        <article class="card" style="--c:var(--nudge)">
-          <div class="shot"><img src="img/nudge.jpg" alt="Nudge week planner with categorised goals" loading="lazy" width="500" height="320"></div>
+        <article class="card" style="--c:var(--donna)">
+          <div class="shot"><img src="img/donna.jpg" alt="Donna week planner with categorised goals" loading="lazy" width="500" height="320"></div>
           <div class="text">
             <span class="tag">Desktop app · Tauri 2</span>
-            <h3>Nudge</h3>
+            <h3>Donna</h3>
             <p class="pitch">A tray app for ideas you'd otherwise forget: press a shortcut anywhere, type "learn rust 2 weeks", and it checks in at 25/50/75/100% of your timeline.</p>
             <ul>
               <li>Rust tray, global shortcut and native notifications; release build verified running on Linux</li>
@@ -190,7 +190,7 @@ footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font-si
               <li>CI builds Linux, macOS and Windows installers</li>
             </ul>
             <div class="chips"><span>Rust</span><span>React</span><span>Tauri 2</span></div>
-            <div class="links"><a href="https://github.com/AkrasiaNexus/nexus/tree/claude/zen-ramanujan-ouxg54/nudge">Source</a></div>
+            <div class="links"><a href="https://github.com/AkrasiaNexus/nexus/tree/claude/zen-ramanujan-ouxg54/donna">Source</a></div>
           </div>
         </article>
       </div>
@@ -230,7 +230,7 @@ $ idiolect eval
     <div class="method">
       <div><h3>Research before code</h3><p>Every project started by checking what already exists. Ideas that were already done well got dropped (a subscription scanner, a runtime RTL linter); the rest were built around the gap.</p></div>
       <div><h3>Tests that could fail</h3><p>Two independent algorithms that must agree, property tests over hundreds of random histories, and held-out evaluation sets.</p></div>
-      <div><h3>Real bugs, written up</h3><p>Majlis's README explains the walking-transfer bug its tests caught. Nudge's tests were written to fail before each parser fix. Mistakes stay visible.</p></div>
+      <div><h3>Real bugs, written up</h3><p>Majlis's README explains the walking-transfer bug its tests caught. Donna's tests were written to fail before each parser fix. Mistakes stay visible.</p></div>
       <div><h3>Shipped, not just written</h3><p>CI on every project, installable apps, live demos, and limitations listed in every README.</p></div>
     </div>
   </section>

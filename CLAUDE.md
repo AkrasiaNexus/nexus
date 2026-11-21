@@ -93,11 +93,11 @@ Turns friend hangouts into quests: niche cheap spot + real bus route + games, in
 - User wants niche, chill, slightly edgy spots; no tourist stuff, nothing far (no Al Wathba). No trespass/abandoned-building spots (UAE legal risk) — find legal edgy ones instead.
 - Games kept: NPC Dialogue (stranger dares), Cover Art (renamed "main character shot" — user finds that corny), Boss Fight. Bus Roulette rejected.
 - Live prototype artifact: https://claude.ai/artifact/LwNwhfV2J2aWaz7CTd35DH
-- Also parked: Nudge (`nudge/`, brain-dump tray app) and Idiolect (`idiolect/`, personal slang/intent profile for AI).
+- Also parked: Donna (`donna/`, brain-dump tray app) and Idiolect (`idiolect/`, personal slang/intent profile for AI).
 - Lore ecosystem: Majlis (`majlis/`, RAPTOR router for fairest group meeting point over GTFS) and Campfire (`campfire/`, CRDT sync behind Lore's shared Lore Book). Campfire is inlined into lore/prototype.html between `/* campfire:start */` markers by `node campfire/tools/bundle.js lore/prototype.html` — never hand-edit that block.
 
 ## Portfolio build mode (standing order)
-- Goal: projects that impress recruiters/college admissions. Each project folder (lore/, nudge/, idiolect/, majlis/, campfire/, ...) is split into its own repo later — keep each self-contained with README + LICENSE (MIT, "AkrasiaNexus") + tests.
+- Goal: projects that impress recruiters/college admissions. Each project folder (lore/, donna/, idiolect/, majlis/, campfire/, ...) is split into its own repo later — keep each self-contained with README + LICENSE (MIT, "AkrasiaNexus") + tests.
 - Per project: research first (does it exist? what's the gap?) → plan → build fully → test → commit. No empty scaffolds; no todo/weather/clone apps.
 - New project picks: credibility that holds up for 1–2 years (fundamentals, real problems, verifiable results), not trend-chasing; creativity is key.
 - When asked to build "until the limit", keep going without stopping to check in.

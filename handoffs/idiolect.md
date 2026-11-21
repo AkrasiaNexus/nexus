@@ -9,7 +9,7 @@ A portable profile of how this user writes (slang, typos, intent) that every AI 
   - `profiles/generic.md`: generic internet slang
   - `profiles/context.md`: its/ill context rules
   - `profiles/me.md`: the **live v1**, written by Claude from all 48 of the user's messages; it has seen every test message
-  - `profiles/me-v0.md`: frozen, used for the reproducible eval, the AI-test prompts and the Nudge conformance vectors
+  - `profiles/me-v0.md`: frozen, used for the reproducible eval, the AI-test prompts and the Donna conformance vectors
 - **Automatic typo repair:** `idiolect/spell.py` (`Speller.from_wordfreq(profile)`, CLI `normalize --spell`).
 - **Instagram learner:** `learn --private` prints word counts and style stats, never a sentence. The user is still waiting for Meta's export, and it runs on the user's laptop only.
 - **AI test:** `tools/llm_intent_eval.py` runs 7 local models (Qwen2.5, Qwen3.5, Gemma 4) through llama-cpp-python. The results are in `data/llm_intent.jsonl` and the README.

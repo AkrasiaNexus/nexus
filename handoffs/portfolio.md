@@ -5,7 +5,7 @@
 
 **Keep the numbers true.** The page quotes test counts and results. As of 21 Nov 2026 they have changed:
 - Lore: 11 tests and 49 spots
-- Nudge: 22 tests, plus the AI planner prototype
+- Donna: 22 tests, plus the AI planner prototype
 - Idiolect: 46 tests, automatic typo repair, a 7-model AI test, and the v1 profile
 - Majlis: 20 tests
 - Campfire: 19 tests
