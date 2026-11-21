@@ -26,7 +26,7 @@ from idiolect.intents import DESCRIPTIONS  # noqa: E402
 
 DATA = ROOT / "data" / "eval.jsonl"
 RESULTS = ROOT / "data" / "llm_intent.jsonl"
-PROFILE = load(*(ROOT / "profiles" / n for n in ("generic.md", "context.md", "me.md")))
+PROFILE = load(*(ROOT / "profiles" / n for n in ("generic.md", "context.md", "me-v0.md")))  # v0: the profile these results were produced with
 CONDITIONS = ("raw", "normalized", "profile prompt")
 TASK = (
     "A user sent this message to their AI coding assistant. Classify what the message is doing with exactly one label:\n"

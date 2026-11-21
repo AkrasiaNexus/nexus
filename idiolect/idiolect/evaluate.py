@@ -39,10 +39,10 @@ def load_examples(path: str | Path) -> list[Example]:
     return examples
 
 
-def word_accuracy(examples: list[Example], profile: Profile) -> float:
+def word_accuracy(examples: list[Example], profile: Profile, speller=None) -> float:
     total = correct = 0
     for ex in examples:
-        pred = normalize_tokens(ex.tokens, profile)
+        pred = normalize_tokens(ex.tokens, profile, speller)
         total += len(ex.norm)
         correct += sum(p == g for p, g in zip(pred, ex.norm))
     return correct / total if total else 0.0
@@ -85,12 +85,14 @@ def report(examples: list[Example], profiles: dict[str, Profile]) -> str:
     splits = sorted({ex.split for ex in examples})
     lines = ["| Profile | " + " | ".join(f"{s} acc | {s} ERR | {s} intent" for s in splits) + " |",
              "|---|" + "---|---|---|" * len(splits)]
-    for name, profile in profiles.items():
+    for name, entry in profiles.items():
+        # An entry is a Profile, or (Profile, Speller) to also repair typos the profile doesn't list.
+        profile, speller = entry if isinstance(entry, tuple) else (entry, None)
         cells = []
         for s in splits:
             subset = [ex for ex in examples if ex.split == s]
             base = word_accuracy(subset, Profile())
-            acc = word_accuracy(subset, profile)
+            acc = word_accuracy(subset, profile, speller)
             cells += [f"{acc:.1%}", f"{err(acc, base):+.2f}", f"{intent_accuracy(subset, profile):.0%}"]
         lines.append(f"| {name} | " + " | ".join(cells) + " |")
     counts = ", ".join(f"{s}: {sum(ex.split == s for ex in examples)} messages, {sum(len(ex.norm) for ex in examples if ex.split == s)} tokens" for s in splits)

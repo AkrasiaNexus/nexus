@@ -8,6 +8,7 @@ from pathlib import Path
 from . import classify, load, normalize
 from .evaluate import learner_report, load_examples, report
 from .learn import read_messages, suggest, wordfreq_backend
+from .spell import Speller
 from .style import style_report
 
 HERE = Path(__file__).resolve().parent.parent
@@ -21,6 +22,7 @@ def main(argv: list[str] | None = None) -> None:
     sub = ap.add_subparsers(dest="cmd", required=True)
     n = sub.add_parser("normalize", help="rewrite text into standard English")
     n.add_argument("text")
+    n.add_argument("--spell", action="store_true", help="also fix typos the profile doesn't list (needs wordfreq)")
     i = sub.add_parser("intent", help="classify what the message wants")
     i.add_argument("text")
     sub.add_parser("prompt", help="print the profile as a system prompt")
@@ -37,7 +39,8 @@ def main(argv: list[str] | None = None) -> None:
 
     profile = load(*(args.profile or DEFAULT_PROFILES))
     if args.cmd == "normalize":
-        result = normalize(args.text, profile)
+        speller = Speller.from_wordfreq(profile) if args.spell else None
+        result = normalize(args.text, profile, speller)
         print(result.text)
         for a, b in result.changes:
             print(f"  {a} -> {b}")
@@ -61,14 +64,24 @@ def main(argv: list[str] | None = None) -> None:
             print(style_report(messages, profile))
     elif args.cmd == "eval":
         here = HERE / "profiles"
-        generic, context, me = load(here / "generic.md"), load(here / "context.md"), load(here / "me.md")
+        generic, context, me = load(here / "generic.md"), load(here / "context.md"), load(here / "me-v0.md")
         examples = load_examples(args.data)
+        v0 = generic.merged(context).merged(me)
+        live = generic.merged(context).merged(load(here / "me.md"))
+        try:
+            v0_spell = (v0, Speller.from_wordfreq(v0))
+            v1_spell = {"generic + context + personal v1 + typo fix (v1 saw every message)": (live, Speller.from_wordfreq(live))}
+        except SystemExit:  # wordfreq not installed: skip the typo-fix rows
+            v0_spell, v1_spell = None, {}
         print(report(examples, {
             "leave as is": load(),
             "generic slang list": generic,
             "personal v0": me,
             "generic + personal v0": generic.merged(me),
-            "generic + context rules + personal v0": generic.merged(context).merged(me),
+            "generic + context rules + personal v0": v0,
+            **({"generic + context rules + personal v0 + typo fix": v0_spell} if v0_spell else {}),
+            "generic + context + personal v1 (v1 saw every message)": live,
+            **v1_spell,
         }))
         try:
             zipf, rank = wordfreq_backend()

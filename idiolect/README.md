@@ -35,10 +35,14 @@ The gold set is 37 real messages from one writer ([`data/eval.jsonl`](data/eval.
 | generic slang list (46 entries) | 93.5% | +0.44 | 93.8% | +0.59 | 90.8% | +0.30 |
 | personal v0 (19 entries) | 97.9% | +0.82 | 94.5% | +0.63 | 91.2% | +0.33 |
 | generic + personal v0 | 99.0% | +0.91 | 95.7% | +0.71 | 92.4% | +0.42 |
-| **generic + context rules + personal v0** | **99.3%** | **+0.94** | **97.2%** | **+0.81** | **93.2%** | **+0.48** |
+| generic + context rules + personal v0 | 99.3% | +0.94 | 97.2% | +0.81 | 93.2% | +0.48 |
+| **+ automatic typo fix** | **99.3%** | **+0.94** | **98.1%** | **+0.87** | **96.4%** | **+0.73** |
+| *generic + context + personal v1 (written by Claude; saw every message)* | *99.7%* | *+0.97* | *99.6%* | *+0.97* | *98.8%* | *+0.91* |
 
 What it shows:
 - **A 19-entry personal profile beats a 46-entry generic list on unseen messages** (test ERR 0.63 vs 0.59), and stacking the two is better again.
+- **Automatic typo repair catches what no list can.** [`idiolect/spell.py`](idiolect/spell.py) turns a rare word into the most common English word one or two edits away, preferring real finger slips: swapped letters, a neighbouring key, a dropped or doubled letter. On test2 it fixed 8 typos the profile had never seen (assisntant, secerts, effiency, uato, peronsal, acess, subcription, urself) and broke nothing. Across all 37 messages it fixed 14 and broke 2 ("todo" → "too", the place name "bateen" → "batten"), and it guessed wrong on 2 slang words no profile listed yet ("aigh", "allat"); v1 lists all four, which protects them. Over all 48 messages this writer has sent, its only wrong change was a model name ("qwen" → "owen"), which listing names under Hotwords prevents.
+- **v1 is the profile Claude wrote** after reading every message, describing how it actually reads this person: slang like alr, asw, ion, idw and wtv, recurring typos, and what phrases like "scrap X", "lock in" and "yo remember" mean. It scores highest, but it has seen every test message, so the italic row is not a held-out result. The honest numbers are the v0 rows above it.
 - **Context rules fix words that are also real English words.** "its" and "ill" were the biggest error left: this writer means "it's" and "I'll", but a plain find-and-replace would break "its own" and "feel ill". [`profiles/context.md`](profiles/context.md) changes them only when the neighbouring word makes it clear. Across all 37 messages it fixed 10 tokens and broke none, and it left "do the **its ill** fix" alone, where the words are being named. The one miss is "its aigh", because "aigh" (alright) isn't in any profile yet.
 - **The profile ages.** On test2, ten days on, ERR drops to 0.48. Most of the remaining errors are new slang ("alr", "ion", "idw", "wtv") and new typos. That is the case for re-running `learn` regularly.
 - Caveats: the context word lists come from English grammar, but the author had seen dev and test while writing them. test2 was labelled before the rules were written, though the same author had read those messages.
@@ -122,7 +126,7 @@ Jarvis, Nexus, forge_change
 
 Context rules apply only when the nearest word (punctuation skipped, `(end)` = none) passes all three columns; an empty column allows anything. A plain Slang or Typos entry for the same word wins.
 
-Prose sections such as "How to read me" are ignored by the parser and kept in the prompt. Load several profiles and later ones win: `load("profiles/generic.md", "profiles/me.md")`.
+Prose sections such as "How to read me" are ignored by the parser and kept in the prompt. Load several profiles and later ones win: `load("profiles/generic.md", "profiles/me.md")`. `profiles/me.md` is the live profile (v1); `profiles/me-v0.md` is frozen so the eval stays reproducible.
 
 ## Use it in an agent
 
@@ -132,6 +136,8 @@ from idiolect import load, normalize, classify
 me = load("profiles/generic.md", "profiles/context.md", "profiles/me.md")
 system_prompt = me.prompt()                  # any model
 clean = normalize(user_text, me).text        # before a small local model
+from idiolect.spell import Speller            # optional: needs `pip install wordfreq`
+clean = normalize(user_text, me, Speller.from_wordfreq(me)).text   # also repair unlisted typos
 route = classify(user_text, me).label        # question / reject / approve / context / pitch / request
 ```
 
@@ -151,7 +157,7 @@ Voice: pass `me.whisper_hotwords()` as faster-whisper's `hotwords` (or `initial_
 python -m unittest discover -s tests
 ```
 
-35 tests: profile parsing and merging, context rules (including naming a word without changing it), Unicode-safe tokenization (Arabic, accents, emoji), splice-in-place output, multi-word expansion, intent labels and personal-cue precedence, all three chat export formats (claude.ai, Claude Code, Instagram), the learner's typo and slang logic, private mode leaking no sentences, ERR maths, gold-alignment validation, and a regression check that the headline result still holds.
+46 tests: profile parsing and merging, context rules (including naming a word without changing it), automatic typo repair (keyboard slips, dropped letters, protected words), Unicode-safe tokenization (Arabic, accents, emoji), splice-in-place output, multi-word expansion, intent labels and personal-cue precedence, all three chat export formats (claude.ai, Claude Code, Instagram), the learner's typo and slang logic, private mode leaking no sentences, ERR maths, gold-alignment validation, and a regression check that the headline result still holds.
 
 ## Limitations and next steps
 

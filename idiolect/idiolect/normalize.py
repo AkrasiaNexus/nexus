@@ -71,27 +71,28 @@ def _neighbour(tokens: list[str], i: int, step: int, profile: Profile) -> set[st
     return {tokens[j], words[0] if step > 0 else words[-1]}
 
 
-def _replace(tokens: list[str], i: int, profile: Profile) -> str:
+def _replace(tokens: list[str], i: int, profile: Profile, speller=None) -> str:
     tok = tokens[i]
     if tok in profile.replacements:
         return profile.replacements[tok]
     rule = profile.context_rules.get(tok)
     if rule and rule.applies(_neighbour(tokens, i, -1, profile), _neighbour(tokens, i, 1, profile)):
         return rule.standard
-    return tok
+    return speller.correct(tok) if speller else tok
 
 
-def normalize_tokens(tokens: list[str], profile: Profile) -> list[str]:
-    return [_replace(tokens, i, profile) for i in range(len(tokens))]
+def normalize_tokens(tokens: list[str], profile: Profile, speller=None) -> list[str]:
+    """`speller` (idiolect.spell.Speller) also repairs typos the profile doesn't list."""
+    return [_replace(tokens, i, profile, speller) for i in range(len(tokens))]
 
 
-def normalize(text: str, profile: Profile) -> Normalized:
+def normalize(text: str, profile: Profile, speller=None) -> Normalized:
     spans = token_spans(text)
     raw = [tok for tok, _, _ in spans]
     pieces, tokens, changes = [], [], []
     last = 0
     for i, (tok, start, end) in enumerate(spans):
-        new = _replace(raw, i, profile)
+        new = _replace(raw, i, profile, speller)
         tokens.append(new)
         if new != tok:
             pieces.append(text[last:start])

@@ -29,7 +29,7 @@ EDGE_CASES = [
 
 
 def main(out: str) -> None:
-    profile = load(ROOT / "profiles" / "generic.md", ROOT / "profiles" / "me.md")
+    profile = load(ROOT / "profiles" / "generic.md", ROOT / "profiles" / "me-v0.md")
     messages = [json.loads(line)["text"] for line in (ROOT / "data" / "eval.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
     vectors = []
     for text in messages + EDGE_CASES:

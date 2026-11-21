@@ -10,6 +10,7 @@ from idiolect.learn import (instagram_owner, messages_from_claude_code, messages
                             messages_from_instagram, read_messages, suggest)
 from idiolect.profile import Profile
 from idiolect.style import style_report
+from idiolect.spell import Speller, slip_bonus
 
 ROOT = Path(__file__).resolve().parent.parent
 SAMPLE = """# Test profile
@@ -286,10 +287,56 @@ class LearnTests(unittest.TestCase):
         self.assertNotIn("bobname", md)  # said fewer than 3 times: names and one-offs stay out
 
 
+class SpellTests(unittest.TestCase):
+    ZIPF = {"assistant": 4.5, "secrets": 4.6, "efficiency": 4.4, "auto": 4.6, "access": 5.0, "personal": 5.2,
+            "separate": 4.8, "roll": 4.8, "the": 7.7, "repos": 2.9, "jus": 1.0, "assistants": 3.5, "cat": 5.0,
+            "cast": 4.6, "cut": 5.2, "lowk": 0.0, "graphify": 0.0, "friend": 5.6, "trend": 4.6}
+
+    def zipf(self, w):
+        return self.ZIPF.get(w, 0.0)
+
+    def speller(self, protected=()):
+        return Speller(self.zipf, frozenset(w for w, z in self.ZIPF.items() if z >= 3), frozenset(protected))
+
+    def test_fixes_fast_typing_slips(self):
+        sp = self.speller()
+        self.assertEqual(sp.correct("assisntant"), "assistant")  # extra letter
+        self.assertEqual(sp.correct("secerts"), "secrets")  # swapped letters
+        self.assertEqual(sp.correct("uato"), "auto")
+        self.assertEqual(sp.correct("acess"), "access")  # missing letter
+        self.assertEqual(sp.correct("seperate"), "separate")
+        self.assertEqual(sp.correct("effiency"), "efficiency")  # two letters missing
+        self.assertEqual(sp.correct("peronsal"), "personal")
+
+    def test_a_dropped_letter_beats_a_neighbouring_key(self):
+        # "frend": dropping the i is the commoner slip than hitting f for t, so "friend" wins over "trend".
+        self.assertEqual(self.speller().correct("frend"), "friend")
+
+    def test_leaves_real_words_short_words_and_protected_words_alone(self):
+        sp = self.speller(protected={"graphify"})
+        for word in ("repos", "the", "cat", "te", "graphify", "2nd", "don't"):
+            self.assertEqual(sp.correct(word), word)
+
+    def test_no_close_word_means_no_change(self):
+        self.assertEqual(self.speller().correct("xqzvw"), "xqzvw")
+
+    def test_keyboard_slip_beats_a_more_common_word(self):
+        # "cqt": q sits next to a on the keyboard, so "cat" wins over the more common "cut".
+        self.assertGreater(slip_bonus("cqt", "cat"), slip_bonus("cqt", "cut"))
+        self.assertEqual(self.speller().correct("cqtt"), "cqtt")  # short and two edits away: left alone
+
+    def test_profile_entries_run_first_and_are_protected(self):
+        p = parse("## Slang\n| a | b | c |\n|---|---|---|\n| lowk | low-key | x |\n\n## Hotwords\nGraphify\n")
+        sp = Speller.for_profile(p, self.zipf, frozenset(w for w, z in self.ZIPF.items() if z >= 3))
+        r = normalize("lowk need an assisntant for graphify", p, sp)
+        self.assertEqual(r.text, "low-key need an assistant for graphify")
+        self.assertEqual(normalize_tokens(tokenize("uato secerts"), p, sp), ["auto", "secrets"])
+
+
 class StyleTests(unittest.TestCase):
     def test_style_report_is_aggregate_only(self):
         msgs = ["lowk wanna go 🔥🔥", "nah", "where u at?", "OKAY bet", "secret plan tonight"]
-        report = style_report(msgs, load(ROOT / "profiles" / "me.md"))
+        report = style_report(msgs, load(ROOT / "profiles" / "me-v0.md"))
         self.assertIn("5 messages", report)
         self.assertIn("80% all lowercase", report)
         self.assertIn("80% end without . ! or ?", report)
@@ -325,7 +372,7 @@ class EvaluateTests(unittest.TestCase):
         examples = [ex for ex in load_examples(ROOT / "data" / "eval.jsonl") if ex.split == "test"]
         base = word_accuracy(examples, Profile())
         generic = load(ROOT / "profiles" / "generic.md")
-        both = generic.merged(load(ROOT / "profiles" / "me.md"))
+        both = generic.merged(load(ROOT / "profiles" / "me-v0.md"))
         self.assertGreater(err(word_accuracy(examples, both), base), err(word_accuracy(examples, generic), base))
 
 
