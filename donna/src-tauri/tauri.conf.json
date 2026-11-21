@@ -20,14 +20,16 @@
         "minHeight": 500
       },
       {
-        "label": "panel",
+        "label": "orb",
         "title": "Donna",
-        "url": "index.html?view=panel",
-        "width": 380,
-        "height": 560,
+        "url": "index.html?view=orb",
+        "width": 72,
+        "height": 72,
         "visible": false,
         "focus": false,
         "decorations": false,
+        "transparent": true,
+        "shadow": false,
         "alwaysOnTop": true,
         "resizable": false,
         "skipTaskbar": true
@@ -35,7 +37,8 @@
     ],
     "security": {
       "csp": "default-src 'self'; connect-src 'self' http://127.0.0.1:11434; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com"
-    }
+    },
+    "macOSPrivateApi": true
   },
   "bundle": {
     "active": true,

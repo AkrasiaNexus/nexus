@@ -19,9 +19,16 @@ export async function hideThisWindow() {
   await getCurrentWindow().hide();
 }
 
-// Shows the side panel without taking keyboard focus (see `announce` in main.rs).
-export async function revealPanel() {
+// Wakes the orb without taking keyboard focus (see `announce` in main.rs).
+export async function revealOrb() {
   if (!isTauri()) return;
   const { invoke } = await import("@tauri-apps/api/core");
   await invoke("announce").catch(() => {});
+}
+
+// The orb window is the orb: it follows its own content so the circle stays a circle.
+export async function resizeOrb(width, height) {
+  if (!isTauri()) return;
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("resize_orb", { width, height }).catch(() => {});
 }

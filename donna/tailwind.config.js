@@ -6,16 +6,18 @@ export default {
     extend: {
       colors: {
         donna: {
-          bg: "#0A0A0B",
-          surface: "#141416",
-          border: "#2A2A2E",
-          text: "#E4E4E7",
-          muted: "#71717A",
-          accent: "#8B5CF6",
-          accentHover: "#7C3AED",
-          green: "#22C55E",
-          orange: "#F59E0B",
-          red: "#EF4444",
+          bg: "#08080A",
+          surface: "#121214",
+          raised: "#1A1A1D",
+          border: "#26262A",
+          text: "#E8E8EC",
+          muted: "#86868F",
+          faint: "#55555E",
+          accent: "#E8E8EC",
+          accentHover: "#FFFFFF",
+          green: "#9A9AA3",
+          orange: "#9A9AA3",
+          red: "#D9544D",
         },
       },
       fontFamily: {

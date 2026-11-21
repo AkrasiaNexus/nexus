@@ -12,14 +12,16 @@ const PRIMARY: Modifiers = Modifiers::SUPER;
 #[cfg(not(target_os = "macos"))]
 const PRIMARY: Modifiers = Modifiers::CONTROL;
 
-const EDGE_MARGIN: i32 = 16;
+const EDGE_MARGIN: i32 = 24;
+// Clears the macOS dock, which sits over the bottom of the screen.
+const BOTTOM_MARGIN: i32 = 96;
 
-fn panel_shortcut() -> Shortcut {
+fn orb_shortcut() -> Shortcut {
     Shortcut::new(Some(PRIMARY | Modifiers::SHIFT), Code::KeyN)
 }
 
-// Pin the panel to the right edge of whichever screen it is on, vertically centred.
-fn anchor_right(app: &AppHandle, window: &WebviewWindow) {
+// Pin the orb to the bottom-right of whichever screen it is on.
+fn anchor_bottom_right(app: &AppHandle, window: &WebviewWindow) {
     let monitor = window
         .current_monitor()
         .ok()
@@ -32,15 +34,15 @@ fn anchor_right(app: &AppHandle, window: &WebviewWindow) {
     let screen = monitor.size();
     let origin = monitor.position();
     let x = origin.x + screen.width as i32 - size.width as i32 - EDGE_MARGIN;
-    let y = origin.y + (screen.height as i32 - size.height as i32) / 2;
+    let y = origin.y + screen.height as i32 - size.height as i32 - BOTTOM_MARGIN;
     let _ = window.set_position(PhysicalPosition::new(x, y));
 }
 
 // `focus` is false when Donna speaks up on her own: a reminder must never swallow
 // the keystrokes of whatever the user is typing in another app.
-fn reveal_panel(app: &AppHandle, focus: bool) {
-    if let Some(window) = app.get_webview_window("panel") {
-        anchor_right(app, &window);
+fn reveal_orb(app: &AppHandle, focus: bool) {
+    if let Some(window) = app.get_webview_window("orb") {
+        anchor_bottom_right(app, &window);
         let _ = window.show();
         if focus {
             let _ = window.set_focus();
@@ -48,12 +50,12 @@ fn reveal_panel(app: &AppHandle, focus: bool) {
     }
 }
 
-fn toggle_panel(app: &AppHandle) {
-    if let Some(window) = app.get_webview_window("panel") {
+fn toggle_orb(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("orb") {
         if window.is_visible().unwrap_or(false) {
             let _ = window.hide();
         } else {
-            reveal_panel(app, true);
+            reveal_orb(app, true);
         }
     }
 }
@@ -69,12 +71,22 @@ fn show_main(app: &AppHandle) {
 // Called from the ticker when a session is about to start.
 #[tauri::command]
 fn announce(app: AppHandle) {
-    reveal_panel(&app, false);
+    reveal_orb(&app, false);
+}
+
+// The orb is a circle at rest and a pill when it speaks, so the window follows its content
+// and re-anchors, otherwise growing would push it off the bottom-right corner.
+#[tauri::command]
+fn resize_orb(app: AppHandle, width: f64, height: f64) {
+    if let Some(window) = app.get_webview_window("orb") {
+        let _ = window.set_size(tauri::LogicalSize::new(width, height));
+        anchor_bottom_right(&app, &window);
+    }
 }
 
 #[tauri::command]
-fn dismiss_panel(app: AppHandle) {
-    if let Some(window) = app.get_webview_window("panel") {
+fn dismiss_orb(app: AppHandle) {
+    if let Some(window) = app.get_webview_window("orb") {
         let _ = window.hide();
     }
 }
@@ -85,21 +97,21 @@ fn main() {
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, shortcut, event| {
-                    if shortcut == &panel_shortcut() && event.state() == ShortcutState::Pressed {
-                        toggle_panel(app);
+                    if shortcut == &orb_shortcut() && event.state() == ShortcutState::Pressed {
+                        toggle_orb(app);
                     }
                 })
                 .build(),
         )
-        .invoke_handler(tauri::generate_handler![announce, dismiss_panel])
+        .invoke_handler(tauri::generate_handler![announce, dismiss_orb, resize_orb])
         .setup(|app| {
-            app.global_shortcut().register(panel_shortcut())?;
+            app.global_shortcut().register(orb_shortcut())?;
 
-            let panel = MenuItem::with_id(app, "panel", "Show panel", true, Some("CmdOrCtrl+Shift+N"))?;
+            let orb = MenuItem::with_id(app, "orb", "Show Donna", true, Some("CmdOrCtrl+Shift+N"))?;
             let open = MenuItem::with_id(app, "open", "Open Donna", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let separator = PredefinedMenuItem::separator(app)?;
-            let menu = Menu::with_items(app, &[&panel, &separator, &open, &quit])?;
+            let menu = Menu::with_items(app, &[&orb, &separator, &open, &quit])?;
 
             TrayIconBuilder::new()
                 .icon(app.default_window_icon().expect("bundle icon").clone())
@@ -107,14 +119,14 @@ fn main() {
                 .menu(&menu)
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id.as_ref() {
-                    "panel" => toggle_panel(app),
+                    "orb" => toggle_orb(app),
                     "open" => show_main(app),
                     "quit" => app.exit(0),
                     _ => {}
                 })
                 .on_tray_icon_event(|tray, event| {
                     if let TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } = event {
-                        toggle_panel(tray.app_handle());
+                        toggle_orb(tray.app_handle());
                     }
                 })
                 .build(app)?;

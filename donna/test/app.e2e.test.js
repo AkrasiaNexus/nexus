@@ -1,4 +1,4 @@
-// Runs the built web app in Chromium: capture, plan, check-in notifications, and the side panel.
+// Runs the built web app in Chromium: capture, plan, check-in notifications, and the orb.
 import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
@@ -106,24 +106,44 @@ test("a check-in that came due fires one notification", async () => {
   await context.close();
 });
 
-test("the side panel shows the next session in Donna's voice, and nothing else", async () => {
+test("the orb rests as a circle on a transparent page, and opens on a click", async () => {
+  const page = await browser.newPage();
+  await page.goto(base + "?view=orb");
+
+  const transparent = await page.evaluate(() => [
+    getComputedStyle(document.documentElement).backgroundColor,
+    getComputedStyle(document.body).backgroundColor,
+  ]);
+  assert.deepEqual(transparent, ["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0)"], "an opaque page makes the round window a square");
+  assert.equal(await page.getByPlaceholder(/tell donna/).count(), 0, "nothing but the circle at rest");
+
+  await page.getByRole("button", { name: "Ask Donna" }).click();
+  await assert.doesNotReject(page.getByPlaceholder(/tell donna/).waitFor());
+
+  await page.close();
+});
+
+test("the daily brief answers from the plan itself, without calling the model", async () => {
   const context = await browser.newContext();
   const page = await context.newPage();
+  let modelCalls = 0;
+  await page.route("http://127.0.0.1:11434/api/chat", async (route) => { modelCalls++; await route.abort(); });
   await page.addInitScript(() => {
     const d = new Date();
     const pad = (n) => String(n).padStart(2, "0");
     const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    const soon = new Date(Date.now() + 4 * 60_000);
     localStorage.setItem("donna_plan", JSON.stringify({
-      blocks: [{ id: "b1", itemId: null, title: "Rust ownership", date, start: `${pad(soon.getHours())}:${pad(soon.getMinutes())}`, minutes: 60, done: false }],
+      blocks: [{ id: "b1", itemId: null, title: "Rust ownership", date, start: "23:30", minutes: 30, done: false }],
       fixed: [], sweptOn: date,
     }));
   });
-  await page.goto(base + "?view=panel");
+  await page.goto(base + "?view=orb");
 
-  assert.equal(await page.getByRole("button", { name: /This Week/ }).count(), 0, "no sidebar in the panel");
-  await assert.doesNotReject(page.getByText(/Rust ownership/).first().waitFor(), "names the session");
-  await assert.doesNotReject(page.getByRole("button", { name: /^done$/ }).waitFor(), "offers a way to tick it off");
+  await page.getByRole("button", { name: "Ask Donna" }).click();
+  await page.getByRole("button", { name: "brief" }).click();
+
+  await assert.doesNotReject(page.getByText(/free|day's gone|booked/i).first().waitFor());
+  assert.equal(modelCalls, 0, "the brief is computed, so Ollama is never asked");
 
   await context.close();
 });
@@ -131,7 +151,7 @@ test("the side panel shows the next session in Donna's voice, and nothing else",
 const OLLAMA_CHAT = "http://127.0.0.1:11434/api/chat";
 const ollamaSays = (message) => ({ status: 200, contentType: "application/json", body: JSON.stringify({ message }) });
 
-test("the panel hands the blurt to Donna, stays responsive while she thinks, and her goal lands in shared storage", async () => {
+test("the orb hands the blurt to Donna, stays responsive while she thinks, and her goal lands in shared storage", async () => {
   const context = await browser.newContext();
   const page = await context.newPage();
   let release;
@@ -144,9 +164,10 @@ test("the panel hands the blurt to Donna, stays responsive while she thinks, and
     await held;
     await route.fulfill(ollamaSays(replies.shift()));
   });
-  await page.goto(base + "?view=panel");
+  await page.goto(base + "?view=orb");
+  await page.getByRole("button", { name: "Ask Donna" }).click();
 
-  const input = page.getByPlaceholder(/blurt it out/);
+  const input = page.getByPlaceholder(/tell donna/);
   await input.fill("learn rust 30 mins a day till dec 5");
   await input.press("Enter");
 
@@ -166,13 +187,14 @@ test("the panel hands the blurt to Donna, stays responsive while she thinks, and
   await context.close();
 });
 
-test("with Ollama down the panel says how to fix it instead of hanging", async () => {
+test("with Ollama down the orb says how to fix it instead of hanging", async () => {
   const context = await browser.newContext();
   const page = await context.newPage();
   await page.route(OLLAMA_CHAT, (route) => route.abort("connectionrefused"));
-  await page.goto(base + "?view=panel");
+  await page.goto(base + "?view=orb");
+  await page.getByRole("button", { name: "Ask Donna" }).click();
 
-  const input = page.getByPlaceholder(/blurt it out/);
+  const input = page.getByPlaceholder(/tell donna/);
   await input.fill("gym at 6");
   await input.press("Enter");
 

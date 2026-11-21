@@ -4,7 +4,7 @@
   "description": "What the Donna windows are allowed to do",
   "windows": [
     "main",
-    "panel"
+    "orb"
   ],
   "permissions": [
     "core:default",

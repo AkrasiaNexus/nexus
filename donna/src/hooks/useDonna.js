@@ -59,5 +59,10 @@ export function useDonna() {
     return true;
   }
 
-  return { thread, busy, say };
+  // An answer Donna already knows (the daily brief) goes straight in: no model, no wait.
+  function tell(question, answer) {
+    setThread((prev) => [...prev, { role: "user", content: question }, { role: "assistant", content: answer }].slice(-HISTORY_LIMIT));
+  }
+
+  return { thread, busy, say, tell };
 }

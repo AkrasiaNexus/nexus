@@ -8,9 +8,14 @@
   box-sizing: border-box;
 }
 
+:root[data-view="orb"],
+:root[data-view="orb"] body {
+  background: transparent;
+}
+
 body {
-  background: #0A0A0B;
-  color: #E4E4E7;
+  background: #08080A;
+  color: #E8E8EC;
   font-family: "Inter", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -33,3 +38,37 @@ input, textarea {
   color: inherit;
   font: inherit;
 }
+
+/* The orb: a quiet ring, not a glowing blob. Colour lives on calendar blocks, not here. */
+.orb {
+  width: 56px; height: 56px; border-radius: 50%; border: 0; cursor: pointer;
+  background: theme('colors.donna.surface');
+  box-shadow: 0 0 0 1px theme('colors.donna.border'), 0 8px 24px -8px rgb(0 0 0 / 0.6);
+  position: relative; transition: transform 140ms ease;
+}
+.orb::after {
+  content: ""; position: absolute; inset: 7px; border-radius: 50%;
+  border: 1.5px solid theme('colors.donna.accent'); opacity: 0.85;
+}
+.orb:hover { transform: scale(1.06); }
+.orb:hover::after { opacity: 0.8; }
+.orb:active { transform: scale(0.97); }
+
+.orb-card {
+  margin: 12px; padding: 14px; border-radius: 16px;
+  background: theme('colors.donna.surface');
+  box-shadow: 0 0 0 1px theme('colors.donna.border'), 0 12px 32px -10px rgb(0 0 0 / 0.65);
+}
+.orb-mini {
+  width: 18px; height: 18px; border-radius: 50%; flex: none; margin-top: 1px;
+  border: 1.5px solid theme('colors.donna.accent');
+}
+.orb-mini.is-busy { animation: orb-breathe 1.4s ease-in-out infinite; }
+@keyframes orb-breathe { 50% { opacity: 0.35; transform: scale(0.88); } }
+@media (prefers-reduced-motion: reduce) { .orb-mini.is-busy { animation: none; opacity: 0.6; } }
+
+.orb-chip {
+  flex: none; font-size: 11.5px; padding: 4px 9px; border-radius: 999px;
+  color: theme('colors.donna.muted'); border: 1px solid theme('colors.donna.border');
+}
+.orb-chip:hover { color: theme('colors.donna.text'); }
