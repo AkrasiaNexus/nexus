@@ -43,6 +43,19 @@ input, textarea {
    UI ease, reduced-motion rules) and ui-ux-pro-max (stagger values): transforms and opacity
    only, so everything stays on the compositor thread. No animation library for this. */
 :root {
+  /* Colours as tokens, not theme() lookups: this CSS then needs nothing from the
+     Tailwind config, which is one fewer thing that can be stale or out of step. */
+  --c-surface: #121214;
+  --c-raised: #1A1A1D;
+  --c-border: #26262A;
+  --c-text: #E8E8EC;
+  --c-muted: #86868F;
+  --cat-skill: #5B8DEF;
+  --cat-idea: #A878E8;
+  --cat-task: #D9A441;
+  --cat-habit: #3FB97E;
+  --cat-explore: #D96BA0;
+
   --m-in: 150ms;
   --m-out: 120ms;
   --m-press: 90ms;
@@ -54,15 +67,15 @@ input, textarea {
 
 .orb {
   width: 56px; height: 56px; border-radius: 50%; border: 0; cursor: pointer;
-  background: theme('colors.donna.surface');
-  box-shadow: 0 0 0 1px theme('colors.donna.border'), 0 8px 24px -8px rgb(0 0 0 / 0.6);
+  background: var(--c-surface);
+  box-shadow: 0 0 0 1px var(--c-border), 0 8px 24px -8px rgb(0 0 0 / 0.6);
   position: relative;
   animation: orb-wake var(--m-panel) var(--m-enter) both;
   transition: transform var(--m-out) var(--m-ease);
 }
 .orb::after {
   content: ""; position: absolute; inset: 7px; border-radius: 50%;
-  border: 1.5px solid theme('colors.donna.text'); opacity: 0.5;
+  border: 1.5px solid var(--c-text); opacity: 0.5;
   transition: opacity var(--m-in) var(--m-ease), inset var(--m-in) var(--m-ease);
 }
 .orb:hover { transform: scale(1.06); }
@@ -72,16 +85,16 @@ input, textarea {
 /* a life sign, not a klaxon: the one thing moving while something waits on you */
 .orb.has-waiting::before {
   content: ""; position: absolute; top: 2px; right: 2px; width: 9px; height: 9px;
-  border-radius: 50%; background: theme('colors.donna.text');
-  box-shadow: 0 0 0 2.5px theme('colors.donna.surface');
+  border-radius: 50%; background: var(--c-text);
+  box-shadow: 0 0 0 2.5px var(--c-surface);
   animation: orb-live var(--m-live) var(--m-ease) infinite;
 }
 
 /* the card grows out of the corner the orb sits in, not out of its own middle */
 .orb-card {
   margin: 12px; padding: 14px; border-radius: 16px;
-  background: theme('colors.donna.surface');
-  box-shadow: 0 0 0 1px theme('colors.donna.border'), 0 12px 32px -10px rgb(0 0 0 / 0.65);
+  background: var(--c-surface);
+  box-shadow: 0 0 0 1px var(--c-border), 0 12px 32px -10px rgb(0 0 0 / 0.65);
   transform-origin: 100% 100%;
   animation: orb-open var(--m-panel) var(--m-enter) both;
 }
@@ -90,12 +103,12 @@ input, textarea {
    sitting above the reminders you can tick off. */
 .orb-mini {
   width: 18px; height: 18px; border-radius: 50%; flex: none; margin-top: 1px;
-  border: 1.5px solid theme('colors.donna.text');
+  border: 1.5px solid var(--c-text);
   position: relative;
 }
 .orb-mini::after {
   content: ""; position: absolute; inset: 4px; border-radius: 50%;
-  background: theme('colors.donna.text');
+  background: var(--c-text);
   transition: inset var(--m-in) var(--m-ease);
 }
 .orb-mini.is-busy::after { inset: 5.5px; }
@@ -109,10 +122,10 @@ input, textarea {
 
 .orb-chip {
   flex: none; font-size: 11.5px; padding: 4px 9px; border-radius: 999px;
-  color: theme('colors.donna.muted'); border: 1px solid theme('colors.donna.border');
+  color: var(--c-muted); border: 1px solid var(--c-border);
   transition: color var(--m-in) var(--m-ease), border-color var(--m-in) var(--m-ease);
 }
-.orb-chip:hover { color: theme('colors.donna.text'); border-color: theme('colors.donna.muted'); }
+.orb-chip:hover { color: var(--c-text); border-color: var(--c-muted); }
 .orb-chip:active { transform: scale(.97); }
 
 @keyframes orb-wake { from { opacity: 0; transform: scale(.6); } }
@@ -133,8 +146,13 @@ input, textarea {
 }
 
 /* Blocks are the one place colour carries meaning: which kind of thing a session is. */
-.cat-skill { border-left-color: theme('colors.cat.skill'); background: color-mix(in srgb, theme('colors.cat.skill') 16%, theme('colors.donna.raised')); color: theme('colors.donna.text'); }
-.cat-idea { border-left-color: theme('colors.cat.idea'); background: color-mix(in srgb, theme('colors.cat.idea') 16%, theme('colors.donna.raised')); color: theme('colors.donna.text'); }
-.cat-task { border-left-color: theme('colors.cat.task'); background: color-mix(in srgb, theme('colors.cat.task') 16%, theme('colors.donna.raised')); color: theme('colors.donna.text'); }
-.cat-habit { border-left-color: theme('colors.cat.habit'); background: color-mix(in srgb, theme('colors.cat.habit') 16%, theme('colors.donna.raised')); color: theme('colors.donna.text'); }
-.cat-explore { border-left-color: theme('colors.cat.explore'); background: color-mix(in srgb, theme('colors.cat.explore') 16%, theme('colors.donna.raised')); color: theme('colors.donna.text'); }
+.cat-skill, .cat-idea, .cat-task, .cat-habit, .cat-explore {
+  border-left-color: var(--cat);
+  background: color-mix(in srgb, var(--cat) 16%, var(--c-raised));
+  color: var(--c-text);
+}
+.cat-skill { --cat: var(--cat-skill); }
+.cat-idea { --cat: var(--cat-idea); }
+.cat-task { --cat: var(--cat-task); }
+.cat-habit { --cat: var(--cat-habit); }
+.cat-explore { --cat: var(--cat-explore); }

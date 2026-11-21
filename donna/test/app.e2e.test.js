@@ -321,3 +321,31 @@ test("a reminder whose moment arrives pops the orb open with nobody touching it"
 
   await context.close();
 });
+
+test("the orb wakes again every time the window is shown, not just the first time", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto(base + "?view=orb");
+
+  const started = () => page.evaluate(() => {
+    const orb = document.querySelector(".orb");
+    return orb ? orb.getAnimations().map((a) => a.startTime).join() : null;
+  });
+
+  const first = await started();
+  assert.notEqual(first, null, "the orb animates on first show");
+
+  // Tauri hides the window rather than unmounting the page; the browser reports the same
+  // visibilitychange, so this is the exact signal the component keys off.
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+    Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await page.waitForTimeout(60);
+
+  assert.notEqual(await started(), first, "it animates again on the next show");
+
+  await context.close();
+});

@@ -34,6 +34,10 @@ export default function Orb() {
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [now, setNow] = useState(Date.now());
+  // Hiding the window doesn't unmount the page, so an entrance animation would only ever
+  // play once. Showing it fires visibilitychange; bumping this key remounts the orb so it
+  // wakes again on every press of the shortcut.
+  const [wake, setWake] = useState(0);
   const [text, setText] = useState("");
   const mic = useDictation((spoken) => { setText(""); say(spoken); });
   const plan = useStore(planStore);
@@ -65,6 +69,16 @@ export default function Orb() {
   }, [ids]);
 
   useWindowFitsContent(card, isOpen);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      setWake((n) => n + 1);
+      setOpen(false);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
 
   useEffect(() => {
     if (open) input.current?.focus();
@@ -103,6 +117,7 @@ export default function Orb() {
     return (
       <div className="h-screen flex items-center justify-center">
         <button
+          key={wake}
           onClick={() => { setOpen(true); setDismissed(false); }}
           aria-label={waiting.length ? `Ask Donna — ${waiting.length} waiting` : "Ask Donna"}
           className={`orb ${waiting.length ? "has-waiting" : ""}`}
@@ -112,7 +127,7 @@ export default function Orb() {
   }
 
   return (
-    <div ref={card} className="orb-card">
+    <div key={wake} ref={card} className="orb-card">
       <div className="flex items-start gap-3">
         <span className={`orb-mini ${busy ? "is-busy" : ""}`} aria-hidden="true" />
         <div className="min-w-0 flex-1">

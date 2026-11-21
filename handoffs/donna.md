@@ -39,7 +39,7 @@ It is for personal use. The name is Donna Paulsen, from Suits.
   survives; the new plan data lives under `donna_plan`.
 
 ## What is built and verified
-155 tests pass: `cd donna && npm test` (143 unit + 12 Playwright e2e). The e2e suite takes
+156 tests pass: `cd donna && npm test` (143 unit + 13 Playwright e2e). The e2e suite takes
 `CHROMIUM_PATH` so it can run against a browser Playwright didn't install itself — in the cloud
 container, `CHROMIUM_PATH=/opt/pw-browsers/chromium npm test`.
 

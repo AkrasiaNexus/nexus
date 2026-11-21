@@ -19,15 +19,6 @@ export default {
           orange: "#9A9AA3",
           red: "#D9544D",
         },
-        // Colour earns its place on calendar blocks only: it says what kind of thing
-        // a session is at a glance. The rest of the app stays black and grey.
-        cat: {
-          skill: "#5B8DEF",
-          idea: "#A878E8",
-          task: "#D9A441",
-          habit: "#3FB97E",
-          explore: "#D96BA0",
-        },
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
