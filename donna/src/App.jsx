@@ -3,15 +3,15 @@ import CaptureInput from "./components/CaptureInput";
 import WeekPlanner from "./components/WeekPlanner";
 import ItemCard from "./components/ItemCard";
 import Sidebar from "./components/Sidebar";
-import CaptureWindow from "./components/CaptureWindow";
+import Panel from "./components/Panel";
 import { itemStore } from "./stores/itemStore";
 import { useStore } from "./hooks/useStore";
 import { useNudgeTicker } from "./hooks/useNudgeTicker";
 
-const isCaptureWindow = new URLSearchParams(window.location.search).get("view") === "capture";
+const isPanel = new URLSearchParams(window.location.search).get("view") === "panel";
 
 export default function App() {
-  return isCaptureWindow ? <CaptureWindow /> : <MainWindow />;
+  return isPanel ? <Panel /> : <MainWindow />;
 }
 
 function MainWindow() {

@@ -18,3 +18,10 @@ export async function hideThisWindow() {
   const { getCurrentWindow } = await import("@tauri-apps/api/window");
   await getCurrentWindow().hide();
 }
+
+// Shows the side panel without taking keyboard focus (see `announce` in main.rs).
+export async function revealPanel() {
+  if (!isTauri()) return;
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("announce").catch(() => {});
+}

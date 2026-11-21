@@ -15,11 +15,13 @@ Ideas, skills to learn and side projects get thought about once and then forgott
 
 ## What it does
 
-- **Capture from anywhere:** a global shortcut opens a frameless, always-on-top input. Enter saves, Esc closes.
+- **A side panel, not a window:** Donna is silent until she isn't. `Ctrl/Cmd + Shift + N` slides a panel in at the right edge of the screen; Esc sends it away. There is no app to sit and look at.
 - **Understands loose input:** "i wanna learn rust in 2 weeks" becomes **Learn rust**, *skill*, due in 14 days. Slang is normalized first with your [Idiolect](../idiolect) profile, so "lowk wanna learn rust jus 2 wks" works too. Timeframes use whole-word units, so "buy 3 more eggs" stays a title and is never read as "3 months".
 - **Plans your week:** goals are grouped into overdue, each of the next 7 days, and later, each with a progress bar.
-- **Check-ins that escalate:** gentle at 25%, firm at 50% and 75%, urgent at the deadline. If your laptop slept through several, you get one nudge, the latest, not a burst.
-- **Runs in the background:** closing the window hides it to the tray so nudges keep arriving.
+- **Reminders before a session, not after:** sessions have real clock times, so five minutes before one starts Donna says so — and the panel appears *unfocused*, so it never swallows what you're typing in another app.
+- **Check-ins that escalate:** for anything not yet given a time — gentle at 25%, firm at 50% and 75%, urgent at the deadline. If your laptop slept through several, you get one nudge, the latest, not a burst.
+- **Missed it? It's tomorrow's problem, first thing:** an end-of-day sweep moves anything you missed to the earliest free slot the next day and flags it as backlog.
+- **Runs in the background:** closing the main window hides it to the tray so nudges keep arriving.
 
 ## Architecture
 
@@ -28,10 +30,10 @@ Ideas, skills to learn and side projects get thought about once and then forgott
 | Desktop shell | **Tauri 2** (Rust): tray icon, global shortcut plugin, notification plugin, about 10 MB instead of Electron's 150 MB |
 | Permissions | Tauri capabilities: windows may only show, hide, focus and send notifications |
 | UI | React 19, Vite, Tailwind CSS |
-| Logic | `src/lib/parser.js` (blurt to goal), `src/lib/nudges.js` (which check-ins are due), both pure and unit tested |
+| Logic | `src/lib/parser.js` (blurt to goal), `src/lib/schedule.js` (free slots and clashes), `src/lib/reminders.js` (what's about to start), `src/lib/backlog.js` (end-of-day rollover), `src/lib/nudges.js` (deadline check-ins) — all pure and unit tested |
 | Storage | `localStorage`, synced live between the capture popup and the main window via the `storage` event |
 
-The quick-capture popup is the same web app loaded with `?view=capture`, so there's one codebase for both windows.
+The side panel is the same web app loaded with `?view=panel`, so there's one codebase for both windows. The panel is anchored to the right edge in Rust (`anchor_right`), because only the native side knows where the screen ends.
 
 ## Getting started
 
@@ -50,7 +52,7 @@ npm run tauri build    # installers in src-tauri/target/release/bundle
 
 ## Tests
 
-22 tests, written test-first. Each parser bug got a failing test before its fix:
+56 tests, written test-first. Each parser bug got a failing test before its fix:
 - **Parser:** timeframes (minutes to months, "tomorrow", "next week"), numbers that aren't timeframes, filler removal ("i wanna ... in"), whole-word categories ("walk the **dog**" is a habit, not a task because of "do"), and effort.
 - **Idiolect port:** the JavaScript normalizer must reproduce the Python reference exactly on 27 exported conformance vectors (including Arabic and emoji). With the profile, "lowk wanna learn rust jus 2 wks" becomes **Learn rust**; without it the title would be "Lowk wanna learn rust jus".
 - **Check-ins:** nothing due early, one due after the last check, only the latest after a long sleep, done and skipped items stay quiet.

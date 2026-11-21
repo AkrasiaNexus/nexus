@@ -838,6 +838,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "donna"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-global-shortcut",
+ "tauri-plugin-notification",
+]
+
+[[package]]
 name = "dpi"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2192,18 +2204,6 @@ dependencies = [
  "serde",
  "tauri-winrt-notification",
  "zbus 6.2.1",
-]
-
-[[package]]
-name = "donna"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-global-shortcut",
- "tauri-plugin-notification",
 ]
 
 [[package]]

@@ -1,4 +1,4 @@
-// Runs the built web app in Chromium: capture, plan, check-in notifications, and the quick-capture window.
+// Runs the built web app in Chromium: capture, plan, check-in notifications, and the side panel.
 import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
@@ -106,13 +106,41 @@ test("a check-in that came due fires one notification", async () => {
   await context.close();
 });
 
-test("the quick-capture window shows only the input and confirms the save", async () => {
-  const page = await browser.newPage();
-  await page.goto(base + "?view=capture");
-  assert.equal(await page.getByRole("button", { name: /This Week/ }).count(), 0, "no sidebar");
+test("the side panel shows the next session in Donna's voice, and nothing else", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const soon = new Date(Date.now() + 4 * 60_000);
+    localStorage.setItem("donna_plan", JSON.stringify({
+      blocks: [{ id: "b1", itemId: null, title: "Rust ownership", date, start: `${pad(soon.getHours())}:${pad(soon.getMinutes())}`, minutes: 60, done: false }],
+      fixed: [], sweptOn: date,
+    }));
+  });
+  await page.goto(base + "?view=panel");
+
+  assert.equal(await page.getByRole("button", { name: /This Week/ }).count(), 0, "no sidebar in the panel");
+  await assert.doesNotReject(page.getByText(/Rust ownership/).first().waitFor(), "names the session");
+  await assert.doesNotReject(page.getByRole("button", { name: /^done$/ }).waitFor(), "offers a way to tick it off");
+
+  await context.close();
+});
+
+test("the panel captures a blurt into the same storage the main window reads", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto(base + "?view=panel");
+
   const input = page.getByPlaceholder(/blurt it out/);
   await input.fill("look into tauri plugins this week");
   await input.press("Enter");
-  await assert.doesNotReject(page.getByRole("status").getByText(/Saved: Look into tauri plugins \(explore\)/).waitFor());
-  await page.close();
+
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("nudge_items") || "[]").length === 1);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("nudge_items"))[0]);
+  assert.equal(saved.title, "Look into tauri plugins");
+  assert.equal(saved.category, "explore");
+
+  await context.close();
 });
