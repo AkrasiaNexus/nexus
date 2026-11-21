@@ -7,7 +7,6 @@ Written 21 Nov 2026 when the work was split into one Claude session per app. Eac
 | Lore (sidequest generator) | `lore/` | [lore.md](lore.md) | https://claude.ai/artifact/LwNwhfV2J2aWaz7CTd35DH |
 | Nudge (AI secretary / planner) | `nudge/` | [nudge.md](nudge.md) | https://claude.ai/artifact/Eig4tD3yVEsSwHn3iTywbf |
 | Idiolect (slang + typo interpreter) | `idiolect/` | [idiolect.md](idiolect.md) | none (library + CLI) |
-| Majlis (fair meeting point, RAPTOR) | `majlis/` | [majlis.md](majlis.md) | https://claude.ai/artifact/XAXpwyvNBP4PGY9mejhmwR |
 | Campfire (CRDT sync for Lore Book) | `campfire/` | [campfire.md](campfire.md) | none (library) |
 | Portfolio (links every project) | `portfolio/` | [portfolio.md](portfolio.md) | https://claude.ai/artifact/F3d2TopkdsyACginYVcQ1E |
 

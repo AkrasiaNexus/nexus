@@ -7,9 +7,8 @@
 - Lore: 11 tests and 49 spots
 - Nudge: 22 tests, plus the AI planner prototype
 - Idiolect: 46 tests, automatic typo repair, a 7-model AI test, and the v1 profile
-- Majlis: 20 tests
 - Campfire: 19 tests
 
-Update the page before the user shares it. Verdict was scrapped by the user, so it must not appear.
+Update the page before the user shares it. Verdict and Majlis were scrapped by the user, so they must not appear.
 
 **Later:** when the projects move to their own repos (the user's plan: one repo per folder, MIT licence under "AkrasiaNexus"), update the "Source" links.

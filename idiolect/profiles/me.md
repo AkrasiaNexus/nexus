@@ -117,4 +117,4 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | remember | context |
 
 ## Hotwords
-Jarvis, Nexus, Nudge, Lore, Idiolect, Majlis, Campfire, forge_change, Claude, Qwen, Gemma, Ollama, Tauri, graphify, Playwright, Moovit, Darb, Hudayriyat, Bateen, Mina, Saadiyat, Corniche, Wathba, lowk, ykwim
+Jarvis, Nexus, Nudge, Lore, Idiolect, Campfire, forge_change, Claude, Qwen, Gemma, Ollama, Tauri, graphify, Playwright, Moovit, Darb, Hudayriyat, Bateen, Mina, Saadiyat, Corniche, Wathba, lowk, ykwim

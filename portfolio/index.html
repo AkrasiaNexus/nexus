@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>AkrasiaNexus Projects</title>
-<meta name="description" content="Six small tools for real problems, each one tested to prove it works.">
+<meta name="description" content="Four small tools for real problems, each one tested to prove it works.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
@@ -12,15 +12,15 @@
 /* Layout: a one-page portfolio. Hero with proof numbers, the Lore system diagram, then one card per project: problem, proof, stack, links. */
 :root{
   --bg:#F6F6F3; --surface:#FFFFFF; --surface-2:#EEEEE9; --fg:#14161A; --muted:#5D626C; --line:#DCDCD5;
-  --lore:#C27803; --idiolect:#2563EB; --nudge:#7C3AED; --majlis:#C2410C; --campfire:#0E8A80;
+  --lore:#C27803; --idiolect:#2563EB; --nudge:#7C3AED; --campfire:#0E8A80;
   --display:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0F1113; --surface:#171A1E; --surface-2:#20242A; --fg:#ECEDEF; --muted:#9AA0AB; --line:#2B3038;
-  --lore:#FBBF24; --idiolect:#60A5FA; --nudge:#A78BFA; --majlis:#FB923C; --campfire:#2DD4BF; color-scheme:dark}}
+  --lore:#FBBF24; --idiolect:#60A5FA; --nudge:#A78BFA; --campfire:#2DD4BF; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0F1113; --surface:#171A1E; --surface-2:#20242A; --fg:#ECEDEF; --muted:#9AA0AB; --line:#2B3038;
-  --lore:#FBBF24; --idiolect:#60A5FA; --nudge:#A78BFA; --majlis:#FB923C; --campfire:#2DD4BF; color-scheme:dark}
+  --lore:#FBBF24; --idiolect:#60A5FA; --nudge:#A78BFA; --campfire:#2DD4BF; color-scheme:dark}
 *{box-sizing:border-box}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 var(--body)}
@@ -88,29 +88,25 @@ footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font-si
     <h1>Small tools for real problems, each one proven to work.</h1>
     <p class="lede">I build things I or my friends actually needed, research what already exists first, and back every claim with tests that could fail. Most of these started in Abu Dhabi, where I live.</p>
     <div class="proof">
-      <div><b>5</b><span>projects, each tested and documented</span></div>
-      <div><b>91</b><span>automated tests, incl. browser end-to-end</span></div>
-      <div><b>4,700+</b><span>randomized checks (differential and property tests)</span></div>
-      <div><b>2</b><span>live demos you can open now</span></div>
+      <div><b>4</b><span>projects, each tested and documented</span></div>
+      <div><b>98</b><span>automated tests, incl. browser end-to-end</span></div>
+      <div><b>7</b><span>local AI models tested on held-out messages</span></div>
+      <div><b>49</b><span>Abu Dhabi spots in Lore, with real bus routes</span></div>
     </div>
   </header>
 
   <section aria-labelledby="sys">
-    <div class="sec-h"><h2 id="sys">One app, two engines</h2><p>Lore is the product. Majlis and Campfire are standalone libraries I built to give it things no off-the-shelf tool did.</p></div>
+    <div class="sec-h"><h2 id="sys">One app, one engine</h2><p>Lore is the product. Campfire is a standalone library I built to give it something no off-the-shelf tool did: a shared journal with no server.</p></div>
     <div class="system">
-      <svg viewBox="0 0 760 210" role="img" aria-label="Diagram: Majlis tells Lore where friends should meet; Campfire syncs Lore's shared Lore Book; Idiolect powers Nudge.">
+      <svg viewBox="0 0 760 210" role="img" aria-label="Diagram: Campfire syncs Lore's shared Lore Book; Idiolect powers Nudge.">
         <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor" style="color:var(--muted)"/></marker></defs>
         <rect class="node" x="290" y="70" width="180" height="70" rx="12"/>
         <rect x="290" y="70" width="6" height="70" rx="3" style="fill:var(--lore)"/>
         <text x="310" y="100">Lore</text><text class="sub" x="310" y="122">sidequests for friend groups</text>
-        <rect class="node" x="20" y="20" width="200" height="64" rx="12"/>
-        <rect x="20" y="20" width="6" height="64" rx="3" style="fill:var(--majlis)"/>
-        <text x="40" y="47">Majlis</text><text class="sub" x="40" y="68">fairest place to meet by bus</text>
-        <rect class="node" x="20" y="126" width="200" height="64" rx="12"/>
-        <rect x="20" y="126" width="6" height="64" rx="3" style="fill:var(--campfire)"/>
-        <text x="40" y="153">Campfire</text><text class="sub" x="40" y="174">serverless shared Lore Book</text>
-        <path class="edge" d="M220 52 C 255 52, 262 88, 288 92"/>
-        <path class="edge" d="M220 158 C 255 158, 262 122, 288 118"/>
+        <rect class="node" x="20" y="73" width="200" height="64" rx="12"/>
+        <rect x="20" y="73" width="6" height="64" rx="3" style="fill:var(--campfire)"/>
+        <text x="40" y="100">Campfire</text><text class="sub" x="40" y="121">serverless shared Lore Book</text>
+        <path class="edge" d="M220 105 L 288 105"/>
         <rect class="node" x="560" y="80" width="180" height="52" rx="12"/><rect x="560" y="80" width="6" height="52" rx="3" style="fill:var(--idiolect)"/>
         <text x="580" y="111">Idiolect</text>
         <rect class="node" x="560" y="146" width="180" height="52" rx="12"/><rect x="560" y="146" width="6" height="52" rx="3" style="fill:var(--nudge)"/>
@@ -141,23 +137,6 @@ footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font-si
           <div class="links"><a class="live" href="https://claude.ai/artifact/LwNwhfV2J2aWaz7CTd35DH">Open the app</a><a href="https://github.com/AkrasiaNexus/nexus/tree/claude/zen-ramanujan-ouxg54/lore">Source</a></div>
         </div>
         <div class="shot"><img src="img/lore.jpg" alt="Lore quest card for Hudayriyat Island with cost per person and tonight's timeline" loading="lazy" width="280" height="476"></div>
-      </article>
-
-      <article class="card" style="--c:var(--majlis)">
-        <div class="shot"><img src="img/majlis.jpg" alt="Interactive RAPTOR explainer mid-run on a small city map" loading="lazy" width="600" height="386"></div>
-        <div class="text">
-          <span class="tag">Algorithms · library + CLI</span>
-          <h3>Majlis</h3>
-          <p class="pitch">Finds the fairest place for friends to meet by public transport by minimising the longest trip, so nobody gets the 70-minute ride.</p>
-          <ul>
-            <li>RAPTOR journey planner (Microsoft Research, 2012) over standard GTFS data</li>
-            <li><b>900 differential queries</b>: agrees with an independent algorithm at every stop of 300 random cities. That test caught two real bugs</li>
-            <li>2,821 reconstructed journeys replayed leg by leg; 2.6 ms per query on 2,025 stops</li>
-            <li>An explorable explainer that runs the real code</li>
-          </ul>
-          <div class="chips"><span>JavaScript</span><span>GTFS</span><span>zero dependencies</span></div>
-          <div class="links"><a class="live" href="https://claude.ai/artifact/XAXpwyvNBP4PGY9mejhmwR">Play with RAPTOR</a><a href="https://github.com/AkrasiaNexus/nexus/tree/claude/zen-ramanujan-ouxg54/majlis">Source</a></div>
-        </div>
       </article>
 
       <div class="mini">
@@ -229,8 +208,8 @@ $ idiolect eval
     <div class="sec-h"><h2 id="how">How I work</h2></div>
     <div class="method">
       <div><h3>Research before code</h3><p>Every project started by checking what already exists. Ideas that were already done well got dropped (a subscription scanner, a runtime RTL linter); the rest were built around the gap.</p></div>
-      <div><h3>Tests that could fail</h3><p>Two independent algorithms that must agree, property tests over hundreds of random histories, and held-out evaluation sets.</p></div>
-      <div><h3>Real bugs, written up</h3><p>Majlis's README explains the walking-transfer bug its tests caught. Nudge's tests were written to fail before each parser fix. Mistakes stay visible.</p></div>
+      <div><h3>Tests that could fail</h3><p>Property tests over hundreds of random histories, held-out evaluation sets labelled before the code changed, and browser tests of every app.</p></div>
+      <div><h3>Real bugs, written up</h3><p>Idiolect's README shows where its own rules turned out overfit on new messages. Nudge's tests were written to fail before each parser fix. Mistakes stay visible.</p></div>
       <div><h3>Shipped, not just written</h3><p>CI on every project, installable apps, live demos, and limitations listed in every README.</p></div>
     </div>
   </section>

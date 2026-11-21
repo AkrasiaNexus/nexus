@@ -42,4 +42,3 @@
 - **Lead:** live spot `marafi` uses line **120** "toward Al Saadiyat Public Beach" from the bus station. If that checks out, the Saadiyat spots (`saadiyat`, `mamsha`) could get a real bus leg instead of taxi-only.
 - **Trip times** for the new spots are estimates and untested in real life. The TrainYAS (Mon/Wed) and Masdar details come from social posts and listings.
 - **The Public Art Biennial** spot (`minaart`) is only true until 15 Feb 2027. The app has no expiry field.
-- **Majlis** (the fair-meeting-point router) could later power a "meet in the middle" mode.
