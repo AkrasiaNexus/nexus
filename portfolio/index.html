@@ -180,17 +180,18 @@ footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font-si
         <article class="card" style="--c:var(--donna)">
           <div class="shot"><img src="img/donna.jpg" alt="Donna week planner with categorised goals" loading="lazy" width="500" height="320"></div>
           <div class="text">
-            <span class="tag">Desktop app · Tauri 2</span>
+            <span class="tag">Desktop app · Tauri 2 · local LLM</span>
             <h3>Donna</h3>
-            <p class="pitch">A tray app for ideas you'd otherwise forget: press a shortcut anywhere, type "learn rust 2 weeks", and it checks in at 25/50/75/100% of your timeline.</p>
+            <p class="pitch">A planner that argues with you. It reads the calendar you already keep, books your goals into the gaps, and refuses when booking something would cost you a deadline — on a model running on your own machine, with no account and no server.</p>
             <ul>
-              <li>Rust tray, global shortcut and native notifications; release build verified running on Linux</li>
-              <li>Parser bugs fixed test-first ("buy 3 more eggs" was being read as 3 months)</li>
-              <li>Understands slang through a JavaScript port of Idiolect, verified against the Python version</li>
-              <li>CI builds Linux, macOS and Windows installers</li>
+              <li>Two guards the model cannot talk its way past: it won't book over something due today, and it names what a booking would displace ("4 sessions left, 4 days — drop one and it doesn't get finished")</li>
+              <li>Answers are computed, not generated: the daily brief, free slots and clash detection are pure functions, so they're instant and can't hallucinate. Only genuinely ambiguous input reaches the model</li>
+              <li>Subscribes to your real iCalendar feed, fetched in Rust so the webview keeps a locked-down CSP and no TLS stack is linked in for one request</li>
+              <li>Hardened after an independent security review: a feed claiming an event ended in the year 9999 expanded to ~2.9M entries and a gigabyte, and event titles reached the model's tool channel next to tools that clear a day — both fixed with tests</li>
+              <li>314 tests (309 JavaScript incl. 21 Playwright end-to-end, 5 Rust); release build verified running on Linux</li>
             </ul>
-            <div class="chips"><span>Rust</span><span>React</span><span>Tauri 2</span></div>
-            <div class="links"><a href="https://github.com/AkrasiaNexus/nexus/tree/claude/zen-ramanujan-ouxg54/donna">Source</a></div>
+            <div class="chips"><span>Rust</span><span>React</span><span>Tauri 2</span><span>Ollama</span></div>
+            <div class="links"><a href="https://github.com/AkrasiaNexus/nexus/tree/claude/serene-davinci-c0ox6c/donna">Source</a></div>
           </div>
         </article>
       </div>
