@@ -418,3 +418,55 @@ test("the prompt makes Donna ask how much a goal matters rather than guess it", 
   assert.match(prompt, /how badly they want it|could wait/i);
   assert.match(prompt, /never guess it from the deadline/i, "a far deadline is not the same as not caring");
 });
+
+const prioritised = (id, title, priority) => ({ id, title, status: "active", deadline: `${TODAY}T23:00:00`, minutesPerDay: 60, priority });
+const sess = (id, itemId, title, start) => ({ id, itemId, title, date: TODAY, start, minutes: 60, done: false });
+
+test("clearing a day by priority removes only the sessions that match", () => {
+  const items = [prioritised("g1", "Rust", "high"), prioritised("g2", "Guitar", "low"), prioritised("g3", "Reading", "low")];
+  const blocks = [sess("b1", "g1", "Rust", "17:00"), sess("b2", "g2", "Guitar", "19:00"), sess("b3", "g3", "Reading", "21:00")];
+  const removed = [];
+  const api = createTools({
+    plan: () => ({ blocks, fixed: [] }),
+    items: () => items,
+    onRemoveBlock: ({ id }) => { removed.push(id); return "removed"; },
+    onSchedule: () => ({}), onAddGoal: () => ({}), onRemoveGoal: () => "ok", onSetFixed: () => ({}), onMoveBlock: () => "ok",
+  });
+
+  const result = api.find((t) => t.function.name === "clear_day").run({ date: TODAY, priority: "low" });
+
+  assert.deepEqual(removed.sort(), ["b2", "b3"], "the high-priority session stays");
+  assert.equal(result.removed, 2);
+});
+
+test("clearing a day with no priority given takes everything booked that day", () => {
+  const items = [prioritised("g1", "Rust", "high")];
+  const blocks = [sess("b1", "g1", "Rust", "17:00"), sess("b2", null, "Haircut", "19:00")];
+  const removed = [];
+  const api = createTools({
+    plan: () => ({ blocks, fixed: [] }), items: () => items,
+    onRemoveBlock: ({ id }) => { removed.push(id); return "removed"; },
+    onSchedule: () => ({}), onAddGoal: () => ({}), onRemoveGoal: () => "ok", onSetFixed: () => ({}), onMoveBlock: () => "ok",
+  });
+
+  api.find((t) => t.function.name === "clear_day").run({ date: TODAY });
+
+  assert.deepEqual(removed.sort(), ["b1", "b2"]);
+});
+
+test("clearing a day leaves fixed commitments alone — school is not Donna's to cancel", () => {
+  const api = createTools({
+    plan: () => ({ blocks: [], fixed: [{ id: "f1", title: "School", days: [0,1,2,3,4,5,6], start: "08:00", end: "14:30" }] }),
+    items: () => [],
+    onRemoveBlock: () => { throw new Error("should not be called"); },
+    onSchedule: () => ({}), onAddGoal: () => ({}), onRemoveGoal: () => "ok", onSetFixed: () => ({}), onMoveBlock: () => "ok",
+  });
+
+  assert.equal(api.find((t) => t.function.name === "clear_day").run({ date: TODAY }).removed, 0);
+});
+
+test("a malformed date is refused rather than clearing the wrong day", () => {
+  const { api } = tools();
+
+  assert.throws(() => api.find((t) => t.function.name === "clear_day").run({ date: "tomorrow" }));
+});

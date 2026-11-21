@@ -408,3 +408,35 @@ test("a long goal has its runway topped back up by the daily sweep", async () =>
 
   await context.close();
 });
+
+test("in the evening Donna asks about what you didn't get to, unprompted", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    // Pin the clock to 21:30 so the test does not depend on when it happens to run.
+    // nowMin() reads these two; today() reads the date parts, which are left alone.
+    Date.prototype.getHours = () => 21;
+    Date.prototype.getMinutes = () => 30;
+
+    const d = new Date();
+    const q = (n) => String(n).padStart(2, "0");
+    const date = `${d.getFullYear()}-${q(d.getMonth() + 1)}-${q(d.getDate())}`;
+    localStorage.setItem("donna_plan", JSON.stringify({
+      fixed: [], reminders: [], sweptOn: date, askedOn: null,
+      blocks: [
+        { id: "b1", itemId: null, title: "Rust ownership", date, start: "19:00", minutes: 60, done: false },
+        { id: "b2", itemId: null, title: "Evening run", date, start: "21:15", minutes: 40, done: false },
+      ],
+    }));
+  });
+  await page.goto(base + "?view=orb");
+
+  await assert.doesNotReject(page.getByText("did you get to these?").waitFor(), "it asks without being opened");
+  await assert.doesNotReject(page.getByText("Rust ownership").waitFor(), "the one that finished at 20:00");
+  assert.equal(await page.getByText("Evening run").count(), 0, "the one still running is not asked about yet");
+
+  await page.getByRole("button", { name: "Done: Rust ownership" }).click();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("donna_plan")).blocks[0].done === true);
+
+  await context.close();
+});

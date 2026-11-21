@@ -6,6 +6,7 @@ import { planStore } from "../stores/planStore";
 import { itemStore } from "../stores/itemStore";
 import { dailyBrief, unplanned } from "../lib/brief";
 import { outstanding } from "../lib/remind";
+import { unfinishedToday, shouldAskAboutToday } from "../lib/dayend";
 import { useStore } from "../hooks/useStore";
 import { today, nowMin, parseYmd, ymd } from "../lib/time";
 import { hideThisWindow, resizeOrb, revealOrb } from "../lib/notify";
@@ -70,11 +71,15 @@ export default function Orb() {
 
   const waiting = outstanding(plan.reminders ?? [], now);
   const nothingBooked = unplanned(items, plan.blocks);
+  // The sweep will move these to tomorrow on its own. This is the chance to say "I did
+  // that one" before it does, and it opens the orb by itself the way a reminder does.
+  const asking = shouldAskAboutToday(plan, today(), nowMin());
+  const unfinished = asking ? unfinishedToday(plan, today(), nowMin()) : [];
   const last = thread.at(-1);
   const speaking = last && last.role !== "user";
   // A reminder that fires pops the orb open where it sits, bottom-right. Dismissing
   // leaves the dot on the circle; only ticking it off clears it for good.
-  const isOpen = open || busy || speaking || (waiting.length > 0 && !dismissed);
+  const isOpen = open || busy || speaking || ((waiting.length > 0 || unfinished.length > 0) && !dismissed);
 
   const seen = useRef("");
   const ids = waiting.map((r) => r.id).join();
@@ -105,13 +110,16 @@ export default function Orb() {
   useEffect(() => {
     const onKey = (e) => {
       if (e.key !== "Escape") return;
-      if (waiting.length && !dismissed) setDismissed(true);
+      if ((waiting.length || unfinished.length) && !dismissed) {
+        setDismissed(true);
+        if (unfinished.length) planStore.markAsked(today());
+      }
       if (open) setOpen(false);
-      else if (!waiting.length) hideThisWindow();
+      else if (!waiting.length && !unfinished.length) hideThisWindow();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, waiting.length, dismissed]);
+  }, [open, waiting.length, unfinished.length, dismissed]);
 
   function submit(e) {
     e.preventDefault();
@@ -166,6 +174,25 @@ export default function Orb() {
           )}
         </div>
       </div>
+
+      {unfinished.length > 0 && (
+        <>
+          <p className="mt-3 font-mono text-[10px] uppercase tracking-wider text-donna-faint">did you get to these?</p>
+          <ul className="orb-waiting mt-1.5 flex flex-col gap-1.5">
+            {unfinished.map((b, i) => (
+              <li key={b.id} style={{ "--i": i }} className="flex items-center gap-2 text-[13px]">
+                <button
+                  onClick={() => planStore.complete(b.id)}
+                  aria-label={`Done: ${b.title}`}
+                  className="w-4 h-4 flex-none rounded-full border border-donna-muted hover:border-donna-text hover:bg-donna-raised active:scale-90 transition-all duration-150"
+                />
+                <span className="min-w-0 flex-1 truncate">{b.title}</span>
+                <span className="flex-none font-mono text-[10px] text-donna-faint">{b.start}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
       {waiting.length > 0 && (
         <ul className="orb-waiting mt-3 flex flex-col gap-1.5">

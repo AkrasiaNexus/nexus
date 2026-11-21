@@ -32,6 +32,7 @@ const DONE = {
   move_block: "moved it",
   remove_block: "removed the session",
   remove_goal: "dropped the goal",
+  clear_day: "cleared that day",
 };
 
 // A model that returns nothing would leave Donna silent, which reads as the app being broken.
@@ -156,6 +157,22 @@ export function createTools({ plan, items, onSchedule, onRemoveGoal, onSetFixed,
           if (cost) return { blocked: true, ask: cost.warning };
         }
         return onSchedule(block);
+      },
+    },
+    {
+      ...schema("clear_day", "Wipe a day's booked sessions, optionally only the ones at a given priority — 'clear my low priority tomorrow'. Weekly fixed commitments are never touched.",
+        { date: { type: "string" }, priority: { type: "string", enum: PRIORITIES } }, ["date"]),
+      run: ({ date, priority }) => {
+        checkDate(date);
+        check(priority === undefined || PRIORITIES.includes(priority), `priority must be one of ${PRIORITIES.join(", ")}`);
+        const goals = items();
+        const doomed = plan().blocks.filter((b) => {
+          if (b.date !== date || b.done) return false;
+          if (!priority) return true;
+          return (goals.find((i) => i.id === b.itemId)?.priority ?? "medium") === priority;
+        });
+        for (const block of doomed) onRemoveBlock({ id: block.id });
+        return { removed: doomed.length, titles: doomed.map((b) => b.title) };
       },
     },
     { ...schema("move_block", "Move a booked session.", { id: { type: "string" }, date: { type: "string" }, start: { type: "string" } }, ["id", "date", "start"]),

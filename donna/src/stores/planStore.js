@@ -6,7 +6,7 @@ import { blockStartMs } from "../lib/reminders";
 
 // New data, so a new key: `nudge_items` still holds the dumped thoughts.
 const STORAGE_KEY = "donna_plan";
-const EMPTY = { blocks: [], fixed: [], reminders: [], sweptOn: null };
+const EMPTY = { blocks: [], fixed: [], reminders: [], sweptOn: null, askedOn: null };
 
 function load() {
   try {
@@ -75,6 +75,11 @@ export const planStore = {
 
   completeReminder(id) {
     commit({ ...plan, reminders: plan.reminders.map((r) => (r.id === id ? { ...r, done: true } : r)) });
+  },
+
+  // Remembers that the evening question has been put today, so it is asked once.
+  markAsked(date) {
+    commit({ ...plan, askedOn: date });
   },
 
   undo(id) {
