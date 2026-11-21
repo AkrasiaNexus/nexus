@@ -8,9 +8,10 @@ import { dailyBrief } from "../lib/brief";
 import { outstanding } from "../lib/remind";
 import { useStore } from "../hooks/useStore";
 import { today, nowMin } from "../lib/time";
-import { hideThisWindow, resizeOrb } from "../lib/notify";
+import { hideThisWindow, resizeOrb, revealOrb } from "../lib/notify";
 
 const RESTING = 72;
+const TICK_MS = 20_000;
 const OPEN_WIDTH = 380;
 
 // The window is the orb, so it follows the content: a circle at rest, a card when it speaks.
@@ -31,16 +32,37 @@ function useWindowFitsContent(ref, open) {
 export default function Orb() {
   const { thread, busy, say, tell } = useDonna();
   const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const [now, setNow] = useState(Date.now());
   const [text, setText] = useState("");
   const mic = useDictation((spoken) => { setText(""); say(spoken); });
   const plan = useStore(planStore);
   const card = useRef(null);
   const input = useRef(null);
 
-  const waiting = outstanding(plan.reminders ?? []);
+  // The orb keeps its own clock. Hidden and idle it would never re-render, so a reminder's
+  // moment would pass unnoticed — and it must not depend on the main window being open.
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), TICK_MS);
+    return () => clearInterval(id);
+  }, []);
+
+  const waiting = outstanding(plan.reminders ?? [], now);
   const last = thread.at(-1);
   const speaking = last && last.role !== "user";
-  const isOpen = open || busy || speaking;
+  // A reminder that fires pops the orb open where it sits, bottom-right. Dismissing
+  // leaves the dot on the circle; only ticking it off clears it for good.
+  const isOpen = open || busy || speaking || (waiting.length > 0 && !dismissed);
+
+  const seen = useRef("");
+  const ids = waiting.map((r) => r.id).join();
+  useEffect(() => {
+    if (ids && ids !== seen.current) {
+      setDismissed(false);
+      revealOrb(); // show the window itself: nothing pops up if it is still hidden
+    }
+    seen.current = ids;
+  }, [ids]);
 
   useWindowFitsContent(card, isOpen);
 
@@ -51,12 +73,13 @@ export default function Orb() {
   useEffect(() => {
     const onKey = (e) => {
       if (e.key !== "Escape") return;
+      if (waiting.length && !dismissed) setDismissed(true);
       if (open) setOpen(false);
-      else hideThisWindow();
+      else if (!waiting.length) hideThisWindow();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [open, waiting.length, dismissed]);
 
   function submit(e) {
     e.preventDefault();
@@ -80,7 +103,7 @@ export default function Orb() {
     return (
       <div className="h-screen flex items-center justify-center">
         <button
-          onClick={() => setOpen(true)}
+          onClick={() => { setOpen(true); setDismissed(false); }}
           aria-label={waiting.length ? `Ask Donna — ${waiting.length} waiting` : "Ask Donna"}
           className={`orb ${waiting.length ? "has-waiting" : ""}`}
         />
@@ -100,6 +123,10 @@ export default function Orb() {
           ) : speaking ? (
             <p className={`text-[13.5px] leading-snug ${last.role === "error" ? "text-donna-red" : "text-donna-text"}`}>
               {last.content}
+            </p>
+          ) : waiting.length ? (
+            <p className="text-[13.5px] text-donna-muted">
+              {waiting.length === 1 ? "this one's on you:" : `${waiting.length} waiting on you:`}
             </p>
           ) : (
             <p className="text-[13.5px] text-donna-muted">what do you need?</p>

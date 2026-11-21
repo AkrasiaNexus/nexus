@@ -263,14 +263,61 @@ test("a fired reminder waits in the orb until it is ticked off", async () => {
   });
   await page.goto(base + "?view=orb");
 
-  await assert.doesNotReject(page.getByRole("button", { name: /1 waiting/ }).waitFor(), "the resting orb says one is waiting");
-  await page.getByRole("button", { name: /Ask Donna/ }).click();
-
+  // it opens itself; the resting circle with its dot is what you get after dismissing
   await assert.doesNotReject(page.getByText("Put the washing on").waitFor());
   assert.equal(await page.getByText("Charge headphones").count(), 0, "one that hasn't come due yet stays quiet");
 
   await page.getByRole("button", { name: "Done: Put the washing on" }).click();
   await page.waitForFunction(() => JSON.parse(localStorage.getItem("donna_plan")).reminders[0].done === true);
+
+  await context.close();
+});
+
+test("a reminder pops the orb open by itself, and dismissing leaves the dot", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    const d = new Date();
+    const q = (n) => String(n).padStart(2, "0");
+    localStorage.setItem("donna_plan", JSON.stringify({
+      blocks: [], fixed: [], sweptOn: `${d.getFullYear()}-${q(d.getMonth() + 1)}-${q(d.getDate())}`,
+      reminders: [{ id: "r1", text: "Put the washing on", at: Date.now() - 60_000, done: false }],
+    }));
+  });
+  await page.goto(base + "?view=orb");
+
+  await assert.doesNotReject(page.getByText("Put the washing on").waitFor(), "it opened without being clicked");
+
+  await page.keyboard.press("Escape");
+  await assert.doesNotReject(page.getByRole("button", { name: /1 waiting/ }).waitFor(), "dismissed back to a dot");
+  assert.equal(await page.getByText("Put the washing on").count(), 0);
+
+  await page.getByRole("button", { name: /Ask Donna/ }).click();
+  await assert.doesNotReject(page.getByText("Put the washing on").waitFor(), "clicking brings it back");
+
+  await context.close();
+});
+
+test("a reminder whose moment arrives pops the orb open with nobody touching it", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    const d = new Date();
+    const q = (n) => String(n).padStart(2, "0");
+    localStorage.setItem("donna_plan", JSON.stringify({
+      blocks: [], fixed: [], sweptOn: `${d.getFullYear()}-${q(d.getMonth() + 1)}-${q(d.getDate())}`,
+      // not due yet when the page loads: it comes due while the orb sits there
+      reminders: [{ id: "r1", text: "Take the bins out", at: Date.now() + 2_000, done: false }],
+    }));
+  });
+  await page.goto(base + "?view=orb");
+
+  assert.equal(await page.getByText("Take the bins out").count(), 0, "nothing shown before its time");
+
+  await assert.doesNotReject(
+    page.getByText("Take the bins out").waitFor({ timeout: 30_000 }),
+    "the orb's own clock brought it up without a click",
+  );
 
   await context.close();
 });
