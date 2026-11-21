@@ -56,7 +56,7 @@ npm run tauri build    # installers in src-tauri/target/release/bundle
 
 ## Tests
 
-156 tests (143 unit, 13 end-to-end), written test-first. Each parser bug got a failing test before its fix:
+159 tests (146 unit, 13 end-to-end), written test-first. Each parser bug got a failing test before its fix:
 - **Parser:** timeframes (minutes to months, "tomorrow", "next week"), numbers that aren't timeframes, filler removal ("i wanna ... in"), whole-word categories ("walk the **dog**" is a habit, not a task because of "do"), and effort.
 - **Idiolect port:** the JavaScript normalizer must reproduce the Python reference exactly on 27 exported conformance vectors (including Arabic and emoji). With the profile, "lowk wanna learn rust jus 2 wks" becomes **Learn rust**; without it the title would be "Lowk wanna learn rust jus".
 - **Check-ins:** nothing due early, one due after the last check, only the latest after a long sleep, done and skipped items stay quiet.

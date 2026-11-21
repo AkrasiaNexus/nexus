@@ -1,13 +1,17 @@
 import { useRef, useState } from "react";
-import { createTools, runTurn, systemPrompt } from "../lib/planner";
+import { createTools, runTurn, systemPrompt, messagesForModel } from "../lib/planner";
 import { parseReminder } from "../lib/remind";
 import { planStore } from "../stores/planStore";
 import { itemStore } from "../stores/itemStore";
 import profileText from "../lib/profile.md?raw";
+import { parseProfile, profileForPrompt } from "../lib/idiolect";
 
 // Enough back-and-forth for "how many mins a day?" → "30, 2 weeks", without the
 // thread crowding the plan out of the 8192-token context.
 const HISTORY_LIMIT = 10;
+// Built once: the substitutions the normalizer applies, and the prose the model is sent.
+const PROFILE = parseProfile(profileText);
+const VOICE = profileForPrompt(profileText);
 // A turn is up to 7 model calls at ~25s of prefill each; past this the panel unlocks with an error.
 const TURN_TIMEOUT_MS = 4 * 60_000;
 
@@ -56,9 +60,8 @@ export function useDonna() {
     setThread(history);
     let reply;
     try {
-      const system = systemPrompt({ plan: planStore.getAll(), items: itemStore.getAll(), profile: profileText });
-      // "error" lines are for the screen only; the model never sees them.
-      const said = history.filter((m) => m.role !== "error");
+      const system = systemPrompt({ plan: planStore.getAll(), items: itemStore.getAll(), profile: VOICE });
+      const said = messagesForModel(history, PROFILE);
       const { text: answer } = await runTurn([{ role: "system", content: system }, ...said], tools, { signal: AbortSignal.timeout(TURN_TIMEOUT_MS) });
       reply = { role: "assistant", content: answer };
     } catch (e) {

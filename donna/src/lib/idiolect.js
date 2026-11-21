@@ -61,3 +61,25 @@ export function normalize(text, profile) {
   }
   return { text: out + text.slice(last), changes };
 }
+
+// The profile is two things in one file: substitution tables, which `normalize` applies
+// mechanically, and prose about how this person writes, which only a model can use.
+// Sending the tables to the model costs ~500 tokens of prefill to hand it a lookup for
+// substitutions that already happened before the text reached it.
+export function profileForPrompt(markdown) {
+  const kept = [];
+  let section = null;
+
+  for (const raw of markdown.split("\n")) {
+    const line = raw.trim();
+    if (line.startsWith("#")) {
+      section = line.startsWith("## ") ? line.slice(3).trim().toLowerCase() : null;
+      kept.push(raw);
+      continue;
+    }
+    if (["slang", "typos"].includes(section) && ROW.test(line)) continue;
+    kept.push(raw);
+  }
+
+  return kept.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}

@@ -3,6 +3,7 @@ import { today, addDays, ymd, fromMin, nowMin, toMin, isYmd, WEEKDAYS } from "./
 import { freeSlots, goalSessions, DAY_START, DAY_END, MAX_GOAL_DAYS } from "./schedule.js";
 import { requiresConfirmation, objection } from "./pushback.js";
 import { displacementCost } from "./pressure.js";
+import { normalize } from "./idiolect.js";
 
 const MAX_TOOL_ROUNDS = 6;
 const DAY_MINUTES = 24 * 60;
@@ -222,4 +223,12 @@ export async function runTurn(messages, tools, { signal } = {}) {
   // Out of rounds: answer with words rather than looping forever.
   const { text } = await chat([...thread, { role: "user", content: "stop using tools and reply in one sentence." }], [], { signal });
   return { text: spoken(text), changes };
+}
+
+// What the model actually sees: the user's own slang already expanded, and the lines that
+// are for the screen only (a failure Donna reported) left out of the conversation.
+export function messagesForModel(history, profile) {
+  return history
+    .filter((m) => m.role !== "error")
+    .map((m) => (m.role === "user" ? { ...m, content: normalize(m.content, profile).text } : m));
 }
