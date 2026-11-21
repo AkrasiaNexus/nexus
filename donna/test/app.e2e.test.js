@@ -378,3 +378,33 @@ test("things with no time booked are visible in the orb, not just sitting in sto
 
   await context.close();
 });
+
+test("a long goal has its runway topped back up by the daily sweep", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    const d = new Date();
+    const q = (n) => String(n).padStart(2, "0");
+    const date = `${d.getFullYear()}-${q(d.getMonth() + 1)}-${q(d.getDate())}`;
+    localStorage.setItem("donna_plan", JSON.stringify({
+      // swept yesterday, and the goal has run down to a single session
+      fixed: [], reminders: [], sweptOn: "2000-01-01",
+      blocks: [{ id: "b1", itemId: "g1", title: "Rust", date, start: "19:00", minutes: 60, done: false }],
+    }));
+    localStorage.setItem("nudge_items", JSON.stringify([{
+      id: "g1", title: "Learn Rust", category: "skill", status: "active",
+      deadline: new Date(Date.now() + 60 * 86_400_000).toISOString(),
+      createdAt: `${date}T08:00:00`, minutesPerDay: 60, nudges: [],
+    }]));
+  });
+  await page.goto(base);
+
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("donna_plan")).blocks.length > 1, null, { timeout: 15_000 });
+  const plan = await page.evaluate(() => JSON.parse(localStorage.getItem("donna_plan")));
+
+  assert.ok(plan.blocks.length > 10, `expected a fortnight of runway, got ${plan.blocks.length}`);
+  assert.ok(plan.blocks.every((b) => b.itemId === "g1"));
+  assert.equal(new Set(plan.blocks.map((b) => b.date)).size, plan.blocks.length, "one session a day, never two");
+
+  await context.close();
+});

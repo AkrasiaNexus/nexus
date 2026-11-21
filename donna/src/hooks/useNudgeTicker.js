@@ -49,7 +49,7 @@ export function useNudgeTicker(items) {
         notify("Donna", getNudgeMessage(nudge.tone, item.title));
       }
 
-      planStore.sweep();
+      planStore.sweep(itemsRef.current);
 
       try {
         localStorage.setItem(LAST_CHECK_KEY, String(now));

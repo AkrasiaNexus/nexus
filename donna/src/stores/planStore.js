@@ -1,6 +1,7 @@
 import { today, nowMin, toMin, fromMin, addDays } from "../lib/time";
 import { findClash, freeSlots, DAY_START, DAY_END } from "../lib/schedule";
 import { rollOverMissed } from "../lib/backlog";
+import { topUpGoals } from "../lib/topup";
 import { blockStartMs } from "../lib/reminders";
 
 // New data, so a new key: `nudge_items` still holds the dumped thoughts.
@@ -123,12 +124,14 @@ export const planStore = {
       .slice(0, limit);
   },
 
-  // Runs once a day: anything missed becomes tomorrow's first job.
-  sweep() {
+  // Runs once a day: anything missed becomes tomorrow's first job, then every goal's
+  // runway is topped back up to a fortnight so a long goal never quietly runs dry.
+  sweep(items = []) {
     const day = today();
-    if (plan.sweptOn === day) return [];
-    const { state, moved } = rollOverMissed(plan, day, nowMin());
+    if (plan.sweptOn === day) return { moved: [], booked: [] };
+    const { state: swept, moved } = rollOverMissed(plan, day, nowMin());
+    const { state, added } = topUpGoals(swept, items, day);
     commit({ ...state, sweptOn: day });
-    return moved;
+    return { moved, booked: added };
   },
 };
