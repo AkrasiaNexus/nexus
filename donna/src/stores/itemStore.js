@@ -64,7 +64,7 @@ export const itemStore = {
   },
 
   // A goal Donna agreed with them: the deadline is the end of the `due` day, local time.
-  addGoal({ title, due, minutes_per_day, priority = "medium" }) {
+  addGoal({ title, due, minutes_per_day, priority = "medium", for_profile = false }) {
     // The model's title is already clean; re-parsing it would strip "tomorrow" or "in 2 weeks".
     const now = Date.now();
     const deadline = parseYmd(due);
@@ -80,6 +80,7 @@ export const itemStore = {
       createdAt: new Date(now).toISOString(),
       minutesPerDay: minutes_per_day,
       priority,
+      forProfile: Boolean(for_profile),
     });
   },
 

@@ -552,3 +552,20 @@ test("the character costs little enough to be worth it", () => {
 
   assert.ok(prompt.length / 4 < 800, `the whole system prompt should stay well under the old 1168 tokens, got ~${Math.round(prompt.length / 4)}`);
 });
+
+test("profile work is a thing she can mark, and is told to", () => {
+  const added = [];
+  const api = createTools({
+    plan: () => ({ blocks: [], fixed: [], memories: [] }), items: () => [],
+    onAddGoal: (g) => { added.push(g); return { id: "g1" }; },
+    onRemember: () => ({}), onForget: () => "ok", onSchedule: () => ({}),
+    onRemoveGoal: () => "ok", onSetFixed: () => ({}), onMoveBlock: () => "ok", onRemoveBlock: () => "ok",
+  });
+
+  api.find((t) => t.function.name === "add_goal").run({ title: "Portfolio site", due: "2099-03-01", minutes_per_day: 60, priority: "low", for_profile: true });
+
+  assert.equal(added[0].for_profile, true);
+  const prompt = systemPrompt({ plan: { blocks: [], fixed: [], memories: [] }, items: [], profile: "" });
+  assert.match(prompt, /portfolio|applications|CV/i);
+  assert.match(prompt, /gets them in/i);
+});

@@ -477,3 +477,32 @@ test("what Donna remembers survives a restart and goes back into her prompt", as
 
   await context.close();
 });
+
+test("she raises profile work against real free time, before being asked", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    Date.prototype.getHours = () => 9;
+    Date.prototype.getMinutes = () => 0;
+    const d = new Date();
+    const q = (n) => String(n).padStart(2, "0");
+    const date = `${d.getFullYear()}-${q(d.getMonth() + 1)}-${q(d.getDate())}`;
+    const inDays = (n) => new Date(Date.now() + n * 86_400_000).toISOString();
+    localStorage.setItem("donna_plan", JSON.stringify({ fixed: [], blocks: [], reminders: [], memories: [], sweptOn: date, askedOn: date }));
+    localStorage.setItem("nudge_items", JSON.stringify([
+      { id: "g1", title: "Learn Rust", category: "skill", status: "active", deadline: inDays(14), createdAt: `${date}T08:00:00`, minutesPerDay: 60, priority: "high", nudges: [] },
+      { id: "pf", title: "Portfolio site", category: "idea", status: "active", deadline: inDays(21), createdAt: `${date}T08:00:00`, minutesPerDay: 90, priority: "low", forProfile: true, nudges: [] },
+    ]));
+  });
+  await page.goto(base + "?view=orb");
+  await page.getByRole("button", { name: /Ask Donna/ }).click();
+
+  await assert.doesNotReject(page.getByText(/gets you in/).waitFor(), "the profile reason, in her register");
+  await assert.doesNotReject(page.getByRole("button", { name: "book it" }).first().waitFor());
+
+  const lines = await page.locator("li").allInnerTexts();
+  assert.ok(lines[0].includes("portfolio"), `profile work leads despite being low priority, got: ${lines[0]}`);
+  assert.equal(await page.getByText("NOTHING BOOKED").count(), 0, "a proposal supersedes the bare list");
+
+  await context.close();
+});
