@@ -791,3 +791,76 @@ test("a reminder typed now is aimed at straight away, not left for the next minu
   assert.ok(fired - due < 3_000, `fired ${fired - due}ms after it was due`);
   await context.close();
 });
+
+// More detail, same calendar: everything below is drawn on the week itself, in grey, and the
+// summary line exists only when there is something to say.
+const seedDetail = () => {
+  const d = new Date();
+  const q = (n) => String(n).padStart(2, "0");
+  const date = `${d.getFullYear()}-${q(d.getMonth() + 1)}-${q(d.getDate())}`;
+  const later = new Date(d);
+  later.setDate(d.getDate() + 3);
+  localStorage.setItem("donna_plan", JSON.stringify({
+    sweptOn: date, askedOn: date, calendarAt: Date.now(),
+    blocks: [{ id: "b1", itemId: "essay", title: "Essay draft", date, start: "15:00", minutes: 60, done: false }],
+    reminders: [{ id: "r1", text: "Call mum", at: new Date(`${date}T17:30:00`).getTime(), done: false }],
+  }));
+  localStorage.setItem("nudge_items", JSON.stringify([
+    { id: "essay", title: "Essay", category: "task", status: "active", priority: "high", deadline: `${date}T18:00:00`, createdAt: `${date}T08:00:00`, nudges: [] },
+    { id: "rust", title: "Learn Rust", category: "skill", status: "active", deadline: later.toISOString(), createdAt: `${date}T08:00:00`, nudges: [] },
+  ]));
+};
+
+test("a deadline is drawn on the day and at the time it falls", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(seedDetail);
+  await page.goto(base);
+
+  await assert.doesNotReject(page.getByText("due · Essay").waitFor(), "the deadline is on the calendar");
+  await context.close();
+});
+
+test("a reminder is drawn at its time, and says what it is", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(seedDetail);
+  await page.goto(base);
+
+  await assert.doesNotReject(page.getByRole("img", { name: /reminder 17:30 — call mum/i }).waitFor());
+  await context.close();
+});
+
+test("a session says which goal it serves and how close that goal is", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(seedDetail);
+  await page.goto(base);
+
+  const title = await page.getByRole("button", { name: /Essay draft/ }).getAttribute("title");
+  assert.match(title, /for Essay/);
+  assert.match(title, /high priority/);
+  assert.match(title, /due today/);
+  await context.close();
+});
+
+test("a goal with no time booked is named under the header", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(seedDetail);
+  await page.goto(base);
+
+  await assert.doesNotReject(page.getByText("not booked: Learn Rust").waitFor());
+  await context.close();
+});
+
+test("with everything booked there is no summary line at all", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(seedWeek);
+  await page.goto(base);
+
+  await page.getByText("Rust ownership").waitFor();
+  assert.equal(await page.getByText(/not booked:/).count(), 0, "clean when there is nothing to say");
+  await context.close();
+});
