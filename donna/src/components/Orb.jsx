@@ -13,20 +13,28 @@ import { hideThisWindow, resizeOrb, revealOrb } from "../lib/notify";
 const RESTING = 72;
 const TICK_MS = 20_000;
 const OPEN_WIDTH = 380;
+const CARD_MARGIN = 12;
+// A floor, so a measurement taken before the webfont lands cannot clip the card.
+const MIN_OPEN_HEIGHT = 108;
 
 // The window is the orb, so it follows the content: a circle at rest, a card when it speaks.
-function useWindowFitsContent(ref, open) {
+// `wake` is in the deps on purpose: it remounts the card, so without it the observer would
+// be left watching a node that is no longer in the document and the window would never grow.
+function useWindowFitsContent(ref, open, wake) {
   useEffect(() => {
     if (!open) {
       resizeOrb(RESTING, RESTING);
       return undefined;
     }
-    const fit = () => resizeOrb(OPEN_WIDTH, Math.ceil(ref.current?.scrollHeight ?? RESTING) + 24);
+    const fit = () => {
+      const height = Math.ceil(ref.current?.getBoundingClientRect().height ?? 0) + CARD_MARGIN * 2;
+      resizeOrb(OPEN_WIDTH, Math.max(MIN_OPEN_HEIGHT, height));
+    };
     fit();
     const observer = new ResizeObserver(fit);
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
-  }, [ref, open]);
+  }, [ref, open, wake]);
 }
 
 export default function Orb() {
@@ -68,7 +76,7 @@ export default function Orb() {
     seen.current = ids;
   }, [ids]);
 
-  useWindowFitsContent(card, isOpen);
+  useWindowFitsContent(card, isOpen, wake);
 
   useEffect(() => {
     const onVisible = () => {

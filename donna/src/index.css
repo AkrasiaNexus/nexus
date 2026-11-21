@@ -56,12 +56,18 @@ input, textarea {
   --cat-habit: #3FB97E;
   --cat-explore: #D96BA0;
 
+  /* Hover feedback stays quick — it should be felt, not watched. */
   --m-in: 150ms;
   --m-out: 120ms;
   --m-press: 90ms;
-  --m-panel: 220ms;
+  /* Something arriving on screen is a different job and needs room to land. The orb
+     overshoots a touch so it reads as settling rather than snapping into place. */
+  --m-wake: 560ms;
+  --m-open: 420ms;
+  --m-row: 420ms;
   --m-ease: cubic-bezier(.2, .8, .2, 1);
-  --m-enter: cubic-bezier(.22, 1, .36, 1);
+  --m-soft: cubic-bezier(.16, 1, .3, 1);
+  --m-pop: cubic-bezier(.34, 1.45, .64, 1);
   --m-live: 2.4s;
 }
 
@@ -70,13 +76,14 @@ input, textarea {
   background: var(--c-surface);
   box-shadow: 0 0 0 1px var(--c-border), 0 8px 24px -8px rgb(0 0 0 / 0.6);
   position: relative;
-  animation: orb-wake var(--m-panel) var(--m-enter) both;
+  animation: orb-wake var(--m-wake) cubic-bezier(.4, 0, .2, 1) both;
   transition: transform var(--m-out) var(--m-ease);
 }
 .orb::after {
   content: ""; position: absolute; inset: 7px; border-radius: 50%;
   border: 1.5px solid var(--c-text); opacity: 0.5;
   transition: opacity var(--m-in) var(--m-ease), inset var(--m-in) var(--m-ease);
+  animation: orb-ring 620ms cubic-bezier(.4, 0, .2, 1) 160ms both;
 }
 .orb:hover { transform: scale(1.06); }
 .orb:hover::after { opacity: 0.8; inset: 5px; }
@@ -96,7 +103,7 @@ input, textarea {
   background: var(--c-surface);
   box-shadow: 0 0 0 1px var(--c-border), 0 12px 32px -10px rgb(0 0 0 / 0.65);
   transform-origin: 100% 100%;
-  animation: orb-open var(--m-panel) var(--m-enter) both;
+  animation: orb-open var(--m-open) cubic-bezier(.34, .07, .2, 1) both;
 }
 
 /* Donna's mark. It has a filled core so it never reads as another empty checkbox
@@ -116,8 +123,8 @@ input, textarea {
 
 /* reminders arrive one after another, 8px and a beat apart (ui-ux-pro-max: stagger list) */
 .orb-waiting > li {
-  animation: orb-row 260ms var(--m-enter) both;
-  animation-delay: calc(var(--i, 0) * 45ms);
+  animation: orb-row var(--m-row) var(--m-soft) both;
+  animation-delay: calc(140ms + var(--i, 0) * 70ms);
 }
 
 .orb-chip {
@@ -128,9 +135,29 @@ input, textarea {
 .orb-chip:hover { color: var(--c-text); border-color: var(--c-muted); }
 .orb-chip:active { transform: scale(.97); }
 
-@keyframes orb-wake { from { opacity: 0; transform: scale(.6); } }
-@keyframes orb-open { from { opacity: 0; transform: scale(.88) translate(6px, 6px); } }
-@keyframes orb-row { from { opacity: 0; transform: translateY(8px); } }
+@keyframes orb-wake {
+  0%   { opacity: 0; transform: scale(.3); }
+  35%  { opacity: .85; transform: scale(.82); }
+  65%  { opacity: 1; transform: scale(1.05); }
+  85%  { transform: scale(.985); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes orb-ring {
+  0%   { opacity: 0; transform: scale(.55); }
+  55%  { opacity: .55; transform: scale(1.04); }
+  100% { opacity: .5; transform: scale(1); }
+}
+@keyframes orb-open {
+  0%   { opacity: 0; transform: scale(.86) translate(14px, 18px); }
+  40%  { opacity: .9; }
+  70%  { transform: scale(1.012) translate(0, 0); }
+  100% { opacity: 1; transform: scale(1) translate(0, 0); }
+}
+@keyframes orb-row {
+  0%   { opacity: 0; transform: translateY(12px); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0); }
+}
 @keyframes orb-breathe { 50% { opacity: .35; transform: scale(.88); } }
 @keyframes orb-live {
   0%, 70%, 100% { transform: scale(1); opacity: 1; }
@@ -139,7 +166,7 @@ input, textarea {
 
 /* colours still change, nothing moves (taste-skill motion.md) */
 @media (prefers-reduced-motion: reduce) {
-  .orb, .orb-card, .orb-waiting > li { animation: none; }
+  .orb, .orb-card, .orb-waiting > li, .orb::after { animation: none; }
   .orb:hover, .orb:active, .orb-chip:active { transform: none; }
   .orb.has-waiting::before { animation: none; }
   .orb-mini.is-busy { animation: none; opacity: .6; }

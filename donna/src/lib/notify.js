@@ -30,5 +30,11 @@ export async function revealOrb() {
 export async function resizeOrb(width, height) {
   if (!isTauri()) return;
   const { invoke } = await import("@tauri-apps/api/core");
-  await invoke("resize_orb", { width, height }).catch(() => {});
+  try {
+    await invoke("resize_orb", { width, height });
+  } catch (cause) {
+    // Never silent: if the window will not resize, the card renders clipped inside a
+    // 72px window and the app looks broken with nothing explaining why.
+    console.error("donna: the orb window refused to resize", cause);
+  }
 }
