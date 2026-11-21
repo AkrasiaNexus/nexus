@@ -60,7 +60,7 @@ container, `CHROMIUM_PATH=/opt/pw-browsers/chromium npm test`.
 | The week calendar | `src/components/WeekView.jsx` |
 | The chatbox under the calendar | `src/components/AskBar.jsx` |
 | The computed daily brief | `src/lib/brief.js` |
-| Orb window, corner anchoring, Ctrl+Option+D | `src-tauri/src/main.rs` |
+| Orb window, corner anchoring, Option+D | `src-tauri/src/main.rs` |
 
 Design points worth keeping:
 - **The shortcut takes focus; a reminder does not.** `toggle_panel` focuses because the user
@@ -129,7 +129,7 @@ the override one would need a code-side "pending objection" so a yes confirms wi
    why the MLX runner rarely reuses the prefix cache. Measure with the timing fields after each.
 2. **Check the desktop panel by eye.** `npm run tauri dev` builds (1m47s) and runs with no
    panics, but macOS blocked both synthetic keystrokes and screenshots for Claude, so nobody has
-   seen the panel yet: press Ctrl+Option+D, check it anchors right, a blurt reaches Ollama (CSP),
+   seen the panel yet: press Option+D, check it anchors right, a blurt reaches Ollama (CSP),
    and a reminder appears without stealing focus.
 3. Goals book at most 14 days ahead; nothing books the weeks after that yet.
 4. The user is designing panel UI and will send references. Build on those when they arrive.

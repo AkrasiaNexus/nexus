@@ -7,10 +7,11 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
-// Control+Option+D. Not on Apple's system shortcut list, and Control+Option is rarely
-// claimed by apps — unlike Shift+Command+N, which is New Folder in the Finder and which a
-// global shortcut would steal system-wide.
-const ORB_MODS: Modifiers = Modifiers::CONTROL.union(Modifiers::ALT);
+// Option+D. Two keys, one hand. Not on Apple's shortcut list; Command+letter belongs to
+// whatever app is focused, Control+letter is the system-wide emacs text bindings, and
+// Option+Space is the default hotkey for both Raycast and Alfred. The only thing Option+D
+// costs is typing "∂".
+const ORB_MODS: Modifiers = Modifiers::ALT;
 
 const EDGE_MARGIN: i32 = 24;
 // Clears the macOS dock, which sits over the bottom of the screen.
@@ -107,7 +108,7 @@ fn main() {
         .setup(|app| {
             app.global_shortcut().register(orb_shortcut())?;
 
-            let orb = MenuItem::with_id(app, "orb", "Show Donna", true, Some("Control+Alt+D"))?;
+            let orb = MenuItem::with_id(app, "orb", "Show Donna", true, Some("Alt+D"))?;
             let open = MenuItem::with_id(app, "open", "Open Donna", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let separator = PredefinedMenuItem::separator(app)?;

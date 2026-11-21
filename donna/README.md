@@ -1,6 +1,6 @@
 # Donna
 
-A brain-dump app that lives in your system tray. Press `Ctrl + Option + D` from any app, type whatever you're thinking ("learn rust 2 weeks"), press Enter, and it disappears. Donna turns the thought into a titled, categorised goal with a deadline, plans it into your week, and checks in at 25%, 50%, 75% and 100% of the time you gave yourself, getting firmer each time.
+A brain-dump app that lives in your system tray. Press `Option + D` from any app, type whatever you're thinking ("learn rust 2 weeks"), press Enter, and it disappears. Donna turns the thought into a titled, categorised goal with a deadline, plans it into your week, and checks in at 25%, 50%, 75% and 100% of the time you gave yourself, getting firmer each time.
 
 <p>
   <img src="docs/capture.png" alt="The frameless quick-capture popup" width="420"><br>
@@ -15,7 +15,7 @@ Ideas, skills to learn and side projects get thought about once and then forgott
 
 ## What it does
 
-- **An orb, not a window:** Donna is silent until she isn't. `Ctrl + Option + D` wakes a small circle in the bottom-right corner; type into it and it grows only as far as it needs to, then shrinks back. Esc sends it away.
+- **An orb, not a window:** Donna is silent until she isn't. `Option + D` wakes a small circle in the bottom-right corner; type into it and it grows only as far as it needs to, then shrinks back. Esc sends it away.
 - **Tell her, she plans it:** type what you're thinking into the panel and a local model (Gemma 4 12B via [Ollama](https://ollama.com), nothing leaves the machine) books it. A one-off with a time is just booked, a weekly thing becomes a fixed slot, and a goal gets two questions (minutes a day, deadline), then a session every day until it's due. Every tool argument the model sends is validated before it touches the plan.
 - **Pushes back:** ask for something fun while a deadline is due today (or slipped yesterday) and Donna refuses until you say yes. Older misses don't block; they're backlog. The refusal is enforced in code (`src/lib/pushback.js`) and spoken verbatim, so the model can't book around it or claim it did.
 - **Understands loose input:** "i wanna learn rust in 2 weeks" becomes **Learn rust**, *skill*, due in 14 days. Slang is normalized first with your [Idiolect](../idiolect) profile, so "lowk wanna learn rust jus 2 wks" works too. Timeframes use whole-word units, so "buy 3 more eggs" stays a title and is never read as "3 months".
