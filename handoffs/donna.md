@@ -39,14 +39,21 @@ It is for personal use. The name is Donna Paulsen, from Suits.
   survives; the new plan data lives under `donna_plan`.
 
 ## What is built and verified
-156 tests pass: `cd donna && npm test` (143 unit + 13 Playwright e2e). The e2e suite takes
+305 tests pass: `cd donna && npm test` (284 unit + 21 Playwright e2e). The e2e suite takes
 `CHROMIUM_PATH` so it can run against a browser Playwright didn't install itself — in the cloud
 container, `CHROMIUM_PATH=/opt/pw-browsers/chromium npm test`.
+
+`npm test` runs `node --test test/*.test.js`, an **unquoted** glob on purpose: `node --test test/`
+throws MODULE_NOT_FOUND on Node 22, and the quoted form silently ran zero tests on Node 20. The
+shell expanding it to real filenames is the only form that works on both. It is not portable to
+Windows `cmd.exe`, which Donna does not target.
 
 | Area | Files |
 |---|---|
 | Clock times, local dates | `src/lib/time.js` |
-| Free slots, clash detection | `src/lib/schedule.js` |
+| Free slots, clash detection (weekly commitments + sessions + calendar events) | `src/lib/schedule.js` |
+| The subscribed iCalendar feed → busy time | `src/lib/calendar.js` |
+| Reading a date out of a blurt | `src/lib/parser.js` (chrono-node) |
 | Reminders before a session starts | `src/lib/reminders.js` (`LEAD_MINUTES = 5`) |
 | End-of-day sweep → backlog | `src/lib/backlog.js` |
 | Donna's voice | `src/lib/nudgeMessages.js` |
@@ -74,6 +81,28 @@ Design points worth keeping:
   so the fixed rules + profile stay a stable prefix for Ollama's cache.
 - `CSP` in `tauri.conf.json` now has `connect-src 'self' http://127.0.0.1:11434`. Without it the
   webview blocked every call to Ollama — it would have failed on the first desktop run.
+- **Dates come from chrono-node, not a regex table.** The old table could not express an absolute
+  date at all, so `submit UCAS by jan 15` silently became "a week from now" and every check-in
+  fired in the wrong month. Three chrono behaviours are handled rather than worked around:
+  `today`/`this week`/`this month` resolve to the period's *start* (already gone for a deadline),
+  so those three stay a local table; a bare month or a three-letter weekday in prose is rejected
+  (`march madness`, `sat nav fix`) via `isCertain`, never the package's private `knownValues`;
+  and `2 wks` is rewritten to `2 weeks` because chrono reads `2 w` and `2 weeks` but not that.
+- **The calendar feed is fetched in Rust, by `curl`.** The webview's `connect-src` stays locked to
+  Ollama, so an arbitrary feed host can't be reached from JS, and `reqwest` is in the tree with no
+  TLS backend — linking one in for a single GET was not worth it. macOS ships `curl`, and it gives
+  `--max-time`/`--max-filesize` for free. The URL goes in as its own argv entry after `--`, never
+  through a shell, and redirects are pinned with `--proto =https --proto-redir =https`.
+- **The feed address is a secret** (a Google "secret iCal address" reads the whole calendar), so it
+  lives in `donna_calendar_url` / `VITE_CALENDAR_URL` and deliberately **not** in `donna_plan`,
+  which is what goes into the model prompt. It is never logged and never quoted back in an error.
+- **A recurrence rule is walked at most 10,000 steps.** `FREQ=SECONDLY` dated a few years back
+  needs ~200 million steps to reach the window and froze the app outright (reproduced). 10,000
+  covers 27 years of a daily rule; past that the event is dropped as a broken feed.
+- **An all-day event is not busy time.** A public holiday is the common all-day entry and it frees
+  the day rather than filling it. A multi-day trip is therefore not blocked out — known limit.
+- **Events are immovable.** `displacementCost` now weighs only `kind === "block"`, so school and a
+  calendar event are refused outright instead of being offered as something to trade away.
 
 ## Real-model findings (21 Nov 2026, gemma4:12b, Ollama 0.40.17, MLX runner, M4 16GB)
 Don't re-derive these.
@@ -131,16 +160,42 @@ the override one would need a code-side "pending objection" so a yes confirms wi
    panics, but macOS blocked both synthetic keystrokes and screenshots for Claude, so nobody has
    seen the panel yet: press Option+D, check it anchors right, a blurt reaches Ollama (CSP),
    and a reminder appears without stealing focus.
-3. Goals book at most 14 days ahead; nothing books the weeks after that yet.
-4. The user is designing panel UI and will send references. Build on those when they arrive.
+3. **Nothing lets you paste the calendar address.** The feed works, but like the Firecrawl key
+   it has to be set by hand — `localStorage.setItem("donna_calendar_url", "<the url>")` in the
+   webview console, or `VITE_CALENDAR_URL=... npm run tauri build`. Google Calendar → Settings →
+   the calendar → "Secret address in iCal format"; iCloud → share a calendar publicly and swap
+   `webcal://` for `https://` (the Rust side accepts either). A paste box belongs in whatever
+   settings UI the user designs — deliberately not invented here.
+4. Goals book at most 14 days ahead; nothing books the weeks after that yet.
+5. The user is designing panel UI and will send references. Build on those when they arrive.
 
 ## Unverified / risks
 - **Desktop panel unseen** — the app launched, but no one has looked at it (see Next 2).
 - A turn times out after 4 min (`TURN_TIMEOUT_MS` in `useDonna.js`) and unlocks the panel.
 - Reviewed (code + security) before commit; all HIGH/MEDIUM fixed. Not fixed, pre-existing:
   `toMin` in `time.js` accepts `24:01`-`24:59`, so a block can run past midnight.
-- `npm test` was silently running zero tests on Node 20 (quoted glob needs Node 21+); now
-  `node --test test/`. CI uses Node 22 so it was fine there.
+- `npm test` is `node --test test/*.test.js`, unquoted, because the directory form throws
+  MODULE_NOT_FOUND on Node 22 and the quoted glob silently ran zero tests on Node 20. Not
+  portable to Windows `cmd.exe`; Donna does not target it.
+- **The Rust side has tests now** (`cd donna/src-tauri && cargo test`, 5 of them, all on the feed
+  address rules). They are not wired into `npm test` — run both.
+- **An all-day calendar entry is not busy time.** Right for a public holiday, wrong for a
+  multi-day trip, which will not be blocked out. Known, deliberate.
+- **A calendar event cannot be moved or dropped by Donna** and is refused outright rather than
+  weighed: `displacementCost` only considers `kind === "block"`.
+- **The feed is trusted for timing, never for words.** Titles are stripped of control characters
+  and capped at 80 for the DOM, and the model is only ever told "a calendar commitment" — the one
+  thing standing between a shared calendar and the prompt. `planner.js` also excludes `events`
+  from the system prompt; keep it that way.
+- **A recurrence rule is walked at most 10,000 steps and 500 occurrences, 2,000 entries a feed.**
+  Past that the event is dropped with a `console.warn`. A legitimate daily rule reaches 27 years
+  back, so this should never bite, but if a real commitment ever vanishes, that warning is why.
+- The calendar refreshes every 15 minutes (`REFRESH_MS`), and a failed fetch keeps the events
+  already known rather than emptying the week.
+- An e2e test was passing or failing by the time of day: its seed had an un-ticked 19:00 session
+  and no `askedOn`, so after 21:00 the evening question popped the orb open and there was no
+  circle left to click. Seeds with a past session now set `askedOn`. Worth checking the other
+  orb seeds if one starts flaking in the evening.
 - The Tauri `identifier` changed to `app.donna.desktop` during the rename, so the macOS app-data
   directory changed with it. Any desktop localStorage from before the rename will not carry over.
 - `portfolio/index.html` links to `.../tree/claude/zen-ramanujan-ouxg54/donna`, a branch where
