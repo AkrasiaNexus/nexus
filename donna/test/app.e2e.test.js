@@ -349,3 +349,32 @@ test("the orb wakes again every time the window is shown, not just the first tim
 
   await context.close();
 });
+
+test("things with no time booked are visible in the orb, not just sitting in storage", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    const d = new Date();
+    const q = (n) => String(n).padStart(2, "0");
+    const date = `${d.getFullYear()}-${q(d.getMonth() + 1)}-${q(d.getDate())}`;
+    const far = new Date(Date.now() + 12 * 86_400_000);
+    localStorage.setItem("donna_plan", JSON.stringify({
+      fixed: [], reminders: [], sweptOn: date,
+      blocks: [{ id: "b1", itemId: "i2", title: "Physics", date, start: "19:00", minutes: 60, done: false }],
+    }));
+    localStorage.setItem("nudge_items", JSON.stringify([
+      { id: "i1", title: "Learn Rust", category: "skill", status: "active", deadline: far.toISOString(), createdAt: `${date}T08:00:00`, nudges: [] },
+      { id: "i2", title: "Physics pset", category: "task", status: "active", deadline: far.toISOString(), createdAt: `${date}T08:00:00`, nudges: [] },
+      { id: "i3", title: "Old essay", category: "task", status: "done", deadline: far.toISOString(), createdAt: `${date}T08:00:00`, nudges: [] },
+    ]));
+  });
+  await page.goto(base + "?view=orb");
+  await page.getByRole("button", { name: /Ask Donna/ }).click();
+
+  await assert.doesNotReject(page.getByText("Learn Rust").waitFor(), "nothing booked against it, so it is shown");
+  assert.equal(await page.getByText("Physics pset").count(), 0, "this one has a session booked");
+  assert.equal(await page.getByText("Old essay").count(), 0, "finished things stay out of it");
+  await assert.doesNotReject(page.getByRole("button", { name: "plan" }).waitFor(), "and you can hand it to Donna");
+
+  await context.close();
+});

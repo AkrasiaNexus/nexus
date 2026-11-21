@@ -4,10 +4,10 @@ import { useDonna } from "../hooks/useDonna";
 import { useDictation } from "../hooks/useDictation";
 import { planStore } from "../stores/planStore";
 import { itemStore } from "../stores/itemStore";
-import { dailyBrief } from "../lib/brief";
+import { dailyBrief, unplanned } from "../lib/brief";
 import { outstanding } from "../lib/remind";
 import { useStore } from "../hooks/useStore";
-import { today, nowMin } from "../lib/time";
+import { today, nowMin, parseYmd, ymd } from "../lib/time";
 import { hideThisWindow, resizeOrb, revealOrb } from "../lib/notify";
 
 const RESTING = 72;
@@ -37,6 +37,14 @@ function useWindowFitsContent(ref, open, wake) {
   }, [ref, open, wake]);
 }
 
+function daysLeft(deadline) {
+  const due = new Date(deadline);
+  if (isNaN(due)) return "";
+  const days = Math.round((parseYmd(ymd(due)) - parseYmd(today())) / 86_400_000);
+  if (days < 0) return "overdue";
+  return days === 0 ? "today" : `${days}d`;
+}
+
 export default function Orb() {
   const { thread, busy, say, tell } = useDonna();
   const [open, setOpen] = useState(false);
@@ -49,6 +57,7 @@ export default function Orb() {
   const [text, setText] = useState("");
   const mic = useDictation((spoken) => { setText(""); say(spoken); });
   const plan = useStore(planStore);
+  const items = useStore(itemStore);
   const card = useRef(null);
   const input = useRef(null);
 
@@ -60,6 +69,7 @@ export default function Orb() {
   }, []);
 
   const waiting = outstanding(plan.reminders ?? [], now);
+  const nothingBooked = unplanned(items, plan.blocks);
   const last = thread.at(-1);
   const speaking = last && last.role !== "user";
   // A reminder that fires pops the orb open where it sits, bottom-right. Dismissing
@@ -170,6 +180,27 @@ export default function Orb() {
             </li>
           ))}
         </ul>
+      )}
+
+      {nothingBooked.length > 0 && (
+        <>
+          <p className="mt-3 font-mono text-[10px] uppercase tracking-wider text-donna-faint">nothing booked</p>
+          <ul className="orb-waiting mt-1.5 flex flex-col gap-1.5">
+            {nothingBooked.slice(0, 4).map((goal, i) => (
+              <li key={goal.id} style={{ "--i": i }} className="flex items-center gap-2 text-[13px]">
+                <span className="min-w-0 flex-1 truncate">{goal.title}</span>
+                <span className="flex-none font-mono text-[10px] text-donna-faint">{daysLeft(goal.deadline)}</span>
+                <button
+                  onClick={() => say(`slot in ${goal.title}`)}
+                  disabled={busy}
+                  className="orb-chip flex-none disabled:opacity-40"
+                >
+                  plan
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       <form onSubmit={submit} className="mt-3 flex items-center gap-2">

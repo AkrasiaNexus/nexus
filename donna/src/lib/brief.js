@@ -2,6 +2,10 @@ import { toMin, fromMin } from "./time.js";
 import { freeSlots, DAY_START, DAY_END } from "./schedule.js";
 import { pendingDeadlines } from "./pushback.js";
 
+// Which goals have time booked ahead of them. A session already ticked off is spent, so
+// it no longer counts as cover.
+const coveredIds = (blocks) => new Set(blocks.filter((b) => !b.done && b.itemId).map((b) => b.itemId));
+
 // Shorter than this isn't a window you'd put anything in.
 const USABLE_MINUTES = 30;
 
@@ -25,7 +29,7 @@ export function dailyBrief({ items, plan, date, nowMinutes }) {
     .map(({ start, end }) => ({ start, end, minutes: span({ start, end }) }));
   const freeMinutes = free.reduce((total, slot) => total + slot.minutes, 0);
 
-  const covered = new Set(plan.blocks.filter((b) => !b.done && b.itemId).map((b) => b.itemId));
+  const covered = coveredIds(plan.blocks);
   const due = pendingDeadlines(items, date).map(({ id, title }) => ({ id, title, booked: covered.has(id) }));
 
   const next = plan.blocks
@@ -59,4 +63,15 @@ function say({ free, freeMinutes, due, next }) {
   else if (free.length && !due.length) lines.push("nothing booked. dump something and i'll slot it.");
 
   return lines.join(" ");
+}
+
+// Things you told Donna about that have no time booked against them. Without this they
+// exist only in storage: the calendar draws sessions, so an item nobody scheduled is
+// invisible until a deadline check-in fires days later.
+export function unplanned(items, blocks) {
+  const covered = coveredIds(blocks);
+
+  return items
+    .filter((item) => item.status === "active" && !covered.has(item.id))
+    .sort((a, b) => (new Date(a.deadline) || 0) - (new Date(b.deadline) || 0));
 }
