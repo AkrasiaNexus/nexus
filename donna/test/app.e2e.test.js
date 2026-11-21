@@ -665,3 +665,128 @@ for (const [name, seed] of Object.entries(CORRUPT)) {
     });
   }
 }
+
+// The first thing anyone tries. Every reminder test above seeded storage directly, so typing
+// one into the box had never been run end to end.
+async function chatbox(page) {
+  await page.addInitScript(() => {
+    const d = new Date();
+    const q = (n) => String(n).padStart(2, "0");
+    const date = `${d.getFullYear()}-${q(d.getMonth() + 1)}-${q(d.getDate())}`;
+    localStorage.setItem("donna_plan", JSON.stringify({ sweptOn: date, askedOn: date, calendarAt: Date.now() }));
+  });
+  await page.goto(base);
+  return page.getByLabel("Tell Donna");
+}
+const savedReminders = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("donna_plan")).reminders);
+
+test("typing a reminder saves it on the real clock and says when, without the model", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  let modelCalls = 0;
+  await page.route("http://127.0.0.1:11434/**", (route) => { modelCalls++; return route.abort(); });
+  const input = await chatbox(page);
+
+  const before = Date.now();
+  await input.fill("remind me to call mum in 20 mins");
+  await input.press("Enter");
+
+  await assert.doesNotReject(page.getByText("got it. call mum — i'll say in 20 mins.").waitFor());
+  const [saved] = await savedReminders(page);
+  assert.equal(saved.text, "Call mum");
+  assert.ok(Math.abs(saved.at - (before + 20 * 60_000)) < 5_000, "twenty minutes from now, on the real clock");
+  assert.equal(modelCalls, 0, "a reminder never waits on the model");
+  await context.close();
+});
+
+test("a reminder with no time asks when, and the next message finishes it", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.route("http://127.0.0.1:11434/**", (route) => route.abort());
+  const input = await chatbox(page);
+
+  await input.fill("remind me to call mum");
+  await input.press("Enter");
+  await assert.doesNotReject(page.getByText("when?", { exact: true }).waitFor());
+  assert.deepEqual(await savedReminders(page), [], "nothing is saved with no time to fire at");
+
+  await input.fill("in 45 mins");
+  await input.press("Enter");
+  await assert.doesNotReject(page.getByText("got it. call mum — i'll say in 45 mins.").waitFor());
+  const [saved] = await savedReminders(page);
+  assert.equal(saved.text, "Call mum");
+  await context.close();
+});
+
+test("a reminder for tomorrow is saved for tomorrow, and she says the day", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.route("http://127.0.0.1:11434/**", (route) => route.abort());
+  const input = await chatbox(page);
+
+  await input.fill("remind me to call mum tomorrow at 9am");
+  await input.press("Enter");
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const day = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][tomorrow.getDay()];
+  await assert.doesNotReject(page.getByText(`got it. call mum — i'll say ${day} 09:00.`).waitFor());
+  const [saved] = await savedReminders(page);
+  assert.equal(new Date(saved.at).getDate(), tomorrow.getDate(), "tomorrow — it used to fire today");
+  assert.equal(new Date(saved.at).getHours(), 9);
+  await context.close();
+});
+
+test("a reminder fires on its moment, not on whichever minute-tick comes after it", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    // Record what the system notification would have said.
+    window.__fired = [];
+    window.Notification = class {
+      static permission = "granted";
+      static requestPermission() { return Promise.resolve("granted"); }
+      constructor(title, { body } = {}) { window.__fired.push({ body, at: Date.now() }); }
+    };
+    const d = new Date();
+    const q = (n) => String(n).padStart(2, "0");
+    const date = `${d.getFullYear()}-${q(d.getMonth() + 1)}-${q(d.getDate())}`;
+    localStorage.setItem("donna_plan", JSON.stringify({
+      sweptOn: date, askedOn: date, calendarAt: Date.now(),
+      reminders: [{ id: "r1", text: "Take the bins out", at: Date.now() + 4_000, done: false }],
+    }));
+  });
+  await page.route("http://127.0.0.1:11434/**", (route) => route.abort());
+  await page.goto(base);
+
+  await page.waitForFunction(() => window.__fired.some((n) => n.body === "Take the bins out"), null, { timeout: 15_000 });
+  const fired = await page.evaluate(() => window.__fired.find((n) => n.body === "Take the bins out").at);
+  const due = await page.evaluate(() => JSON.parse(localStorage.getItem("donna_plan")).reminders[0].at);
+  assert.ok(fired - due < 3_000, `fired ${fired - due}ms after it was due — the minute tick alone could be 60s late`);
+  await context.close();
+});
+
+test("a reminder typed now is aimed at straight away, not left for the next minute-tick", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    window.__fired = [];
+    window.Notification = class {
+      static permission = "granted";
+      static requestPermission() { return Promise.resolve("granted"); }
+      constructor(title, { body } = {}) { window.__fired.push({ body, at: Date.now() }); }
+    };
+  });
+  await page.route("http://127.0.0.1:11434/**", (route) => route.abort());
+  const input = await chatbox(page);
+
+  // "in 1 min" is the shortest thing anyone types when checking this works.
+  await input.fill("remind me to stretch in 1 min");
+  await input.press("Enter");
+  const due = await page.waitForFunction(() => JSON.parse(localStorage.getItem("donna_plan")).reminders?.[0]?.at).then((h) => h.jsonValue());
+
+  await page.waitForFunction(() => window.__fired.some((n) => n.body === "Stretch"), null, { timeout: 90_000 });
+  const fired = await page.evaluate(() => window.__fired.find((n) => n.body === "Stretch").at);
+  assert.ok(fired - due < 3_000, `fired ${fired - due}ms after it was due`);
+  await context.close();
+});

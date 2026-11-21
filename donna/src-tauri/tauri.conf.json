@@ -17,7 +17,8 @@
         "width": 900,
         "height": 700,
         "minWidth": 400,
-        "minHeight": 500
+        "minHeight": 500,
+        "backgroundThrottling": "disabled"
       },
       {
         "label": "orb",
@@ -31,7 +32,8 @@
         "transparent": true,
         "shadow": false,
         "alwaysOnTop": true,
-        "skipTaskbar": true
+        "skipTaskbar": true,
+        "backgroundThrottling": "disabled"
       }
     ],
     "security": {

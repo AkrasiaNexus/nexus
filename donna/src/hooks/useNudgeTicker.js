@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { dueNudges } from "../lib/nudges";
 import { dueReminders, blockStartMs } from "../lib/reminders";
-import { dueRemindersAt } from "../lib/remind";
+import { dueRemindersAt, msUntilNext } from "../lib/remind";
 import { getNudgeMessage, getReminderMessage } from "../lib/nudgeMessages";
 import { notify, revealOrb } from "../lib/notify";
 import { planStore } from "../stores/planStore";
@@ -74,9 +74,34 @@ export function useNudgeTicker(items) {
       } catch {
         // storage blocked: nudges may repeat after a reload, which beats losing them
       }
+      // Firing a reminder changes nothing in the plan, so the one after it is aimed here.
+      aimAtNext();
     }
+    // The minute tick can land up to a minute after a reminder is due, so "remind me in 1 min"
+    // arrived nearly two minutes later. A one-off timer is aimed at the next reminder whenever
+    // the plan changes — including the moment one is saved.
+    let aimed = null;
+    function aimAtNext() {
+      clearTimeout(aimed);
+      const wait = msUntilNext(planStore.getAll().reminders);
+      if (wait !== null && wait < TICK_MS) aimed = setTimeout(tick, wait + 250);
+    }
+
     tick();
     const id = setInterval(tick, TICK_MS);
-    return () => clearInterval(id);
+    const stopAiming = planStore.subscribe(aimAtNext);
+    // A safety net for when the timer was held back anyway — macOS before 14 ignores the
+    // no-throttling setting: the moment the window is shown, anything that came due while it
+    // was suspended fires then, instead of up to a minute later.
+    const onShow = () => {
+      if (document.visibilityState === "visible") tick();
+    };
+    document.addEventListener("visibilitychange", onShow);
+    return () => {
+      clearInterval(id);
+      clearTimeout(aimed);
+      stopAiming();
+      document.removeEventListener("visibilitychange", onShow);
+    };
   }, []);
 }

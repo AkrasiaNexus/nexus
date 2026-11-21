@@ -1,13 +1,54 @@
-const MINUTE_MS = 60_000;
+import * as chrono from "chrono-node";
+import { WEEKDAYS } from "./time.js";
+import { isProse } from "./parser.js";
 
-// "remind me to…", and the two other ways people actually ask.
-const ASK = /^\s*(?:(?:can you|pls|please)\s+)?(?:remind me to|don'?t let me forget to|dont let me forget to|remember to)\s+/i;
-const IN = /\bin\s+(\d+)\s*(min|mins|minute|minutes|h|hr|hrs|hour|hours)\b/i;
-const MERIDIEM = /\bat\s+(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\.?\b/i;
-const CLOCK = /\bat\s+(\d{1,2}):(\d{2})\b/;
+const MINUTE_MS = 60_000;
+const HOUR_MS = 60 * MINUTE_MS;
+// A day named with no time ("tmrw", "friday") is most use at the start of that day.
+const START_OF_DAY = 9;
+
+// "remind me to…", "remind me in 20 mins to…", and the other ways people actually ask. The
+// "to" is optional after "remind me" because the time often comes first.
+const ASK = /^\s*(?:(?:can you|could you|pls|plz|please|yo)\s+)?(?:remind me|ping me|nudge me|don'?t let me forget|remember to)\b\s*(?:to\b\s*)?/i;
+// Words that already place a time of day, so chrono's reading of them is kept as it is.
+const PART_OF_DAY = /\b(?:morning|afternoon|evening|night|tonight|noon|midday|midnight|lunch)\b/i;
+// "at 5" with no am or pm.
+const BARE_HOUR = /^(?:at\s+)?(\d{1,2})(?::(\d{2}))?$/i;
+// chrono keeps "at", "on" and "in" inside its match but leaves "by" and "before" behind when the
+// time starts with a digit ("by 5pm" matches "5pm"). Only then are they stripped: stripping on/in
+// everywhere ate the end of "put the washing on" and would eat "drop by" too.
+const DANGLING = /\s+(?:by|before)\s*$/i;
 
 const titled = (text) =>
   text.replace(/\s+/g, " ").trim().replace(/^./, (c) => c.toUpperCase());
+
+// The next time the clock shows h:m, taking h as either half of the day. Read literally,
+// "at 5" said at 2pm was 05:00 the following morning — twelve hours late.
+function nextOnClock(hour, minute, nowMs) {
+  const candidates = [];
+  for (const days of [0, 1]) {
+    for (const h of [hour % 12, (hour % 12) + 12]) {
+      const when = new Date(nowMs);
+      when.setDate(when.getDate() + days);
+      when.setHours(h, minute, 0, 0);
+      if (when.getTime() > nowMs) candidates.push(when.getTime());
+    }
+  }
+  return Math.min(...candidates);
+}
+
+// When a chrono reading should fire, or null if it doesn't name a usable moment.
+function moment(hit, nowMs) {
+  const bare = BARE_HOUR.exec(hit.text.trim());
+  if (bare && Number(bare[1]) >= 1 && Number(bare[1]) <= 12) {
+    return nextOnClock(Number(bare[1]), Number(bare[2] ?? 0), nowMs);
+  }
+
+  const when = hit.start.date();
+  if (!hit.start.isCertain("hour") && !PART_OF_DAY.test(hit.text)) when.setHours(START_OF_DAY, 0, 0, 0);
+  // "today" said after nine names no moment left to fire at; it waits to be given one.
+  return when.getTime() > nowMs ? when.getTime() : null;
+}
 
 // A two-minute job you'd otherwise forget. Deliberately not a calendar block: it takes no
 // room in the week, it just arrives, gets done, and gets out of the way.
@@ -17,32 +58,42 @@ export function parseReminder(raw, nowMs = Date.now()) {
   let rest = raw.replace(ASK, "");
   let at = null;
 
-  const relative = IN.exec(rest);
-  const meridiem = MERIDIEM.exec(rest);
-  const clock = CLOCK.exec(rest);
-
-  if (relative) {
-    const amount = Number(relative[1]);
-    const minutes = /^h/i.test(relative[2]) ? amount * 60 : amount;
-    at = nowMs + minutes * MINUTE_MS;
-    rest = rest.replace(relative[0], " ");
-  } else if (meridiem || clock) {
-    const match = meridiem ?? clock;
-    const hour24 = meridiem
-      ? (Number(meridiem[1]) % 12) + (meridiem[3].toLowerCase() === "p" ? 12 : 0)
-      : Number(clock[1]);
-    const minute = Number((meridiem ? meridiem[2] : clock[2]) ?? 0);
-    if (hour24 > 23 || minute > 59) return null;
-
-    const when = new Date(nowMs);
-    when.setHours(hour24, minute, 0, 0);
-    if (when.getTime() <= nowMs) when.setDate(when.getDate() + 1);
-    at = when.getTime();
-    rest = rest.replace(match[0], " ");
+  // The first reading that is a real time: in "fix the sat nav at 6pm", "sat" comes first.
+  const hit = chrono.parse(rest, new Date(nowMs), { forwardDate: true }).find((h) => !isProse(h));
+  if (hit) {
+    at = moment(hit, nowMs);
+    if (at !== null) {
+      let before = rest.slice(0, hit.index);
+      if (/^\d/.test(hit.text)) before = before.replace(DANGLING, "");
+      rest = `${before} ${rest.slice(hit.index + hit.text.length)}`;
+    }
   }
+
+  rest = rest.trim().replace(/^to\s+/i, "");
 
   const text = titled(rest);
   return text ? { text, at } : null;
+}
+
+// "remind me to call mum" -> "when?" -> "5pm". The reply completes the reminder only if it is
+// nothing but a time, read by the same rules as a reminder given in one go; anything more is a
+// new message, and the half-finished reminder is let go rather than guessed at.
+export function completeReminder(pendingText, reply, nowMs = Date.now()) {
+  const whole = parseReminder(`remind me to ${pendingText} ${reply}`, nowMs);
+  return whole?.at && whole.text === pendingText ? whole : null;
+}
+
+// How she says when, on the real clock, so a guess that is wrong is seen the moment she
+// says it rather than when the reminder fails to arrive.
+export function whenSaid(atMs, nowMs = Date.now()) {
+  const minutes = Math.round((atMs - nowMs) / MINUTE_MS);
+  if (atMs - nowMs <= HOUR_MS) return `in ${Math.max(1, minutes)} min${Math.max(1, minutes) === 1 ? "" : "s"}`;
+
+  const when = new Date(atMs);
+  const clock = `${String(when.getHours()).padStart(2, "0")}:${String(when.getMinutes()).padStart(2, "0")}`;
+  return when.toDateString() === new Date(nowMs).toDateString()
+    ? `at ${clock}`
+    : `${WEEKDAYS[when.getDay()].toLowerCase()} ${clock}`;
 }
 
 // Reminders whose moment fell in (since, now]. Unlike a session, one slept through still
@@ -59,4 +110,13 @@ export function outstanding(reminders, now = Date.now()) {
   return reminders
     .filter((r) => !r.done && r.at !== null && r.at <= now)
     .sort((a, b) => a.at - b.at);
+}
+
+// How long until the next reminder is due, so it can fire on its minute rather than on whichever
+// minute-tick happens to come after it. Null when nothing is waiting.
+export function msUntilNext(reminders, now = Date.now()) {
+  const next = reminders
+    .filter((r) => !r.done && r.at !== null && r.at > now)
+    .reduce((soonest, r) => Math.min(soonest, r.at), Infinity);
+  return next === Infinity ? null : next - now;
 }

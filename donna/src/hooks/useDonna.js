@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { createTools, runTurn, systemPrompt, messagesForModel } from "../lib/planner";
-import { parseReminder } from "../lib/remind";
+import { parseReminder, completeReminder, whenSaid } from "../lib/remind";
 import { planStore } from "../stores/planStore";
 import { itemStore } from "../stores/itemStore";
 import profileText from "../lib/profile.md?raw";
@@ -41,17 +41,27 @@ export function useDonna() {
   const [thread, setThread] = useState([]);
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
+  // A reminder asked for without a time, waiting for the reply that names one.
+  const pendingRef = useRef(null);
 
   async function say(text) {
     if (busyRef.current) return false;
 
     // "remind me to X in 20 mins" is a two-minute job, not a session. It reads the text
-    // and saves it — no model, and nothing added to the week.
-    const reminder = parseReminder(text);
+    // and saves it — no model, and nothing added to the week. The model has no reminder tool,
+    // so anything that is a reminder has to be finished here or it never fires.
+    const pending = pendingRef.current;
+    pendingRef.current = null;
+    const reminder = (pending && completeReminder(pending, text)) || parseReminder(text);
     if (reminder?.at) {
       planStore.remind(reminder.text, reminder.at);
-      const mins = Math.max(1, Math.round((reminder.at - Date.now()) / 60_000));
-      answer(text, `got it. ${reminder.text.toLowerCase()} — i'll say in ${mins} min${mins === 1 ? "" : "s"}.`);
+      // Said on the real clock, so a time she read wrong is seen now, not when it fails to arrive.
+      answer(text, `got it. ${reminder.text.toLowerCase()} — i'll say ${whenSaid(reminder.at)}.`);
+      return true;
+    }
+    if (reminder) {
+      pendingRef.current = reminder.text;
+      answer(text, "when?");
       return true;
     }
 

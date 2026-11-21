@@ -26,7 +26,7 @@ const WEEK_ABBR = /\b(\d+)\s*wks?\b/gi;
 // written. A duration like "3 months" knows only a month too, so the digit tells them apart.
 // shortcut: a weekday someone did mean in three letters ("essay due fri") falls back to the
 // default week, which beats a confident wrong date; drop the length test if that ever grates.
-const isProse = (hit) =>
+export const isProse = (hit) =>
   !/\d/.test(hit.text) &&
   !hit.start.isCertain("day") &&
   !hit.start.isCertain("hour") &&
@@ -52,8 +52,9 @@ function extractTimeframe(raw, now) {
   }
 
   const text = raw.replace(WEEK_ABBR, "$1 weeks");
-  const [hit] = chrono.parse(text, new Date(now), { forwardDate: true });
-  const timeframeMs = hit && !isProse(hit) ? hit.start.date().getTime() - now : 0;
+  // The first reading that is a real date: in "sat nav fix by friday", "sat" comes first.
+  const hit = chrono.parse(text, new Date(now), { forwardDate: true }).find((h) => !isProse(h));
+  const timeframeMs = hit ? hit.start.date().getTime() - now : 0;
   // A deadline already gone, or seconds away, would give a nudge ladder that fires all four at
   // once: fall back to the default rather than check in about it four times.
   if (timeframeMs < MINUTE) return { timeframeMs: DEFAULT_TIMEFRAME, remaining: raw };

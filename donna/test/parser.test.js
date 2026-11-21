@@ -139,3 +139,10 @@ test("a blurt that is only a date keeps the words that were typed", () => {
 test("a preposition the date left behind is cleaned up", () => {
   assert.equal(parse("essay due by friday at the latest").title, "Essay due at the latest");
 });
+
+test("a short weekday before the real date does not hide the real date", () => {
+  // "sat" is read first and rejected as prose; the date after it still has to count.
+  const nav = parse("sat nav fix by friday");
+  assert.equal(new Date(nav.deadline).getDay(), 5);
+  assert.equal(nav.title, "Sat nav fix");
+});
