@@ -1,0 +1,33 @@
+{
+  "hook": {
+    "enabled": true,
+    "limits": {
+      "maxFindings": 5,
+      "maxChars": 8000
+    }
+  },
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "ecosphere/src/app/(app)/scan/Scanner.tsx"
+        ],
+        "createdAt": "2026-11-16T08:33:39.698Z",
+        "reason": "user mockup: camera viewfinder corner brackets on the AI Waste Scanner frame are the reference design, not card accents"
+      },
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "ecosphere/src/app/(app)/scan/Scanner.tsx"
+        ],
+        "createdAt": "2026-11-16T08:33:39.705Z",
+        "reason": "user mockup: camera viewfinder corner brackets on the AI Waste Scanner frame are the reference design, not card accents"
+      }
+    ]
+  }
+}

@@ -1,0 +1,79 @@
+/* Cinematic landing. The track is tall; the stage inside it is sticky, so the phone stays put while scroll drives the timeline. */
+.cine { background: #070908; color: #fff; }
+.cine-track { position: relative; height: 1150vh; }
+.cine-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; perspective: 1600px;
+  background: radial-gradient(120% 90% at 50% 110%, #0f1f15 0%, #070908 55%); }
+
+.cine-nav { position: fixed; inset: 0 0 auto 0; z-index: 30; display: flex; align-items: center; justify-content: space-between;
+  padding: 18px clamp(16px, 4vw, 48px); background: linear-gradient(#070908cc, #07090800); }
+
+.cine-glow { position: absolute; left: 50%; top: 50%; width: 70vmin; height: 70vmin; margin: -35vmin 0 0 -35vmin; border-radius: 50%;
+  background: radial-gradient(circle, rgba(162, 212, 126, 0.22), rgba(30, 58, 40, 0.18) 40%, transparent 70%); filter: blur(10px); }
+.cine-nature { position: absolute; inset: -5%; }
+
+.cine-intro-logo { position: absolute; left: 50%; top: 13vh; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 4; }
+.cine-logo-in { opacity: 0; animation: cine-logo 1400ms var(--ease-out) forwards; }
+@keyframes cine-logo { from { opacity: 0; filter: blur(8px); transform: translateY(8px); } to { opacity: 1; filter: blur(0); transform: none; } }
+
+.cine-rig { position: absolute; left: 50%; top: 50%; translate: -50% -50%; transform-style: preserve-3d; z-index: 3; }
+.cine-rig .phone { --pw: min(300px, 34vh); }
+.cine-tilt { transform-style: preserve-3d; } /* keeps the phone's faces 3D through the cursor-tilt layer */
+/* Separate floor shadow: a filter on .phone would flatten its 3D faces. */
+.cine-shadow { position: absolute; left: 50%; top: 50%; width: min(300px, 34vh); height: 40px; translate: -50% calc(min(300px, 34vh) * 1.12);
+  border-radius: 50%; background: radial-gradient(closest-side, rgba(0, 0, 0, 0.75), transparent); filter: blur(12px); z-index: 2; }
+
+/* Chapter copy: left column on desktop, centred for the intro/outro chapters. */
+.cine-text { position: absolute; left: clamp(24px, 7vw, 120px); top: 50%; translate: 0 -50%; width: min(34vw, 460px); z-index: 4; pointer-events: none; }
+.cine-text-center { left: 50%; translate: -50% 0; top: auto; bottom: 6vh; width: min(90vw, 760px); text-align: center; }
+.cine-text[data-ch="9"] { bottom: auto; top: 19vh; }
+.cine-h { font-size: clamp(1.9rem, 2.6vw + 0.9rem, 3.5rem); /* rem term keeps browser zoom working */ line-height: 1.04; letter-spacing: -0.035em; font-weight: 600; text-wrap: balance; }
+.cine-text-center .cine-h { font-size: clamp(1.65rem, 2vw + 0.9rem, 2.75rem); }
+.cine-p { margin-top: 18px; max-width: 38ch; font-size: clamp(0.95rem, 0.4vw + 0.8rem, 1.125rem); line-height: 1.55; color: rgba(255, 255, 255, 0.62); }
+
+.cine-chip { position: absolute; left: calc(50% + 15vw - 290px); top: 30%; z-index: 5; display: flex; flex-direction: column; gap: 2px;
+  padding: 12px 16px; border-radius: 16px; background: rgba(23, 26, 25, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(8px); }
+.cine-particle { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: #b6f2a8; box-shadow: 0 0 10px #a2d47e; z-index: 4; }
+
+.cine-bottle { position: absolute; left: calc(50% + 27vw); top: 50%; width: min(220px, 26vh); aspect-ratio: 1 / 1.2; translate: -50% -50%; z-index: 2; }
+.cine-beam { position: absolute; inset: 0 -10%; height: 22%; background: linear-gradient(transparent, rgba(162, 212, 126, 0.55), transparent); mix-blend-mode: screen;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent); mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent); }
+.cine-tag { position: absolute; left: 50%; bottom: -14%; translate: -50% 0; white-space: nowrap; padding: 6px 12px; border-radius: 999px;
+  background: #a2d47e; color: #0b0d0c; font-size: 12px; font-weight: 600; }
+
+.cine-panel { position: absolute; left: calc(50% + 15vw); top: 50%; translate: -50% -50%; width: min(420px, 80vw); padding: 20px; border-radius: 22px; z-index: 4;
+  background: linear-gradient(#191d1b, #121514); border: 1px solid rgba(255, 255, 255, 0.07); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5); }
+.cine-exchange { position: absolute; left: calc(50% - 21vw); bottom: 18vh; width: min(300px, 70vw); display: flex; align-items: center; z-index: 5; }
+
+.cine-final-logo { position: absolute; left: 50%; top: 11vh; translate: -50% 0; display: flex; align-items: center; gap: 10px; z-index: 4; }
+.cine-cta { position: absolute; left: 50%; bottom: 7vh; translate: -50% 0; display: flex; gap: 12px; z-index: 6; }
+
+.cine-eq { display: inline-flex; gap: 2px; align-items: flex-end; height: 10px; }
+.cine-eq i { width: 2px; height: 100%; background: #a2d47e; border-radius: 1px; transform-origin: bottom; animation: cine-eq 1.1s ease-in-out infinite; }
+.cine-eq i:nth-child(2) { animation-delay: -0.4s; } .cine-eq i:nth-child(3) { animation-delay: -0.75s; }
+@keyframes cine-eq { 0%, 100% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } }
+.cine-footer { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; padding: 28px clamp(16px, 4vw, 48px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06); font-size: 14px; color: rgba(255, 255, 255, 0.55); }
+.cine-footer a:hover { color: #fff; }
+
+/* Mobile: its own layout, not a shrunken desktop. Phone up top, copy underneath, shorter chapters. */
+@media (max-width: 767px) {
+  .cine-track { height: 820vh; }
+  .cine-rig { top: 40%; }
+  .cine-rig .phone { --pw: min(230px, 30vh); }
+  .cine-text, .cine-text-center { left: 50%; translate: -50% 0; top: auto; bottom: 5vh; width: calc(100vw - 32px); text-align: center; }
+  .cine-text[data-ch="9"] { top: auto; bottom: 16vh; }
+  .cine-p { margin-inline: auto; font-size: 14px; }
+  .cine-h { font-size: clamp(1.5rem, 4vw + 0.6rem, 2rem); }
+  .cine-chip { display: none; } /* fewer decorative layers on phones */
+  .cine-bottle { left: 50%; top: 17vh; width: 24vw; }
+  .cine-shadow { display: none; }
+  .cine-panel { left: 50%; top: 40%; }
+  .cine-exchange { left: 50%; translate: -50% 0; bottom: auto; top: 10vh; }
+  .cine-cta { flex-direction: column; width: calc(100vw - 48px); bottom: 5vh; }
+  .cine-text[data-ch="9"] .cine-h { margin-bottom: 120px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cine-logo-in { animation: fade-in 600ms both; }
+  .cine-eq i { animation: none; transform: scaleY(0.6); }
+}

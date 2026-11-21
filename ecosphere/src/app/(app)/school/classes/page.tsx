@@ -1,0 +1,46 @@
+import { requireUser } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+import { withDates } from "@/lib/queries";
+import type { HealthRow } from "@/components/HealthStatus";
+import { healthAlerts, healthStatus } from "@/lib/health";
+import { startOf } from "@/lib/queries";
+import { impact } from "@/lib/waste";
+import { Header } from "@/components/ui";
+
+const DOT = { OK: "🟢", WATCH: "🟡", ACTION: "🔴" };
+
+export default async function ManageClasses() {
+  const admin = await requireUser(["SCHOOL_ADMIN"]);
+  const sb = createClient();
+  const since = startOf("month");
+  const people = ((await sb.from("profiles").select("*, scans(wasteType, weightKg, createdAt)").eq("schoolId", admin.schoolId ?? "").in("role", ["STUDENT", "TEACHER", "HEALTH_MONITOR"])).data ?? [])
+    .map((p) => ({ ...p, scans: (p.scans ?? []).filter((x: { createdAt: string }) => new Date(x.createdAt) >= since) }));
+  const allReports = withDates((await sb.from("health_reports").select("*").eq("schoolId", admin.schoolId ?? "").order("createdAt", { ascending: false }).limit(300)).data, "createdAt") as HealthRow[];
+  const grades = Array.from(new Set(people.map((p) => p.grade ?? "Unassigned"))).sort();
+  const reports = grades.map((g) => allReports.find((r) => r.className === g) ?? null);
+  return (
+    <>
+      <Header title="Manage Classes" back="/profile" />
+      <div className="stagger flex flex-col gap-3 px-5">
+        {grades.map((g, i) => {
+          const students = people.filter((p) => p.role === "STUDENT" && (p.grade ?? "Unassigned") === g);
+          const staff = people.filter((p) => p.role !== "STUDENT" && p.grade === g);
+          const im = impact(students.flatMap((s) => s.scans));
+          const r = reports[i];
+          return (
+            <article key={g} className="card space-y-2 p-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold">{g}</h2>
+                <span className="text-sm">{r ? DOT[healthStatus(healthAlerts(r))] : "⚪"} {r ? r.cleaning.replace("_", " ").toLowerCase() : "no report"}</span>
+              </div>
+              <p className="text-xs text-white/60">{students.length} students · {im.kg} kg sorted this month · {im.recyclingRate}% recycled</p>
+              <p className="text-xs text-white/60">Staff: {staff.map((s) => `${s.name} (${s.role === "TEACHER" ? "Teacher" : "Health Monitor"})`).join(", ") || "none assigned"}</p>
+            </article>
+          );
+        })}
+        {grades.length === 0 && <p className="card p-6 text-center text-sm text-white/55">No classes yet. Classes appear when students join.</p>}
+        <p className="text-center text-xs text-white/45">Classes are created automatically from the class students and staff enter when they sign up.</p>
+      </div>
+    </>
+  );
+}

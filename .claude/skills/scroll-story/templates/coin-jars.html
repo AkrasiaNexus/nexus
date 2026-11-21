@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Coinjar · Every coin has a job</title>
+<!--
+  scroll-story template (framework-free). Concept bank #3 "Every coin has a job".
+  Same architecture as the EcoSphere landing: tall track → sticky 100svh stage → ONE anime.js timeline scrubbed by scroll,
+  rebuilt by createScope for mobile / reduced motion; chapter copy reveals per word, hands over as one block;
+  final CTA is inert until the end; the hook reacts to the cursor before the first scroll.
+-->
+<style>
+  :root { --ink: #0f0d0a; --paper: #f5ecd9; --gold: #e9b44c; --gold-d: #b9852a; --sage: #9fbf8f; --clay: #e58a6b; --sky: #7cc3d6; --ease: cubic-bezier(.16,1,.3,1); }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--ink); color: var(--paper); font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  ::selection { background: var(--gold); color: var(--ink); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+  nav { position: fixed; inset: 0 0 auto; z-index: 20; display: flex; justify-content: space-between; align-items: center; padding: 18px clamp(16px, 4vw, 48px); }
+  nav b { letter-spacing: -.02em; } nav a { color: var(--paper); text-decoration: none; padding: 8px 16px; border-radius: 999px; background: var(--gold); color: var(--ink); font-weight: 600; }
+  .track { position: relative; height: 620vh; }
+  .stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; perspective: 1400px;
+    background: radial-gradient(90% 70% at 50% 100%, #2a2112, var(--ink) 60%); }
+  .copy { position: absolute; left: clamp(24px, 7vw, 120px); top: 50%; translate: 0 -50%; width: min(36vw, 480px); z-index: 5; }
+  .copy.center { left: 50%; translate: -50% 0; top: 14vh; width: min(90vw, 720px); text-align: center; }
+  h2 { font-size: clamp(30px, 3.8vw, 58px); line-height: 1.03; letter-spacing: -.035em; font-weight: 650; text-wrap: balance; }
+  h2 span { display: inline-block; white-space: pre; opacity: 0; } p { margin-top: 16px; color: #f5ecd9a8; max-width: 36ch; opacity: 0; }
+  .center p { margin-inline: auto; }
+  /* The signature: coins are real 3D discs (two faces + an edge band). */
+  .coin { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px; transform-style: preserve-3d; z-index: 3; }
+  .coin i { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffe3a3, var(--gold) 45%, var(--gold-d)); box-shadow: inset 0 0 0 4px #c9932f; }
+  .coin i::after { content: "¢"; position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; font-size: 26px; color: #8a5e17; }
+  .coin i:last-child { transform: rotateY(180deg) translateZ(3px); } .coin i:first-child { transform: translateZ(3px); }
+  .coin.hero { width: 150px; height: 150px; margin: -75px; } .coin.hero i::after { font-size: 64px; }
+  .tilt { position: absolute; inset: 0; transform-style: preserve-3d; }
+  .jars { position: absolute; left: 50%; bottom: 10vh; translate: -50% 0; display: flex; gap: clamp(16px, 4vw, 56px); z-index: 2; opacity: 0; }
+  .jar { position: relative; width: clamp(90px, 11vw, 150px); aspect-ratio: .78; border: 3px solid #f5ecd955; border-top: 0; border-radius: 0 0 26px 26px; overflow: hidden; }
+  .jar::before { content: ""; position: absolute; top: -10px; left: -6px; right: -6px; height: 12px; border-radius: 6px; background: #f5ecd955; }
+  .fill { position: absolute; inset: auto 0 0; height: 100%; transform-origin: bottom; transform: scaleY(0); }
+  .jar label { position: absolute; inset: auto 0 -30px; text-align: center; font-size: 13px; color: #f5ecd9cc; }
+  .jar { overflow: visible; } .fill { border-radius: 0 0 23px 23px; }
+  .jar .amt { position: absolute; inset: auto 0 -54px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--paper); }
+  .goal { position: absolute; left: 50%; bottom: calc(10vh + clamp(90px,11vw,150px) / .78 + 34px); translate: -50% 0; padding: 8px 14px; border-radius: 999px; background: var(--sage); color: var(--ink); font-weight: 700; font-size: 14px; opacity: 0; z-index: 4; white-space: nowrap; }
+  .cta { position: absolute; left: 50%; top: calc(14vh + 140px); translate: -50% 0; z-index: 6; opacity: 0; pointer-events: none; }
+  .cta a { display: inline-block; white-space: nowrap; padding: 14px 28px; border-radius: 999px; background: var(--gold); color: var(--ink); font-weight: 700; text-decoration: none; }
+  footer { display: flex; justify-content: space-between; padding: 28px clamp(16px, 4vw, 48px); color: #f5ecd977; font-size: 14px; border-top: 1px solid #f5ecd915; }
+  @media (max-width: 767px) {
+    .track { height: 480vh; }
+    .copy, .copy.center { left: 50%; translate: -50% 0; top: 12vh; bottom: auto; width: calc(100vw - 32px); text-align: center; }
+    .jars { bottom: 14vh; }
+    .copy p { margin-inline: auto; font-size: 14px; } .coin { width: 44px; height: 44px; margin: -22px; } .coin.hero { width: 110px; height: 110px; margin: -55px; }
+    .cta { top: calc(12vh + 110px); }
+  }
+</style>
+</head>
+<body>
+<nav><b>Coinjar</b><a href="#start">Start sorting</a></nav>
+<main>
+  <section class="track" data-track>
+    <div class="stage">
+      <div class="copy" data-ch="0"><h2 data-words>Every coin has a job.</h2><p data-rest>Coinjar gives every dollar a place before the month starts.</p></div>
+      <div class="copy" data-ch="1"><h2 data-words>Money without a plan leaks.</h2><p data-rest>Little spends scatter. You only notice when it's gone.</p></div>
+      <div class="copy" data-ch="2"><h2 data-words>Sort it once. It sorts itself.</h2><p data-rest>Set your jars; every payday fills them in the right order.</p></div>
+      <div class="copy" data-ch="3"><h2 data-words>Then one jar is full.</h2><p data-rest>Goals stop being wishes. Demo values shown.</p></div>
+      <div class="copy center" data-ch="4"><h2 data-words>Give your money a job today.</h2></div>
+
+      <div class="jars" data-jars>
+        <div class="jar"><div class="fill" data-fill="0" style="background:var(--sky)"></div><span class="amt" data-amt="640">$0</span><label>Bills</label></div>
+        <div class="jar"><div class="fill" data-fill="1" style="background:var(--sage)"></div><span class="amt" data-amt="1200">$0</span><label>Savings</label></div>
+        <div class="jar"><div class="fill" data-fill="2" style="background:var(--clay)"></div><span class="amt" data-amt="180">$0</span><label>Fun</label></div>
+      </div>
+      <div class="goal" data-goal>Goal reached · Laptop fund (demo)</div>
+      <div class="tilt" data-tilt><div class="coin hero" data-hero><i></i><i></i></div></div>
+      <div data-coins></div>
+      <div class="cta" data-cta><a href="#start" id="start">Start sorting · free</a></div>
+    </div>
+  </section>
+</main>
+<footer><span>Coinjar · scroll-story template</span><span>Demo content</span></footer>
+
+<script type="module">
+import { createTimeline, createScope, createAnimatable, onScroll, stagger } from "https://cdn.jsdelivr.net/npm/animejs@4.5.0/dist/bundles/anime.esm.min.js";
+const root = document.querySelector("main"), C = 1000, at = (c, f = 0) => c * C + f * C;
+// Split headlines into words (real text stays in the DOM for screen readers).
+document.querySelectorAll("[data-words]").forEach((h) => { h.setAttribute("aria-label", h.textContent); h.innerHTML = h.textContent.split(" ").map((w) => `<span aria-hidden="true">${w} </span>`).join(""); });
+// 24 coins; each has a resting jar (0..2) for the sort chapter.
+const coinsBox = root.querySelector("[data-coins]");
+coinsBox.innerHTML = Array.from({ length: 24 }, (_, i) => `<div class="coin" data-coin data-jar="${i % 3}" style="opacity:0"><i></i><i></i></div>`).join("");
+
+function build({ mobile, reduce }) {
+  const $ = (s) => root.querySelector(s), $$ = (s) => [...root.querySelectorAll(s)], cta = $("[data-cta]");
+  const tl = createTimeline({ defaults: { ease: "inOut(2)", duration: C * .4 },
+    autoplay: onScroll({ target: $("[data-track]"), enter: "top top", leave: "bottom bottom", sync: .5 }),
+    onUpdate: (self) => { const live = self.progress > .9; cta.style.pointerEvents = live ? "auto" : "none"; cta.toggleAttribute("inert", !live); } });
+  const move = (v) => (reduce ? 0 : v);
+  // Copy: per-word reveal, single-block hand-over (reliable under fast scroll jumps).
+  $$("[data-ch]").forEach((b, i) => {
+    tl.add([...b.querySelectorAll("h2 span")], { opacity: [0, 1], y: [move(18), 0], delay: stagger(C * .012), duration: C * .16 }, at(i, i ? .06 : .02));
+    const p = b.querySelector("[data-rest]"); if (p) tl.add(p, { opacity: [0, 1], y: [move(12), 0], duration: C * .16 }, at(i, .18));
+    if (i < 4) tl.add(b, { opacity: [1, 0], y: [0, move(-24)], duration: C * .12 }, at(i, .86));
+  });
+  const hero = $("[data-hero]"), coins = $$("[data-coin]");
+  const jarX = (j) => (j - 1) * (mobile ? 28 : 13); // vw offsets of the three jars
+  // 01 Hook: the hero coin spins slowly and settles; it already reacts to the cursor (see below).
+  if (!reduce) tl.add(hero, { rotateY: [0, 540], x: ["0vw", mobile ? "0vw" : "16vw"], y: ["0vh", mobile ? "8vh" : "0vh"], duration: C * .9, ease: "inOut(3)" }, at(0));
+  // 02 Chaos: the coin shatters into many, scattered across the stage, spinning.
+  tl.add(hero, reduce ? { opacity: 0, duration: C * .1 } : { opacity: 0, scale: .4, duration: C * .1 }, at(1, .05));
+  tl.add(coins, { opacity: [0, 1], x: () => `${(Math.random() - .5) * (mobile ? 80 : 70)}vw`, y: () => `${(Math.random() - .5) * 60}vh`,
+    rotateY: () => move(Math.random() * 720), rotateZ: () => move((Math.random() - .5) * 60), delay: stagger(C * .01), duration: C * .4, ease: "out(3)" }, at(1, .1));
+  // 03 Sort: jars appear; coins arc into their jar; fills rise with counters.
+  tl.add($("[data-jars]"), { opacity: [0, 1], y: [move(40), 0], duration: C * .2 }, at(2, .02));
+  tl.add(coins, { x: (el) => `${jarX(+el.dataset.jar)}vw`, y: mobile ? "30vh" : "28vh", rotateY: 0, rotateZ: 0, scale: .5, delay: stagger(C * .012), duration: C * .4, ease: "inOut(3)" }, at(2, .15));
+  tl.add(coins, { opacity: 0, duration: C * .1, delay: stagger(C * .006) }, at(2, .55));
+  $$("[data-fill]").forEach((f, j) => tl.add(f, { scaleY: [0, [.55, .45, .3][j]], duration: C * .35, ease: "out(2)" }, at(2, .4)));
+  $$("[data-amt]").forEach((el) => { const o = { v: 0 }, to = +el.dataset.amt * .5; tl.add(o, { v: to, duration: C * .35, ease: "out(2)", onUpdate: () => (el.textContent = "$" + Math.round(o.v)) }, at(2, .4)); });
+  // 04 Climax: savings fills to the goal; the jar glows; a goal ribbon lands.
+  const save = $("[data-fill='1']"), saveAmt = $$("[data-amt]")[1];
+  tl.add(save, { scaleY: 1, duration: C * .4, ease: "inOut(3)" }, at(3, .1));
+  const o2 = { v: 600 }; tl.add(o2, { v: 1200, duration: C * .4, ease: "inOut(3)", onUpdate: () => (saveAmt.textContent = "$" + Math.round(o2.v)) }, at(3, .1));
+  tl.add(save.parentElement, { boxShadow: ["0 0 0 0 #9fbf8f00", "0 0 60px 6px #9fbf8f66"], scale: [1, move(1.08) || 1], duration: C * .2 }, at(3, .5));
+  tl.add($("[data-goal]"), { opacity: [0, 1], y: [move(16), 0], duration: C * .15 }, at(3, .55));
+  // 05 CTA
+  tl.add(save.parentElement, { scale: 1, duration: C * .2 }, at(4, .05));
+  tl.add(cta, { opacity: [0, 1], y: [move(16), 0], duration: C * .2 }, at(4, .35));
+  tl.add({}, { duration: 1 }, at(5));
+  // Hook reacts in the first second: the hero coin leans toward the cursor (fine pointers, motion allowed).
+  let off = () => {};
+  if (!reduce && matchMedia("(pointer: fine)").matches) {
+    const tilt = createAnimatable($("[data-tilt]"), { rotateX: 900, rotateY: 900, ease: "out(3)" });
+    const lean = (e) => { tilt.rotateY((e.clientX / innerWidth - .5) * 18); tilt.rotateX(-(e.clientY / innerHeight - .5) * 12); };
+    addEventListener("pointermove", lean, { passive: true }); off = () => removeEventListener("pointermove", lean);
+  }
+  return () => { off(); tl.revert(); };
+}
+// Keep the story position (0–1), not the pixel offset, across layout changes; geometry cached, re-measured on resize.
+const track = root.querySelector("[data-track]");
+let geo = {}, resume = 0, stableW = innerWidth;
+const measure = () => { geo = { top: track.offsetTop, span: Math.max(1, track.offsetHeight - innerHeight) }; };
+const place = () => (scrollY - geo.top) / geo.span;
+const restore = (p) => { if (p >= 0 && p <= 1) scrollTo(0, geo.top + p * geo.span); };
+measure(); resume = place();
+addEventListener("scroll", () => { if (innerWidth === stableW) resume = place(); }, { passive: true });
+createScope({ root, mediaQueries: { mobile: "(max-width: 767px)", reduce: "(prefers-reduced-motion: reduce)" } })
+  .add((self) => { measure(); if (innerWidth !== stableW) restore(resume); stableW = innerWidth;
+    return build({ mobile: !!self.matches.mobile, reduce: !!self.matches.reduce }); });
+addEventListener("resize", () => { measure(); if (innerWidth !== stableW) { restore(resume); stableW = innerWidth; } });
+</script>
+</body>
+</html>
