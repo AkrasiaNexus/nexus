@@ -72,3 +72,11 @@ input, textarea {
   color: theme('colors.donna.muted'); border: 1px solid theme('colors.donna.border');
 }
 .orb-chip:hover { color: theme('colors.donna.text'); }
+
+
+/* Blocks are the one place colour carries meaning: which kind of thing a session is. */
+.cat-skill { border-left-color: theme('colors.cat.skill'); background: color-mix(in srgb, theme('colors.cat.skill') 16%, theme('colors.donna.raised')); color: theme('colors.donna.text'); }
+.cat-idea { border-left-color: theme('colors.cat.idea'); background: color-mix(in srgb, theme('colors.cat.idea') 16%, theme('colors.donna.raised')); color: theme('colors.donna.text'); }
+.cat-task { border-left-color: theme('colors.cat.task'); background: color-mix(in srgb, theme('colors.cat.task') 16%, theme('colors.donna.raised')); color: theme('colors.donna.text'); }
+.cat-habit { border-left-color: theme('colors.cat.habit'); background: color-mix(in srgb, theme('colors.cat.habit') 16%, theme('colors.donna.raised')); color: theme('colors.donna.text'); }
+.cat-explore { border-left-color: theme('colors.cat.explore'); background: color-mix(in srgb, theme('colors.cat.explore') 16%, theme('colors.donna.raised')); color: theme('colors.donna.text'); }

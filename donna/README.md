@@ -15,7 +15,7 @@ Ideas, skills to learn and side projects get thought about once and then forgott
 
 ## What it does
 
-- **A side panel, not a window:** Donna is silent until she isn't. `Ctrl/Cmd + Shift + N` slides a panel in at the right edge of the screen; Esc sends it away. There is no app to sit and look at.
+- **An orb, not a window:** Donna is silent until she isn't. `Ctrl/Cmd + Shift + N` wakes a small circle in the bottom-right corner; type into it and it grows only as far as it needs to, then shrinks back. Esc sends it away.
 - **Tell her, she plans it:** type what you're thinking into the panel and a local model (Gemma 4 12B via [Ollama](https://ollama.com), nothing leaves the machine) books it. A one-off with a time is just booked, a weekly thing becomes a fixed slot, and a goal gets two questions (minutes a day, deadline), then a session every day until it's due. Every tool argument the model sends is validated before it touches the plan.
 - **Pushes back:** ask for something fun while a deadline is due today (or slipped yesterday) and Donna refuses until you say yes. Older misses don't block; they're backlog. The refusal is enforced in code (`src/lib/pushback.js`) and spoken verbatim, so the model can't book around it or claim it did.
 - **Understands loose input:** "i wanna learn rust in 2 weeks" becomes **Learn rust**, *skill*, due in 14 days. Slang is normalized first with your [Idiolect](../idiolect) profile, so "lowk wanna learn rust jus 2 wks" works too. Timeframes use whole-word units, so "buy 3 more eggs" stays a title and is never read as "3 months".
@@ -56,7 +56,7 @@ npm run tauri build    # installers in src-tauri/target/release/bundle
 
 ## Tests
 
-114 tests (107 unit, 7 end-to-end), written test-first. Each parser bug got a failing test before its fix:
+131 tests (122 unit, 9 end-to-end), written test-first. Each parser bug got a failing test before its fix:
 - **Parser:** timeframes (minutes to months, "tomorrow", "next week"), numbers that aren't timeframes, filler removal ("i wanna ... in"), whole-word categories ("walk the **dog**" is a habit, not a task because of "do"), and effort.
 - **Idiolect port:** the JavaScript normalizer must reproduce the Python reference exactly on 27 exported conformance vectors (including Arabic and emoji). With the profile, "lowk wanna learn rust jus 2 wks" becomes **Learn rust**; without it the title would be "Lowk wanna learn rust jus".
 - **Check-ins:** nothing due early, one due after the last check, only the latest after a long sleep, done and skipped items stay quiet.

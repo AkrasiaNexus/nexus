@@ -65,6 +65,10 @@ export const planStore = {
     return null;
   },
 
+  undo(id) {
+    commit({ ...plan, blocks: plan.blocks.map((b) => (b.id === id ? { ...b, done: false } : b)) });
+  },
+
   complete(id) {
     commit({ ...plan, blocks: plan.blocks.map((b) => (b.id === id ? { ...b, done: true } : b)) });
   },

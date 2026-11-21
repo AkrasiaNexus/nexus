@@ -34,3 +34,10 @@ export function nowMin() {
   const now = new Date();
   return now.getHours() * 60 + now.getMinutes();
 }
+
+// The Monday-first week containing `date`, as seven YYYY-MM-DD strings.
+export function weekOf(date) {
+  const shift = (parseYmd(date).getDay() + 6) % 7;
+  const monday = addDays(date, -shift);
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+}

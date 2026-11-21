@@ -39,8 +39,9 @@ It is for personal use. The name is Donna Paulsen, from Suits.
   survives; the new plan data lives under `donna_plan`.
 
 ## What is built and verified
-114 tests pass on the Mac: `cd donna && npm test` (107 unit + 7 Playwright e2e). The e2e tests
-ran for the first time on 21 Nov 2026, after `npm ci` and `npx playwright install chromium`.
+131 tests pass: `cd donna && npm test` (122 unit + 9 Playwright e2e). The e2e suite takes
+`CHROMIUM_PATH` so it can run against a browser Playwright didn't install itself — in the cloud
+container, `CHROMIUM_PATH=/opt/pw-browsers/chromium npm test`.
 
 | Area | Files |
 |---|---|
@@ -55,7 +56,10 @@ ran for the first time on 21 Nov 2026, after `npm ci` and `npx playwright instal
 | Panel ↔ planner wiring (thread, busy, errors) | `src/hooks/useDonna.js` |
 | Plan state (blocks + fixed, `move`, `removeForItem`) | `src/stores/planStore.js` |
 | Goals (`addGoal`) | `src/stores/itemStore.js` |
-| The side panel (latest exchange + thinking dots) | `src/components/Panel.jsx` |
+| The orb (circle at rest, card when it speaks) | `src/components/Orb.jsx` |
+| The week calendar | `src/components/WeekView.jsx` |
+| The chatbox under the calendar | `src/components/AskBar.jsx` |
+| The computed daily brief | `src/lib/brief.js` |
 | Panel window, edge anchoring | `src-tauri/src/main.rs` (`anchor_right`, `announce`) |
 
 Design points worth keeping:

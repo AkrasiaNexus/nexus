@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { toMin, fromMin, addDays, isYmd, parseYmd } from "../src/lib/time.js";
+import { toMin, fromMin, addDays, isYmd, parseYmd, weekOf } from "../src/lib/time.js";
 import { busyOn, freeSlots, findClash, goalSessions } from "../src/lib/schedule.js";
 
 const DATE = "2026-11-24";
@@ -149,4 +149,23 @@ test("goal sessions are empty when the due date has already passed", () => {
 test("isYmd rejects dates that do not exist, like Feb 31", () => {
   assert.equal(isYmd("2026-02-31"), false);
   assert.equal(isYmd("2028-02-29"), true);
+});
+
+test("weekOf returns Monday to Sunday around a midweek date", () => {
+  const week = weekOf("2026-11-25");
+
+  assert.equal(week.length, 7);
+  assert.equal(week[0], "2026-11-23");
+  assert.equal(week[6], "2026-11-29");
+  assert.ok(week.includes("2026-11-25"));
+});
+
+test("weekOf treats Sunday as the end of its week, not the start", () => {
+  assert.deepEqual(weekOf("2026-11-29")[0], "2026-11-23");
+});
+
+test("weekOf crosses a month boundary without losing days", () => {
+  const week = weekOf("2026-12-01");
+
+  assert.deepEqual(week, ["2026-11-30", "2026-12-01", "2026-12-02", "2026-12-03", "2026-12-04", "2026-12-05", "2026-12-06"]);
 });

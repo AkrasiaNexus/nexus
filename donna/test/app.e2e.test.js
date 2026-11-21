@@ -27,7 +27,10 @@ test.before(async () => {
   });
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   base = `http://127.0.0.1:${server.address().port}/`;
-  browser = await chromium.launch();
+  // CHROMIUM_PATH lets the suite run against a browser Playwright didn't install itself
+  // (a CI image, or a container whose bundled build doesn't match this Playwright).
+  const executablePath = process.env.CHROMIUM_PATH;
+  browser = await chromium.launch(executablePath ? { executablePath, args: ["--no-sandbox"] } : {});
 });
 
 test.after(async () => {
@@ -35,45 +38,84 @@ test.after(async () => {
   server.close();
 });
 
-test("a blurt becomes a planned, categorised card", async () => {
-  const page = await browser.newPage();
-  await page.goto(base);
-  const input = page.getByPlaceholder(/blurt it out/);
-  await input.fill("i wanna learn rust in 2 weeks");
-  await input.press("Enter");
-  await input.fill("call mom tomorrow");
-  await input.press("Enter");
+const seedWeek = () => {
+  const d = new Date();
+  const q = (n) => String(n).padStart(2, "0");
+  const ymd = (x) => `${x.getFullYear()}-${q(x.getMonth() + 1)}-${q(x.getDate())}`;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  const day = (i) => { const x = new Date(monday); x.setDate(monday.getDate() + i); return ymd(x); };
+  localStorage.setItem("donna_plan", JSON.stringify({
+    fixed: [{ id: "f1", title: "School", days: [1, 2, 3, 4, 5], start: "08:00", end: "14:30" }],
+    blocks: [{ id: "b1", itemId: "i1", title: "Rust ownership", date: day(0), start: "19:00", minutes: 60, done: false }],
+    sweptOn: ymd(d),
+  }));
+  localStorage.setItem("nudge_items", JSON.stringify([
+    { id: "i1", title: "Learn Rust", category: "skill", status: "active", deadline: `${day(6)}T23:00:00`, createdAt: `${ymd(d)}T08:00:00`, nudges: [] },
+  ]));
+};
 
-  await page.getByRole("button", { name: /Everything/ }).click();
-  await assert.doesNotReject(page.getByText("Learn rust", { exact: true }).waitFor());
-  await assert.doesNotReject(page.getByText("Call mom", { exact: true }).waitFor());
-  assert.equal(await page.getByText("skill", { exact: true }).count(), 1);
-  await page.close();
+test("the week draws booked sessions and fixed commitments where they actually fall", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(seedWeek);
+  await page.goto(base);
+
+  await assert.doesNotReject(page.getByText("Rust ownership").waitFor(), "the session is drawn");
+  await assert.doesNotReject(page.getByText("School").first().waitFor(), "fixed commitments are drawn behind it");
+  assert.equal(await page.getByRole("button", { name: /Everything/ }).count(), 0, "the old dashboard is gone");
+
+  await context.close();
 });
 
-test("slang is understood before parsing (Idiolect profile)", async () => {
-  const page = await browser.newPage();
+test("clicking a session ticks it off, and clicking again puts it back", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(seedWeek);
   await page.goto(base);
-  const input = page.getByPlaceholder(/blurt it out/);
-  await input.fill("lowk wanna learn rust jus 2 wks");
-  await input.press("Enter");
-  await page.getByRole("button", { name: /Everything/ }).click();
-  await assert.doesNotReject(page.getByText("Learn rust", { exact: true }).waitFor());
-  await page.close();
+
+  const session = page.getByRole("button", { name: /Rust ownership/ });
+  await session.click();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("donna_plan")).blocks[0].done === true);
+
+  await session.click();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("donna_plan")).blocks[0].done === false);
+
+  await context.close();
 });
 
-test("the This Week count matches what the week planner shows", async () => {
-  const page = await browser.newPage();
+test("the week steps forward and comes back to today", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(seedWeek);
   await page.goto(base);
-  const input = page.getByPlaceholder(/blurt it out/);
-  for (const text of ["call mom tomorrow", "gym 3x this week", "finish the essay in 3 days"]) {
-    await input.fill(text);
-    await input.press("Enter");
-  }
-  const badge = await page.getByRole("button", { name: /This Week/ }).innerText();
-  const datedCards = await page.locator("main h3:not(:text('Later')) + div > div").count();
-  assert.equal(Number(badge.match(/\d+/)[0]), datedCards);
-  await page.close();
+
+  const heading = page.locator("h1");
+  assert.equal(await heading.innerText(), "This week");
+
+  await page.getByRole("button", { name: "Next week" }).click();
+  assert.notEqual(await heading.innerText(), "This week", "the heading names the week you moved to");
+
+  await page.getByRole("button", { name: "This week" }).click();
+  assert.equal(await heading.innerText(), "This week");
+
+  await context.close();
+});
+
+test("the chatbox under the calendar answers the brief without calling the model", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  let modelCalls = 0;
+  await page.route("http://127.0.0.1:11434/api/chat", async (route) => { modelCalls++; await route.abort(); });
+  await page.addInitScript(seedWeek);
+  await page.goto(base);
+
+  await page.getByRole("button", { name: "brief" }).click();
+
+  await assert.doesNotReject(page.getByText(/free|day's gone|booked/i).first().waitFor());
+  assert.equal(modelCalls, 0);
+
+  await context.close();
 });
 
 test("a check-in that came due fires one notification", async () => {

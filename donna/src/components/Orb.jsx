@@ -82,12 +82,16 @@ export default function Orb() {
       <div className="flex items-start gap-3">
         <span className={`orb-mini ${busy ? "is-busy" : ""}`} aria-hidden="true" />
         <div className="min-w-0 flex-1">
-          {speaking ? (
+          {busy ? (
+            <p role="status" aria-label="Donna is thinking" className="text-[13.5px] text-donna-muted">
+              thinking…
+            </p>
+          ) : speaking ? (
             <p className={`text-[13.5px] leading-snug ${last.role === "error" ? "text-donna-red" : "text-donna-text"}`}>
               {last.content}
             </p>
           ) : (
-            <p className="text-[13.5px] text-donna-muted">{busy ? "thinking…" : "what do you need?"}</p>
+            <p className="text-[13.5px] text-donna-muted">what do you need?</p>
           )}
         </div>
       </div>
