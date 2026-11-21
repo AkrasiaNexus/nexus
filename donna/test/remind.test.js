@@ -186,3 +186,24 @@ test("the wait until the next reminder ignores done, unscheduled and already-due
   assert.equal(msUntilNext(reminders, NOW), 30_000);
   assert.equal(msUntilNext([], NOW), null);
 });
+
+test("a bare hour with a day named lands in the waking day, not the small hours", () => {
+  // NOW is Thursday 14:00. Read literally, every one of these fired between 03:00 and 05:00.
+  assert.deepEqual(on("remind me tomorrow at 5 to call mum"), { text: "Call mum", day: 9, hour: 17, minute: 0 });
+  assert.deepEqual(on("remind me to call mum friday at 3"), { text: "Call mum", day: 9, hour: 15, minute: 0 });
+  assert.deepEqual(on("remind me to call mum at 5 tomorrow"), { text: "Call mum", day: 9, hour: 17, minute: 0 });
+  // Morning hours stay in the morning.
+  assert.deepEqual(on("remind me to call mum tmrw at 9"), { text: "Call mum", day: 9, hour: 9, minute: 0 });
+  // An explicit am is believed.
+  assert.deepEqual(on("remind me to call mum tomorrow at 5am"), { text: "Call mum", day: 9, hour: 5, minute: 0 });
+});
+
+test("the most natural answers to when? finish the reminder", () => {
+  assert.equal(new Date(completeReminder("Call mum", "5", NOW).at).getHours(), 17);
+  assert.equal(new Date(completeReminder("Call mum", "5:30", NOW).at).getMinutes(), 30);
+  assert.equal(completeReminder("Call mum", "in 5", NOW).at, NOW + 5 * 60_000);
+});
+
+test("a time read without its preposition leaves no dangling word", () => {
+  assert.equal(at("remind me to call mum at noon").text, "Call mum");
+});

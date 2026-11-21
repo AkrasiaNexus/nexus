@@ -14,10 +14,12 @@ const ASK = /^\s*(?:(?:can you|could you|pls|plz|please|yo)\s+)?(?:remind me|pin
 const PART_OF_DAY = /\b(?:morning|afternoon|evening|night|tonight|noon|midday|midnight|lunch)\b/i;
 // "at 5" with no am or pm.
 const BARE_HOUR = /^(?:at\s+)?(\d{1,2})(?::(\d{2}))?$/i;
-// chrono keeps "at", "on" and "in" inside its match but leaves "by" and "before" behind when the
-// time starts with a digit ("by 5pm" matches "5pm"). Only then are they stripped: stripping on/in
-// everywhere ate the end of "put the washing on" and would eat "drop by" too.
-const DANGLING = /\s+(?:by|before)\s*$/i;
+// chrono sometimes leaves the word that introduced a time behind: "by 5pm" matches "5pm", "at
+// noon" matches "noon". Only those are stripped, and only then: stripping on/in everywhere ate
+// the end of "put the washing on", and stripping "by" before a word would eat "drop by tmrw".
+const LEADS = /^(?:at|on|in|by|before|from|until)\b/i;
+const DANGLING_AT = /\s+at\s*$/i;
+const DANGLING_BY = /\s+(?:by|before)\s*$/i;
 
 const titled = (text) =>
   text.replace(/\s+/g, " ").trim().replace(/^./, (c) => c.toUpperCase());
@@ -46,6 +48,13 @@ function moment(hit, nowMs) {
 
   const when = hit.start.date();
   if (!hit.start.isCertain("hour") && !PART_OF_DAY.test(hit.text)) when.setHours(START_OF_DAY, 0, 0, 0);
+  // A day named with a bare hour — "tomorrow at 5", "friday at 3" — read literally fired between
+  // 03:00 and 06:00. People mean the waking day, so 1-6 is afternoon and 7-11 morning, the way
+  // calendar apps read it. An explicit am or pm is always believed.
+  else if (hit.start.isCertain("hour") && !hit.start.isCertain("meridiem") && !PART_OF_DAY.test(hit.text)) {
+    const hour = when.getHours();
+    if (hour >= 1 && hour <= 6) when.setHours(hour + 12);
+  }
   // "today" said after nine names no moment left to fire at; it waits to be given one.
   return when.getTime() > nowMs ? when.getTime() : null;
 }
@@ -64,7 +73,8 @@ export function parseReminder(raw, nowMs = Date.now()) {
     at = moment(hit, nowMs);
     if (at !== null) {
       let before = rest.slice(0, hit.index);
-      if (/^\d/.test(hit.text)) before = before.replace(DANGLING, "");
+      if (!LEADS.test(hit.text)) before = before.replace(DANGLING_AT, "");
+      if (/^\d/.test(hit.text)) before = before.replace(DANGLING_BY, "");
       rest = `${before} ${rest.slice(hit.index + hit.text.length)}`;
     }
   }
@@ -79,7 +89,10 @@ export function parseReminder(raw, nowMs = Date.now()) {
 // nothing but a time, read by the same rules as a reminder given in one go; anything more is a
 // new message, and the half-finished reminder is let go rather than guessed at.
 export function completeReminder(pendingText, reply, nowMs = Date.now()) {
-  const whole = parseReminder(`remind me to ${pendingText} ${reply}`, nowMs);
+  // The likeliest answers are the shortest: "5" or "5:30" is a time on the clock, "in 5" minutes.
+  const said = reply.trim();
+  const read = /^\d{1,2}(?::\d{2})?$/.test(said) ? `at ${said}` : /^in\s+\d+$/i.test(said) ? `${said} mins` : said;
+  const whole = parseReminder(`remind me to ${pendingText} ${read}`, nowMs);
   return whole?.at && whole.text === pendingText ? whole : null;
 }
 

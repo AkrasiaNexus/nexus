@@ -779,3 +779,18 @@ test("a malformed tool call goes back to the model as an error instead of crashi
     restore();
   }
 });
+
+test("arguments that arrived as a string go back to the model as an object", async () => {
+  // Ollama's native API rejects a string there, so the round after it would have failed.
+  const { sent, restore } = stubReplies(
+    { message: { content: "", tool_calls: [{ function: { name: "find_free_slots", arguments: JSON.stringify({ minutes: 60 }) } }] } },
+    says("free at 19:00."),
+  );
+  const { api } = tools();
+
+  await runTurn([{ role: "user", content: "when am i free" }], api);
+
+  const echoed = sent[1].messages.find((m) => m.role === "assistant" && m.tool_calls).tool_calls[0];
+  assert.deepEqual(echoed.function.arguments, { minutes: 60 });
+  restore();
+});

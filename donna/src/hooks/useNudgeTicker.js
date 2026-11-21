@@ -26,6 +26,11 @@ export function useNudgeTicker(items) {
   itemsRef.current = items;
 
   useEffect(() => {
+    // Each of these only marks itself done when its request returns, so a tick that lands while
+    // one is still out would start it again — and the research is paid-for web searches.
+    let fetchingCalendar = false;
+    let researching = false;
+
     function tick() {
       const now = Date.now();
       const since = readLastCheck();
@@ -54,8 +59,11 @@ export function useNudgeTicker(items) {
 
       // Before the sweep books anything: a lesson added to the calendar this morning has to
       // be busy time before a goal gets topped up into it.
-      if (shouldRefreshCalendar(planStore.getAll(), now)) {
-        refreshCalendar(today()).then((events) => planStore.setEvents(events));
+      if (!fetchingCalendar && shouldRefreshCalendar(planStore.getAll(), now)) {
+        fetchingCalendar = true;
+        refreshCalendar(today())
+          .then((events) => planStore.setEvents(events))
+          .finally(() => { fetchingCalendar = false; });
       }
 
       planStore.sweep(itemsRef.current);
@@ -63,10 +71,12 @@ export function useNudgeTicker(items) {
       // She works while you're asleep. Fire and forget: the tick must not wait on a search,
       // and a night that turns up nothing is still a night that ran.
       const plan = planStore.getAll();
-      if (shouldResearch(plan, today(), nowMin())) {
+      if (!researching && shouldResearch(plan, today(), nowMin())) {
+        researching = true;
         researchOnce({ items: itemsRef.current, memories: plan.memories, findings: plan.findings })
           .then(({ found }) => planStore.recordFindings(today(), found))
-          .catch(() => planStore.recordFindings(today(), []));
+          .catch(() => planStore.recordFindings(today(), []))
+          .finally(() => { researching = false; });
       }
 
       try {

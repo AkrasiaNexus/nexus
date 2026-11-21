@@ -320,7 +320,13 @@ export async function runTurn(messages, tools, { signal } = {}) {
     const { text, toolCalls } = await chat(thread, wire, { signal });
     if (!toolCalls.length) return { text: spoken(text), changes };
 
-    thread.push({ role: "assistant", content: text, tool_calls: toolCalls });
+    // Echoed back as objects whatever shape they came in: Ollama's native API rejects string
+    // arguments in the thread, so the round after a string-argument call would have failed.
+    const echoed = toolCalls.map((call) => {
+      const { name, args } = readCall(call);
+      return { ...call, function: { ...call?.function, name, arguments: args } };
+    });
+    thread.push({ role: "assistant", content: text, tool_calls: echoed });
     let ask = null;
     const results = [];
     for (const call of toolCalls) {
