@@ -21,11 +21,16 @@ const DEFAULT_TIMEFRAME = WEEK;
 // chrono reads "2 w" and "2 weeks" but not "2 wks", which is how a week usually gets typed.
 const WEEK_ABBR = /\b(\d+)\s*wks?\b/gi;
 
-// A bare month name is prose, not a deadline — "march madness", "august plans". chrono reads
-// one as a month with no day, weekday or time, and nothing numeric was written. A written
-// duration like "3 months" also knows only a month, so the digit is what tells them apart.
-const isBareMonth = (hit) =>
-  !/\d/.test(hit.text) && Object.keys(hit.start.knownValues).every((k) => k === "month" || k === "year");
+// A bare month or a short weekday is prose, not a deadline — "march madness", "sat nav fix",
+// "sun screen". chrono reads one with no day of the month and no time, and nothing numeric was
+// written. A duration like "3 months" knows only a month too, so the digit tells them apart.
+// shortcut: a weekday someone did mean in three letters ("essay due fri") falls back to the
+// default week, which beats a confident wrong date; drop the length test if that ever grates.
+const isProse = (hit) =>
+  !/\d/.test(hit.text) &&
+  !hit.start.isCertain("day") &&
+  !hit.start.isCertain("hour") &&
+  (!hit.start.isCertain("weekday") || hit.text.length <= 3);
 
 const CATEGORY_KEYWORDS = {
   skill: ["learn", "study", "practice", "course", "tutorial", "read about", "get into"],
@@ -48,12 +53,13 @@ function extractTimeframe(raw, now) {
 
   const text = raw.replace(WEEK_ABBR, "$1 weeks");
   const [hit] = chrono.parse(text, new Date(now), { forwardDate: true });
-  const timeframeMs = hit && !isBareMonth(hit) ? hit.start.date().getTime() - now : 0;
+  const timeframeMs = hit && !isProse(hit) ? hit.start.date().getTime() - now : 0;
   // A deadline already gone, or seconds away, would give a nudge ladder that fires all four at
   // once: fall back to the default rather than check in about it four times.
   if (timeframeMs < MINUTE) return { timeframeMs: DEFAULT_TIMEFRAME, remaining: raw };
 
-  return { timeframeMs, remaining: `${text.slice(0, hit.index)} ${text.slice(hit.index + hit.text.length)}` };
+  const before = text.slice(0, hit.index).replace(TRAILING_FILLER, "");
+  return { timeframeMs, remaining: `${before} ${text.slice(hit.index + hit.text.length)}` };
 }
 
 export function detectCategory(text) {
@@ -87,7 +93,7 @@ export function parseBlurt(rawText, now = Date.now(), profile = null) {
   const { timeframeMs, remaining } = extractTimeframe(text, now);
   return {
     raw: rawText,
-    title: toTitle(remaining),
+    title: toTitle(remaining) || toTitle(rawText),
     category: detectCategory(text),
     effort: estimateEffort(timeframeMs),
     deadline: new Date(now + timeframeMs).toISOString(),

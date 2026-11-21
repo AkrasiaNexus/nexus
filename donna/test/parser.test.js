@@ -121,3 +121,21 @@ test("a bare month name in prose is not a deadline", () => {
 test("a timeframe under a minute is not a deadline", () => {
   assert.equal(days(parse("see you in a sec")), 7);
 });
+
+test("a three-letter weekday inside a phrase is prose, not a deadline", () => {
+  assert.equal(days(parse("sat nav fix")), 7);
+  assert.equal(parse("sat nav fix").title, "Sat nav fix");
+  assert.equal(parse("sun screen").title, "Sun screen");
+  assert.equal(parse("wed photos").title, "Wed photos");
+  // Spelled out it is a real deadline. NOW is Tuesday 10 November 2026.
+  assert.equal(new Date(parse("essay due saturday").deadline).getDay(), 6);
+});
+
+test("a blurt that is only a date keeps the words that were typed", () => {
+  assert.equal(parse("friday").title, "Friday");
+  assert.equal(parse("3 months").title, "3 months");
+});
+
+test("a preposition the date left behind is cleaned up", () => {
+  assert.equal(parse("essay due by friday at the latest").title, "Essay due at the latest");
+});
