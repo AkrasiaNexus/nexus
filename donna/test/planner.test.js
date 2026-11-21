@@ -529,3 +529,26 @@ test("she can look for free time inside a window, so 'i work late' is usable", (
   assert.ok(slots.length > 0);
   assert.ok(slots.every((s) => s.start >= "22:00"), `expected only late slots, got ${JSON.stringify(slots)}`);
 });
+
+test("she is given a character, not just a job description", () => {
+  const prompt = systemPrompt({ plan: { blocks: [], fixed: [], memories: [] }, items: [], profile: "" });
+
+  assert.match(prompt, /never apolog/i, "I'm not apologising for who I am");
+  assert.match(prompt, /don't hedge|do not hedge/i);
+  assert.match(prompt, /look after them|protect/i, "her job as she sees it: take care of him");
+  assert.match(prompt, /without asking permission|don't ask permission/i, "she acts within her remit");
+});
+
+test("the sycophantic register is ruled out by name", () => {
+  const prompt = systemPrompt({ plan: { blocks: [], fixed: [], memories: [] }, items: [], profile: "" });
+
+  for (const phrase of ["great idea", "happy to help", "exclamation"]) {
+    assert.match(prompt, new RegExp(phrase, "i"), `expected the prompt to forbid "${phrase}"`);
+  }
+});
+
+test("the character costs little enough to be worth it", () => {
+  const prompt = systemPrompt({ plan: { blocks: [], fixed: [], memories: [] }, items: [], profile: "" });
+
+  assert.ok(prompt.length / 4 < 800, `the whole system prompt should stay well under the old 1168 tokens, got ~${Math.round(prompt.length / 4)}`);
+});
