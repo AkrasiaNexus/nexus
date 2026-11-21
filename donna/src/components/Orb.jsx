@@ -7,6 +7,7 @@ import { itemStore } from "../stores/itemStore";
 import { dailyBrief, unplanned } from "../lib/brief";
 import { suggestions } from "../lib/suggest";
 import { observations } from "../lib/patterns";
+import { applyProposals } from "../lib/apply";
 import { outstanding } from "../lib/remind";
 import { unfinishedToday, shouldAskAboutToday } from "../lib/dayend";
 import { useStore } from "../hooks/useStore";
@@ -79,6 +80,9 @@ export default function Orb() {
   // What she'd have noticed on her own. She has the whole history; saying nothing about it
   // is the difference between a calendar and someone paying attention.
   const noticed = observations({ items, plan, date: today() });
+  // Other people's deadlines, which don't move. These lead: your own work can slip a day,
+  // an application that closes cannot.
+  const applications = applyProposals({ plan, date: today(), nowMinutes: nowMin() });
   // A suggestion is the same thing with a slot and a reason attached, so anything she can
   // propose properly is not also listed as a bare title.
   const proposed = new Set(ideas.map((i) => i.item.id));
@@ -219,6 +223,29 @@ export default function Orb() {
                 className="w-4 h-4 flex-none rounded-full border border-donna-muted hover:border-donna-text hover:bg-donna-raised active:scale-90 transition-all duration-150"
               />
               <span className="min-w-0 truncate">{r.text}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {applications.length > 0 && unfinished.length === 0 && (
+        <ul className="orb-waiting mt-3 flex flex-col gap-2">
+          {applications.map((p, i) => (
+            <li key={p.finding.id} style={{ "--i": i }} className="flex items-start gap-2 text-[13px] leading-snug">
+              <span className="mt-1.5 w-1 h-1 flex-none rounded-full bg-donna-text" />
+              <span className="min-w-0 flex-1">
+                {p.finding.title} closes {p.finding.deadline}. {p.slot.date === today() ? "today" : p.slot.date} at {p.slot.start}?
+              </span>
+              <button onClick={() => planStore.blockForFinding(p.finding.id, { title: p.title, ...p.slot })} className="orb-chip flex-none">
+                block it
+              </button>
+              <button
+                onClick={() => planStore.dismissFinding(p.finding.id)}
+                aria-label={`Not interested: ${p.finding.title}`}
+                className="flex-none px-1 text-donna-faint hover:text-donna-muted"
+              >
+                ×
+              </button>
             </li>
           ))}
         </ul>

@@ -83,6 +83,25 @@ export const planStore = {
     commit({ ...plan, findings: [...plan.findings, ...findings], researchedOn: date });
   },
 
+  // Books the time and marks the finding dealt with in one go: two commits would leave a
+  // window where the session exists and she offers to book it again.
+  blockForFinding(findingId, { title, date, start, minutes }) {
+    const hit = findClash(plan, date, toMin(start), minutes);
+    if (hit) throw new Error(`clashes with ${hit.title} at ${fromMin(hit.s)}`);
+    const block = { id: crypto.randomUUID(), itemId: null, title, date, start, minutes, done: false };
+    commit({
+      ...plan,
+      blocks: [...plan.blocks, block],
+      findings: plan.findings.map((f) => (f.id === findingId ? { ...f, handled: true } : f)),
+    });
+    return block;
+  },
+
+  // Not now, and not again: she has made the offer and you have answered it.
+  dismissFinding(findingId) {
+    commit({ ...plan, findings: plan.findings.map((f) => (f.id === findingId ? { ...f, handled: true } : f)) });
+  },
+
   // What she knows about you. Donna's defining trait, and the one the port dropped.
   remember(text) {
     const memory = { id: crypto.randomUUID(), text, at: Date.now() };

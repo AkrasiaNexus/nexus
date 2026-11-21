@@ -577,3 +577,39 @@ test("she researches overnight on her own and reads it out in the morning", asyn
 
   await context.close();
 });
+
+test("she offers to block time for a deadline she found, and booking it clears the offer", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    Date.prototype.getHours = () => 9;
+    Date.prototype.getMinutes = () => 0;
+    const d = new Date();
+    const q = (n) => String(n).padStart(2, "0");
+    const date = `${d.getFullYear()}-${q(d.getMonth() + 1)}-${q(d.getDate())}`;
+    const closes = new Date(Date.now() + 10 * 86_400_000);
+    localStorage.setItem("donna_plan", JSON.stringify({
+      fixed: [], blocks: [], reminders: [], memories: [], sweptOn: date, askedOn: date, researchedOn: date,
+      findings: [{
+        id: "primes", title: "MIT PRIMES", url: "https://e/primes",
+        deadline: `${closes.getFullYear()}-${q(closes.getMonth() + 1)}-${q(closes.getDate())}`,
+        note: "", foundOn: date,
+      }],
+    }));
+    localStorage.setItem("nudge_items", "[]");
+  });
+  await page.goto(base + "?view=orb");
+  await page.getByRole("button", { name: /Ask Donna/ }).click();
+
+  await assert.doesNotReject(page.getByText(/MIT PRIMES closes/).waitFor(), "she raises it with the date");
+  await page.getByRole("button", { name: "block it" }).click();
+
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("donna_plan")).blocks.length === 1);
+  const plan = await page.evaluate(() => JSON.parse(localStorage.getItem("donna_plan")));
+  assert.match(plan.blocks[0].title, /Apply: MIT PRIMES/);
+  assert.equal(plan.blocks[0].minutes, 90);
+  assert.equal(plan.findings[0].handled, true, "she doesn't offer the same thing twice");
+  assert.equal(await page.getByText(/MIT PRIMES closes/).count(), 0, "and the offer goes away");
+
+  await context.close();
+});
