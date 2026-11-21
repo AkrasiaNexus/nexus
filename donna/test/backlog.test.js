@@ -88,3 +88,33 @@ test("a session that cannot fit tomorrow stays put but is still flagged backlog"
   assert.deepEqual(moved, []);
   assert.deepEqual(state.blocks.map((b) => [b.date, b.isBacklog]), [[TODAY, true]]);
 });
+
+// One missed session a day for the last two weeks, as if the app had not run while away.
+const away = (days) =>
+  Array.from({ length: days }, (_, i) => {
+    const d = new Date(2026, 10, 24 - days + i);
+    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return block({ id: `b${i}`, title: `Thing ${i}`, date });
+  });
+
+test("coming back after a break does not carpet tomorrow with everything missed", () => {
+  // Before the cap, all fourteen landed on one day, 07:00 to 21:00 solid.
+  const { state } = rollOverMissed({ fixed: [], blocks: away(14) }, TODAY, toMin("10:00"));
+
+  const tomorrow = state.blocks.filter((b) => b.date === TOMORROW);
+  assert.ok(tomorrow.length <= 3, `${tomorrow.length} sessions landed on tomorrow`);
+});
+
+test("the most recent misses are the ones carried forward", () => {
+  const { moved } = rollOverMissed({ fixed: [], blocks: away(5) }, TODAY, toMin("10:00"));
+
+  assert.deepEqual(moved.map((b) => b.id), ["b2", "b3", "b4"], "the last three, in the order they were meant to happen");
+});
+
+test("a miss from more than a week ago is history, left exactly as it was", () => {
+  const old = block({ id: "old", date: "2026-11-10" });
+  const { state, moved } = rollOverMissed({ fixed: [], blocks: [old] }, TODAY, toMin("10:00"));
+
+  assert.deepEqual(moved, []);
+  assert.deepEqual(state.blocks, [old], "not moved, and not flagged as backlog either");
+});
