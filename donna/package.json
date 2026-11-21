@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "test": "node --test \"test/*.test.js\""
+    "test": "node --test test/"
   },
   "license": "MIT",
   "dependencies": {

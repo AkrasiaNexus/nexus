@@ -6,7 +6,7 @@ const TODAY = "2026-11-24";
 
 const item = (overrides = {}) => ({
   id: "i1", title: "Physics pset", status: "active",
-  deadline: `${TODAY}T18:00:00.000Z`, ...overrides,
+  deadline: `${TODAY}T18:00:00`, ...overrides,
 });
 
 test("an unfinished thing due today counts as pending", () => {
@@ -22,18 +22,18 @@ test("something skipped never blocks anything", () => {
 });
 
 test("a deadline later in the week is not pending yet", () => {
-  assert.deepEqual(pendingDeadlines([item({ deadline: "2026-11-28T18:00:00.000Z" })], TODAY), []);
+  assert.deepEqual(pendingDeadlines([item({ deadline: "2026-11-28T18:00:00" })], TODAY), []);
 });
 
 test("a deadline late on the day itself still counts", () => {
-  const lateTonight = item({ deadline: `${TODAY}T23:30:00.000Z` });
+  const lateTonight = item({ deadline: `${TODAY}T23:30:00` });
 
   assert.deepEqual(pendingDeadlines([lateTonight], TODAY).map((i) => i.id), ["i1"]);
 });
 
 test("the soonest deadline is the one that leads", () => {
-  const later = item({ id: "late", deadline: `${TODAY}T20:00:00.000Z` });
-  const sooner = item({ id: "soon", deadline: "2026-11-22T09:00:00.000Z" });
+  const later = item({ id: "late", deadline: `${TODAY}T20:00:00` });
+  const sooner = item({ id: "soon", deadline: "2026-11-22T09:00:00" });
 
   assert.deepEqual(pendingDeadlines([later, sooner], TODAY).map((i) => i.id), ["soon", "late"]);
 });
