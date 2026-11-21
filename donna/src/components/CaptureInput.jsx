@@ -2,7 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import { Zap, Mic } from "lucide-react";
 import { itemStore } from "../stores/itemStore";
 
-export default function CaptureInput({ autoFocus = false, onCapture }) {
+// `onSubmit` hands the text to Donna instead of the plain parser; `busy` refuses a second
+// send while she is still answering, and keeps what was typed rather than losing it.
+export default function CaptureInput({ autoFocus = false, onCapture, onSubmit, busy = false }) {
   const [value, setValue] = useState("");
   const inputRef = useRef(null);
 
@@ -13,9 +15,10 @@ export default function CaptureInput({ autoFocus = false, onCapture }) {
   function handleSubmit(e) {
     e.preventDefault();
     const text = value.trim();
-    if (!text) return;
-    const item = itemStore.add(text);
+    if (!text || busy) return;
     setValue("");
+    if (onSubmit) return onSubmit(text);
+    const item = itemStore.add(text);
     onCapture?.(item);
   }
 

@@ -47,7 +47,7 @@ function extractTimeframe(text) {
   return { timeframeMs: DEFAULT_TIMEFRAME, remaining: text };
 }
 
-function detectCategory(text) {
+export function detectCategory(text) {
   let best = { category: DEFAULT_CATEGORY, index: Infinity };
   for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
     for (const keyword of keywords) {
@@ -58,7 +58,7 @@ function detectCategory(text) {
   return best.category;
 }
 
-function estimateEffort(timeframeMs) {
+export function estimateEffort(timeframeMs) {
   if (timeframeMs <= HOUR) return "quick";
   if (timeframeMs <= 3 * DAY) return "short";
   if (timeframeMs <= 2 * WEEK) return "medium";

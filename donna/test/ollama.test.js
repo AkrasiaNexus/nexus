@@ -63,3 +63,22 @@ test("any other failure surfaces the status rather than pretending it worked", a
   await assert.rejects(chat([], []), /ollama returned 500/);
   restore();
 });
+
+test("thinking is off and the model stays loaded, because both cost the user minutes per reply", async () => {
+  let sent;
+  const restore = stubFetch(async (_url, init) => { sent = JSON.parse(init.body); return ok({ message: { content: "" } }); });
+
+  await chat([{ role: "user", content: "hi" }], []);
+
+  assert.equal(sent.think, false, "gemma4 spent 880 tokens thinking before saying hi");
+  assert.equal(sent.keep_alive, -1, "the default 5m unload makes every burst pay a cold load");
+  restore();
+});
+
+test("a turn that timed out says so, rather than claiming ollama is down", async () => {
+  const restore = stubFetch(async (_url, init) => { throw init.signal.reason; });
+  const signal = AbortSignal.abort(new DOMException("timed out", "TimeoutError"));
+
+  await assert.rejects(chat([], [], { signal }), (e) => !(e instanceof OllamaDown) && /too long/.test(e.message));
+  restore();
+});

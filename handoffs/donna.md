@@ -1,6 +1,6 @@
 # Donna handoff
 
-Rewritten 21 Nov 2026, after the user pivoted the product away from a web planner.
+Rewritten 21 Nov 2026 (twice: after the pivot to a background app, then after the first real-model run).
 Branch: `claude/serene-davinci-c0ox6c`. Work only in `donna/`.
 
 ## Goal (user's words)
@@ -39,8 +39,8 @@ It is for personal use. The name is Donna Paulsen, from Suits.
   survives; the new plan data lives under `donna_plan`.
 
 ## What is built and verified
-75 unit tests pass (`cd donna && node --test "test/*.test.js"` — note the 6 Playwright e2e
-tests need a browser; see Unverified).
+100 tests pass on the Mac: `cd donna && npm test` (93 unit + 7 Playwright e2e). The e2e tests
+ran for the first time on 21 Nov 2026, after `npm ci` and `npx playwright install chromium`.
 
 | Area | Files |
 |---|---|
@@ -49,44 +49,72 @@ tests need a browser; see Unverified).
 | Reminders before a session starts | `src/lib/reminders.js` (`LEAD_MINUTES = 5`) |
 | End-of-day sweep → backlog | `src/lib/backlog.js` |
 | Donna's voice | `src/lib/nudgeMessages.js` |
-| Local model client | `src/lib/ollama.js` (`num_ctx` pinned to 8192) |
+| Local model client | `src/lib/ollama.js` (`num_ctx` 8192, `think: false`, `keep_alive: -1`) |
 | Refuse-until-confirmed guard | `src/lib/pushback.js` |
-| Planner loop: tools, prompt, turn loop | `src/lib/planner.js` |
-| Plan state (blocks + fixed) | `src/stores/planStore.js` |
-| The side panel | `src/components/Panel.jsx` |
+| Planner loop: tools, prompt, turn loop, argument validation | `src/lib/planner.js` |
+| Panel ↔ planner wiring (thread, busy, errors) | `src/hooks/useDonna.js` |
+| Plan state (blocks + fixed, `move`, `removeForItem`) | `src/stores/planStore.js` |
+| Goals (`addGoal`) | `src/stores/itemStore.js` |
+| The side panel (latest exchange + thinking dots) | `src/components/Panel.jsx` |
 | Panel window, edge anchoring | `src-tauri/src/main.rs` (`anchor_right`, `announce`) |
 
-Two deliberate design points worth keeping:
+Design points worth keeping:
 - **The shortcut takes focus; a reminder does not.** `toggle_panel` focuses because the user
-  pressed it to type. The `announce` command reveals the panel unfocused so it never swallows
-  keystrokes meant for another app.
-- **`num_ctx` is pinned to 8192.** Ollama sizes context from free VRAM and picks 4096 on a 16GB
-  Mac, which silently truncates the profile and the plan with no error.
+  pressed it to type. `announce` reveals the panel unfocused.
+- **`num_ctx` is pinned to 8192.** Ollama picks 4096 on a 16GB Mac and silently truncates.
+- **A blocked booking returns the guard's objection verbatim** and ends the turn. Gemma was seen
+  saying "i put valorant in" over a blocked call; now the model never gets to word a refusal.
+- **Model tool arguments are untrusted input**: date/time/minutes/weekdays are checked in
+  `planner.js`; a bad call goes back to the model as `{ error }` so it can retry.
+- **The prompt ends with the changing parts** (plan, then "Right now: Sat 2026-11-21 15:57"),
+  so the fixed rules + profile stay a stable prefix for Ollama's cache.
+- `CSP` in `tauri.conf.json` now has `connect-src 'self' http://127.0.0.1:11434`. Without it the
+  webview blocked every call to Ollama — it would have failed on the first desktop run.
+
+## Real-model findings (21 Nov 2026, gemma4:12b, Ollama 0.40.17, MLX runner, M4 16GB)
+Don't re-derive these.
+- **Tool calls work. The format needs no fixing.** Gemma 4 calls `schedule_block`, `set_fixed`,
+  `add_goal` with correct args through Ollama's native `tools`.
+- **Measured, not guessed** (Ollama's `*_duration` fields): the model was warm (`load=0.0s`).
+  Thinking was the big cost — 880 thinking tokens before "say hi in five words", ~533 per turn
+  at ~12 tok/s (≈ the M4's bandwidth ceiling for a 7.7GB model). `think: false` → 0.
+- **What's left is prefill:** ~2000 prompt tokens at ~65-90 tok/s ≈ 22-30s **per model call**,
+  and a booking turn is 2 calls. Prefix caching only kicked in once (2107 tok in 1.1s); usually
+  every call re-prefills everything. A real panel turn ("gym at 9pm today") took **48s** in
+  Chromium against real Gemma (was 130s at session start).
+- `keep_alive: -1` is sent per request (`ollama ps` shows `UNTIL Forever`) — no env var needed.
+  It keeps 7.7GB resident; the Mac was already using ~4-5GB swap.
+- Pushback still works with thinking off: it refused valorant while physics was due, then
+  booked on "nah fr i need a break, book it" (with `confirmed: true`).
+- Fixed from real runs: one-off sessions were treated as goals (asked for a deadline for "gym at
+  6pm"); deadlines went over as UTC ISO and the model read 19:00Z as "due at 7pm"; the prompt
+  had no clock time, so "in 5 mins" was booked at 07:05.
 
 ## Next, in order
-1. **Wire `planner.js` into the panel.** It is built and unit-tested but nothing calls it yet:
-   the panel's input still goes straight to `itemStore.add`. `createTools` wants callbacks onto
-   `planStore` and `itemStore`, and `systemPrompt` wants `profile.md` (import it with `?raw`,
-   as `itemStore` already does).
-2. **First real run against Gemma 4.** Nothing has touched a real model yet. Expect the tool-call
-   format to need fixing: Ollama lists `tools` as a gemma4 capability but it is unproven here.
-3. **Run the app on the Mac**: `cd donna && npm run tauri dev`. Check the panel anchors to the
-   right edge and that `focused(false)` holds on macOS — on some platforms a repeated `show()`
-   re-raises the app.
+1. **Cut prefill.** ~900 of ~2000 prompt tokens are `profile.md`, which is the *generic*
+   slang baseline a 12B already knows. Options, best first: send the user text through
+   `idiolect.normalize` and drop the profile from the prompt; shorten tool descriptions; find out
+   why the MLX runner rarely reuses the prefix cache. Measure with the timing fields after each.
+2. **Run the app on the Mac**: `cd donna && npm run tauri dev`. Check the panel anchors right,
+   `focused(false)` holds on macOS, and the CSP change lets the webview reach Ollama.
+3. Gemma said "i'll start booking those 30 min sessions now" after `add_goal` and booked none.
+   Either make it book in the same turn (prompt) or have code book goal sessions.
 4. The user is designing panel UI and will send references. Build on those when they arrive.
 
 ## Unverified / risks
-- **The 6 Playwright e2e tests have never been run.** The cloud container has no matching
-  `chrome-headless-shell`. Run `npm test` on the Mac. The README says 56 tests; that is 50 unit
-  (verified at the time) + 6 e2e (unverified). It now says 56 but there are 65 unit tests —
-  **update the README count** once the e2e tests actually run.
-- **No real model call has happened.** `ollama.js` is tested against a stubbed `fetch`.
+- **Desktop (Tauri) run not done yet** — everything above ran in Node and headless Chromium.
+- A turn times out after 4 min (`TURN_TIMEOUT_MS` in `useDonna.js`) and unlocks the panel.
+- Reviewed (code + security) before commit; all HIGH/MEDIUM fixed. Not fixed, pre-existing:
+  `toMin` in `time.js` accepts `24:01`-`24:59`, so a block can run past midnight.
+- An overdue active item blocks *every* booking until it is done or skipped — by design, but
+  now visible. If it nags, consider only blocking on today's deadlines.
+- `npm test` was silently running zero tests on Node 20 (quoted glob needs Node 21+); now
+  `node --test test/`. CI uses Node 22 so it was fine there.
 - The Tauri `identifier` changed to `app.donna.desktop` during the rename, so the macOS app-data
   directory changed with it. Any desktop localStorage from before the rename will not carry over.
 - `portfolio/index.html` links to `.../tree/claude/zen-ramanujan-ouxg54/donna`, a branch where
   that folder is still called `nudge/`. The link 404s until this branch merges.
-- 4 orphan `nudge/` references linger in generated `graphify-out/graph.json`; `--force` would
-  not purge them. Cosmetic.
+- 4 orphan `nudge/` references linger in generated `graphify-out/graph.json`. Cosmetic.
 
 ## Environment notes
 - **Cloud sessions cannot reach the user's Mac folder.** `~/Projects` on the computer "Asus" is in

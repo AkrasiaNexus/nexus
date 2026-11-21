@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import CaptureInput from "./CaptureInput";
 import { planStore } from "../stores/planStore";
 import { useStore } from "../hooks/useStore";
+import { useDonna } from "../hooks/useDonna";
 import { blockStartMs } from "../lib/reminders";
 import { getReminderMessage } from "../lib/nudgeMessages";
 import { hideThisWindow } from "../lib/notify";
@@ -13,6 +14,7 @@ const minutesUntil = (block, now) => Math.round((blockStartMs(block) - now) / MI
 
 export default function Panel() {
   const plan = useStore(planStore);
+  const { thread, busy, say } = useDonna();
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -59,8 +61,10 @@ export default function Panel() {
         )}
       </div>
 
+      <Exchange thread={thread} busy={busy} />
+
       <div className="p-3 border-t border-donna-border">
-        <CaptureInput autoFocus />
+        <CaptureInput autoFocus onSubmit={say} busy={busy} />
       </div>
     </div>
   );
@@ -89,6 +93,34 @@ function HeadlineBlock({ block, now }) {
           {block.start} · {block.minutes}m
         </span>
       </div>
+    </div>
+  );
+}
+
+const BUBBLE = {
+  user: "text-donna-muted",
+  assistant: "text-donna-text",
+  error: "text-donna-red",
+};
+
+// Only the latest back-and-forth: the panel is a glance, not a chat log.
+function Exchange({ thread, busy }) {
+  const lastUser = thread.findLastIndex((m) => m.role === "user");
+  if (lastUser === -1) return null;
+  const shown = thread.slice(lastUser);
+
+  return (
+    <div className="px-4 py-3 space-y-1.5 text-sm border-t border-donna-border" aria-live="polite">
+      {shown.map((m, i) => (
+        <p key={i} className={BUBBLE[m.role]}>{m.content}</p>
+      ))}
+      {busy && (
+        <div role="status" aria-label="Donna is thinking" className="flex gap-1 py-1">
+          {[0, 150, 300].map((delay) => (
+            <span key={delay} className="w-1.5 h-1.5 rounded-full bg-donna-accent animate-bounce" style={{ animationDelay: `${delay}ms` }} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

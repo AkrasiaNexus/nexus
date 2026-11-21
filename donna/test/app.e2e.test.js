@@ -128,19 +128,54 @@ test("the side panel shows the next session in Donna's voice, and nothing else",
   await context.close();
 });
 
-test("the panel captures a blurt into the same storage the main window reads", async () => {
+const OLLAMA_CHAT = "http://127.0.0.1:11434/api/chat";
+const ollamaSays = (message) => ({ status: 200, contentType: "application/json", body: JSON.stringify({ message }) });
+
+test("the panel hands the blurt to Donna, stays responsive while she thinks, and her goal lands in shared storage", async () => {
   const context = await browser.newContext();
   const page = await context.newPage();
+  let release;
+  const held = new Promise((r) => { release = r; });
+  const replies = [
+    { content: "", tool_calls: [{ function: { name: "add_goal", arguments: { title: "learn rust", due: "2099-12-05", minutes_per_day: 30 } } }] },
+    { content: "added rust, 30 mins a day till dec 5." },
+  ];
+  await page.route(OLLAMA_CHAT, async (route) => {
+    await held;
+    await route.fulfill(ollamaSays(replies.shift()));
+  });
   await page.goto(base + "?view=panel");
 
   const input = page.getByPlaceholder(/blurt it out/);
-  await input.fill("look into tauri plugins this week");
+  await input.fill("learn rust 30 mins a day till dec 5");
   await input.press("Enter");
 
-  await page.waitForFunction(() => JSON.parse(localStorage.getItem("nudge_items") || "[]").length === 1);
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("nudge_items"))[0]);
-  assert.equal(saved.title, "Look into tauri plugins");
-  assert.equal(saved.category, "explore");
+  assert.equal(await input.inputValue(), "", "the input clears before Donna answers");
+  await assert.doesNotReject(page.getByRole("status", { name: "Donna is thinking" }).waitFor());
+  await input.fill("second thought");
+  await input.press("Enter");
+  assert.equal(await input.inputValue(), "second thought", "a send while busy keeps the text");
 
+  release();
+  await assert.doesNotReject(page.getByText("added rust, 30 mins a day till dec 5.").waitFor());
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("nudge_items"))[0]);
+  assert.equal(saved.title, "Learn rust");
+  assert.equal(saved.minutesPerDay, 30);
+  assert.equal(await page.getByRole("status", { name: "Donna is thinking" }).count(), 0);
+
+  await context.close();
+});
+
+test("with Ollama down the panel says how to fix it instead of hanging", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.route(OLLAMA_CHAT, (route) => route.abort("connectionrefused"));
+  await page.goto(base + "?view=panel");
+
+  const input = page.getByPlaceholder(/blurt it out/);
+  await input.fill("gym at 6");
+  await input.press("Enter");
+
+  await assert.doesNotReject(page.getByText(/ollama isn't running/).waitFor());
   await context.close();
 });

@@ -73,6 +73,22 @@ export const planStore = {
     commit({ ...plan, blocks: plan.blocks.filter((b) => b.id !== id) });
   },
 
+  // Same clash rule as booking, ignoring the session's own old slot.
+  move(id, date, start) {
+    const block = plan.blocks.find((b) => b.id === id);
+    if (!block) throw new Error(`no session with id ${id}`);
+    const hit = findClash(plan, date, toMin(start), block.minutes, id);
+    if (hit) throw new Error(`clashes with ${hit.title} at ${fromMin(hit.s)}`);
+    const moved = { ...block, date, start };
+    commit({ ...plan, blocks: plan.blocks.map((b) => (b.id === id ? moved : b)) });
+    return moved;
+  },
+
+  // A dropped goal takes its sessions with it.
+  removeForItem(itemId) {
+    commit({ ...plan, blocks: plan.blocks.filter((b) => b.itemId !== itemId) });
+  },
+
   setFixed(entry) {
     const fixed = { id: entry.id ?? crypto.randomUUID(), ...entry };
     commit({ ...plan, fixed: [...plan.fixed.filter((f) => f.id !== fixed.id), fixed] });

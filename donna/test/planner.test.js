@@ -33,7 +33,7 @@ function tools({ items = [], blocks = [], fixed = [] } = {}) {
   return { api, booked };
 }
 
-const dueItem = { id: "i1", title: "Physics pset", status: "active", deadline: `${TODAY}T18:00:00.000Z` };
+const dueItem = { id: "i1", title: "Physics pset", status: "active", deadline: `${TODAY}T18:00:00` };
 
 test("a reply with no tool calls comes straight back", async () => {
   const { restore } = stubReplies(says("alr, nothing booked."));
@@ -155,4 +155,165 @@ test("tools are sent to the model without their run functions", async () => {
   assert.ok(sent[0].tools.every((t) => t.run === undefined), "run closures must not be serialised");
   assert.ok(sent[0].tools.some((t) => t.function.name === "schedule_block"));
   restore();
+});
+
+test("the prompt separates one-off sessions and weekly commitments from goals before asking goal questions", () => {
+  const prompt = systemPrompt({ plan: { blocks: [], fixed: [] }, items: [], profile: "" });
+
+  const oneOff = prompt.indexOf("schedule_block");
+  const goalRule = prompt.indexOf("minutes a day and a deadline");
+  assert.ok(oneOff > -1 && oneOff < goalRule, "the one-off rule must come before the goal rule");
+  assert.match(prompt, /set_fixed/);
+  assert.match(prompt, /only (for )?a goal/i, "the goal questions must not apply to everything");
+});
+
+test("the prompt gives the current local clock time, so 'in 5 mins' can be booked", () => {
+  const prompt = systemPrompt({ plan: { blocks: [], fixed: [] }, items: [], profile: "" });
+  const now = new Date();
+  const clock = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+  assert.ok(prompt.includes(clock), `expected ${clock} in the prompt`);
+});
+
+test("deadlines reach the model as local wall-clock times, not UTC ISO strings", () => {
+  const due = new Date(2026, 10, 24, 23, 0);
+  const prompt = systemPrompt({ plan: { blocks: [], fixed: [] }, items: [{ ...dueItem, deadline: due.toISOString() }], profile: "" });
+
+  assert.ok(prompt.includes("2026-11-24 23:00"), "the model read 19:00Z as 'due at 7pm'");
+  assert.ok(!prompt.includes(due.toISOString()));
+});
+
+test("a blocked booking is answered with the guard's own words, so the model cannot claim it booked", async () => {
+  const { sent, restore } = stubReplies(
+    toolCall("schedule_block", { title: "Valorant", date: TODAY, start: "16:02", minutes: 60 }),
+    says("you got it, i put valorant in for 4:02 pm."),
+  );
+  const { api, booked } = tools({ items: [dueItem] });
+
+  const { text, changes } = await runTurn([{ role: "user", content: "valorant in 5" }], api);
+
+  assert.equal(booked.length, 0);
+  assert.deepEqual(changes, []);
+  assert.match(text, /Physics pset is due today.*still want this booked\?/);
+  assert.equal(sent.length, 1, "no second round for the model to spin the refusal");
+  restore();
+});
+
+const run = (api, name, args) => api.find((t) => t.function.name === name).run(args);
+
+test("a booking with a malformed date, time or length is rejected before it reaches the plan", () => {
+  const { api, booked } = tools();
+
+  for (const bad of [
+    { title: "Rust", date: "tomorrow", start: "19:00", minutes: 60 },
+    { title: "Rust", date: TODAY, start: "7pm", minutes: 60 },
+    { title: "Rust", date: TODAY, start: "19:00", minutes: -30 },
+    { title: "Rust", date: TODAY, start: "19:00", minutes: "an hour" },
+    { title: "", date: TODAY, start: "19:00", minutes: 60 },
+  ]) {
+    assert.throws(() => run(api, "schedule_block", bad), undefined, JSON.stringify(bad));
+  }
+  assert.equal(booked.length, 0);
+});
+
+test("a goal needs a real due date and a sane number of minutes a day", () => {
+  const { api } = tools();
+
+  assert.throws(() => run(api, "add_goal", { title: "Rust", due: "in 2 weeks", minutes_per_day: 30 }));
+  assert.throws(() => run(api, "add_goal", { title: "Rust", due: "2026-12-05", minutes_per_day: 0 }));
+  assert.deepEqual(run(api, "add_goal", { title: "Rust", due: "2026-12-05", minutes_per_day: 30 }), { id: "g1" });
+});
+
+test("a weekly commitment needs weekdays 0-6 and an end after its start", () => {
+  const { api } = tools();
+
+  assert.throws(() => run(api, "set_fixed", { title: "Gym", days: [1, 9], start: "06:00", end: "07:00" }));
+  assert.throws(() => run(api, "set_fixed", { title: "Gym", days: [1], start: "07:00", end: "06:00" }));
+  assert.deepEqual(run(api, "set_fixed", { title: "Gym", days: [1, 3, 5], start: "06:00", end: "07:00" }), { id: "f1" });
+});
+
+test("moving a session checks the new date and time too", () => {
+  const { api } = tools({ blocks: [{ id: "b1", title: "Rust", date: TODAY, start: "18:00", minutes: 60 }] });
+
+  assert.throws(() => run(api, "move_block", { id: "b1", date: "monday", start: "19:00" }));
+  assert.throws(() => run(api, "move_block", { id: "nope", date: TODAY, start: "19:00" }));
+  assert.equal(run(api, "move_block", { id: "b1", date: TODAY, start: "19:00" }), "ok");
+});
+
+test("a free-slot search with a malformed date is rejected rather than searching garbage", () => {
+  const { api } = tools();
+
+  assert.throws(() => run(api, "find_free_slots", { from_date: "today", minutes: 30 }));
+  assert.ok(Array.isArray(run(api, "find_free_slots", { from_date: TODAY, minutes: 30 })));
+});
+
+test("removing a goal or session needs an id that exists, so a null id cannot wipe every one-off", () => {
+  const { api } = tools({ items: [dueItem], blocks: [{ id: "b1", itemId: null, title: "Gym", date: TODAY, start: "18:00", minutes: 60 }] });
+
+  for (const id of [null, undefined, "", "ghost"]) {
+    assert.throws(() => run(api, "remove_goal", { id }), undefined, `remove_goal ${id}`);
+    assert.throws(() => run(api, "remove_block", { id }), undefined, `remove_block ${id}`);
+  }
+  assert.equal(run(api, "remove_goal", { id: "i1" }), "ok");
+  assert.equal(run(api, "remove_block", { id: "b1" }), "ok");
+});
+
+test("a free-slot search cannot be asked to loop forever or look for an impossible length", () => {
+  const { api } = tools();
+
+  assert.throws(() => run(api, "find_free_slots", { from_date: TODAY, minutes: 30, days: 1e9 }));
+  assert.throws(() => run(api, "find_free_slots", { from_date: TODAY, minutes: 30, days: Infinity }));
+  assert.throws(() => run(api, "find_free_slots", { from_date: TODAY, minutes: 1000 }), undefined, "longer than the whole day window");
+});
+
+test("a weekly commitment is stored with only its own fields and a fresh id", () => {
+  let saved;
+  const api = createTools({ plan: () => ({ blocks: [], fixed: [] }), items: () => [], onSetFixed: (e) => { saved = e; return e; } });
+
+  run(api, "set_fixed", { title: "Gym", days: [1], start: "06:00", end: "07:00", id: "existing", extra: "junk" });
+
+  assert.deepEqual(saved, { title: "Gym", days: [1], start: "06:00", end: "07:00" });
+});
+
+test("priority, goal_id and title length are checked too", () => {
+  const { api, booked } = tools({ items: [{ ...dueItem, deadline: "2099-01-01T12:00:00" }] });
+
+  assert.throws(() => run(api, "add_goal", { title: "Rust", due: "2026-12-05", minutes_per_day: 30, priority: "urgent!!" }));
+  assert.throws(() => run(api, "add_goal", { title: "x".repeat(201), due: "2026-12-05", minutes_per_day: 30 }));
+  assert.throws(() => run(api, "schedule_block", { title: "Rust", date: TODAY, start: "19:00", minutes: 60, goal_id: "ghost" }));
+  run(api, "schedule_block", { title: "Rust", date: TODAY, start: "19:00", minutes: 60, goal_id: "i1" });
+  assert.equal(booked.length, 1);
+});
+
+test("a goal's own session on its due day is not blocked by that same goal", () => {
+  const { api, booked } = tools({ items: [dueItem] });
+
+  run(api, "schedule_block", { title: "Physics", date: TODAY, start: "19:00", minutes: 60, goal_id: "i1" });
+
+  assert.equal(booked.length, 1);
+});
+
+test("when a booking is blocked, what did go through in the same round is still said", async () => {
+  const { restore } = stubReplies({ message: { content: "", tool_calls: [
+    { function: { name: "add_goal", arguments: { title: "Rust", due: "2026-12-05", minutes_per_day: 30 } } },
+    { function: { name: "schedule_block", arguments: { title: "Rust", date: TODAY, start: "19:00", minutes: 30 } } },
+  ] } });
+  const { api } = tools({ items: [dueItem] });
+
+  const { text, changes } = await runTurn([{ role: "user", content: "rust 30 a day" }], api);
+
+  assert.deepEqual(changes, ["add_goal"]);
+  assert.match(text, /added the goal/);
+  assert.match(text, /still want this booked\?/);
+  restore();
+});
+
+test("only active goals reach the prompt, and a corrupt deadline does not print NaN", () => {
+  const prompt = systemPrompt({ plan: { blocks: [], fixed: [] }, profile: "", items: [
+    { ...dueItem, id: "done1", title: "Old essay", status: "done" },
+    { ...dueItem, id: "bad", title: "Broken", deadline: undefined },
+  ] });
+
+  assert.ok(!prompt.includes("Old essay"));
+  assert.ok(!prompt.includes("NaN"));
 });

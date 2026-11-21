@@ -1,6 +1,7 @@
-import { parseBlurt, getNudgeSchedule } from "../lib/parser";
+import { parseBlurt, getNudgeSchedule, estimateEffort, detectCategory } from "../lib/parser";
 import { parseProfile } from "../lib/idiolect";
 import profileText from "../lib/profile.md?raw";
+import { parseYmd } from "../lib/time";
 
 const PROFILE = parseProfile(profileText);
 
@@ -33,6 +34,20 @@ window.addEventListener("storage", (event) => {
   notify();
 });
 
+function insert(parsed) {
+  const item = {
+    id: crypto.randomUUID(),
+    ...parsed,
+    status: "active",
+    nudges: getNudgeSchedule(parsed.createdAt, parsed.deadline),
+    completedAt: null,
+  };
+  items = [item, ...items];
+  saveItems(items);
+  notify();
+  return item;
+}
+
 export const itemStore = {
   subscribe(fn) {
     listeners.add(fn);
@@ -45,18 +60,27 @@ export const itemStore = {
   },
 
   add(rawText) {
-    const parsed = parseBlurt(rawText, Date.now(), PROFILE);
-    const item = {
-      id: crypto.randomUUID(),
-      ...parsed,
-      status: "active",
-      nudges: getNudgeSchedule(parsed.createdAt, parsed.deadline),
-      completedAt: null,
-    };
-    items = [item, ...items];
-    saveItems(items);
-    notify();
-    return item;
+    return insert(parseBlurt(rawText, Date.now(), PROFILE));
+  },
+
+  // A goal Donna agreed with them: the deadline is the end of the `due` day, local time.
+  addGoal({ title, due, minutes_per_day, priority = "medium" }) {
+    // The model's title is already clean; re-parsing it would strip "tomorrow" or "in 2 weeks".
+    const now = Date.now();
+    const deadline = parseYmd(due);
+    deadline.setHours(23, 59, 0, 0);
+    const timeframeMs = deadline.getTime() - now;
+    return insert({
+      raw: title,
+      title: title.trim().charAt(0).toUpperCase() + title.trim().slice(1),
+      category: detectCategory(title),
+      effort: estimateEffort(timeframeMs),
+      deadline: deadline.toISOString(),
+      timeframeMs,
+      createdAt: new Date(now).toISOString(),
+      minutesPerDay: minutes_per_day,
+      priority,
+    });
   },
 
   complete(id) {

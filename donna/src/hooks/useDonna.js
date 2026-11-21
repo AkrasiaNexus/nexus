@@ -1,0 +1,63 @@
+import { useRef, useState } from "react";
+import { createTools, runTurn, systemPrompt } from "../lib/planner";
+import { planStore } from "../stores/planStore";
+import { itemStore } from "../stores/itemStore";
+import profileText from "../lib/profile.md?raw";
+
+// Enough back-and-forth for "how many mins a day?" → "30, 2 weeks", without the
+// thread crowding the plan out of the 8192-token context.
+const HISTORY_LIMIT = 10;
+// A turn is up to 7 model calls at ~25s of prefill each; past this the panel unlocks with an error.
+const TURN_TIMEOUT_MS = 4 * 60_000;
+
+const tools = createTools({
+  plan: () => planStore.getAll(),
+  items: () => itemStore.getAll(),
+  onAddGoal: (goal) => ({ id: itemStore.addGoal(goal).id }),
+  onSchedule: ({ goal_id, ...block }) => planStore.schedule({ itemId: goal_id ?? null, ...block }),
+  onMoveBlock: ({ id, date, start }) => planStore.move(id, date, start),
+  onRemoveBlock: ({ id }) => {
+    planStore.remove(id);
+    return "removed";
+  },
+  onRemoveGoal: ({ id }) => {
+    planStore.removeForItem(id);
+    itemStore.remove(id);
+    return "removed";
+  },
+  onSetFixed: (entry) => planStore.setFixed(entry),
+});
+
+// One conversation with Donna. `say` never throws: failures come back as Donna's line,
+// so the panel always has something to show.
+export function useDonna() {
+  const [thread, setThread] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
+
+  async function say(text) {
+    if (busyRef.current) return false;
+    busyRef.current = true;
+    setBusy(true);
+
+    const history = [...thread, { role: "user", content: text }].slice(-HISTORY_LIMIT);
+    setThread(history);
+    let reply;
+    try {
+      const system = systemPrompt({ plan: planStore.getAll(), items: itemStore.getAll(), profile: profileText });
+      // "error" lines are for the screen only; the model never sees them.
+      const said = history.filter((m) => m.role !== "error");
+      const { text: answer } = await runTurn([{ role: "system", content: system }, ...said], tools, { signal: AbortSignal.timeout(TURN_TIMEOUT_MS) });
+      reply = { role: "assistant", content: answer };
+    } catch (e) {
+      reply = { role: "error", content: e.message };
+    }
+
+    setThread([...history, reply]);
+    busyRef.current = false;
+    setBusy(false);
+    return true;
+  }
+
+  return { thread, busy, say };
+}
