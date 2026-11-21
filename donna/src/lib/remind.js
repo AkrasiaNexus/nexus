@@ -52,3 +52,11 @@ export function dueRemindersAt(reminders, since, now) {
     .filter((r) => !r.done && r.at !== null && r.at > since && r.at <= now)
     .sort((a, b) => a.at - b.at);
 }
+
+// Reminders that have come due and not been ticked off. They stay here however long it
+// takes: a notification you missed is a thing forgotten again, which is the whole problem.
+export function outstanding(reminders, now = Date.now()) {
+  return reminders
+    .filter((r) => !r.done && r.at !== null && r.at <= now)
+    .sort((a, b) => a.at - b.at);
+}

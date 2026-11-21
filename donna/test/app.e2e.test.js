@@ -245,3 +245,32 @@ test("with Ollama down the orb says how to fix it instead of hanging", async () 
   await assert.doesNotReject(page.getByText(/ollama isn't running/).waitFor());
   await context.close();
 });
+
+test("a fired reminder waits in the orb until it is ticked off", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    const d = new Date();
+    const q = (n) => String(n).padStart(2, "0");
+    const date = `${d.getFullYear()}-${q(d.getMonth() + 1)}-${q(d.getDate())}`;
+    localStorage.setItem("donna_plan", JSON.stringify({
+      blocks: [], fixed: [], sweptOn: date,
+      reminders: [
+        { id: "r1", text: "Put the washing on", at: Date.now() - 60_000, done: false },
+        { id: "r2", text: "Charge headphones", at: Date.now() + 3_600_000, done: false },
+      ],
+    }));
+  });
+  await page.goto(base + "?view=orb");
+
+  await assert.doesNotReject(page.getByRole("button", { name: /1 waiting/ }).waitFor(), "the resting orb says one is waiting");
+  await page.getByRole("button", { name: /Ask Donna/ }).click();
+
+  await assert.doesNotReject(page.getByText("Put the washing on").waitFor());
+  assert.equal(await page.getByText("Charge headphones").count(), 0, "one that hasn't come due yet stays quiet");
+
+  await page.getByRole("button", { name: "Done: Put the washing on" }).click();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("donna_plan")).reminders[0].done === true);
+
+  await context.close();
+});

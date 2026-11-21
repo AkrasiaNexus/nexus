@@ -5,6 +5,8 @@ import { useDictation } from "../hooks/useDictation";
 import { planStore } from "../stores/planStore";
 import { itemStore } from "../stores/itemStore";
 import { dailyBrief } from "../lib/brief";
+import { outstanding } from "../lib/remind";
+import { useStore } from "../hooks/useStore";
 import { today, nowMin } from "../lib/time";
 import { hideThisWindow, resizeOrb } from "../lib/notify";
 
@@ -31,9 +33,11 @@ export default function Orb() {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const mic = useDictation((spoken) => { setText(""); say(spoken); });
+  const plan = useStore(planStore);
   const card = useRef(null);
   const input = useRef(null);
 
+  const waiting = outstanding(plan.reminders ?? []);
   const last = thread.at(-1);
   const speaking = last && last.role !== "user";
   const isOpen = open || busy || speaking;
@@ -75,7 +79,11 @@ export default function Orb() {
   if (!isOpen) {
     return (
       <div className="h-screen flex items-center justify-center">
-        <button onClick={() => setOpen(true)} aria-label="Ask Donna" className="orb" />
+        <button
+          onClick={() => setOpen(true)}
+          aria-label={waiting.length ? `Ask Donna — ${waiting.length} waiting` : "Ask Donna"}
+          className={`orb ${waiting.length ? "has-waiting" : ""}`}
+        />
       </div>
     );
   }
@@ -98,6 +106,21 @@ export default function Orb() {
           )}
         </div>
       </div>
+
+      {waiting.length > 0 && (
+        <ul className="mt-3 flex flex-col gap-1.5">
+          {waiting.map((r) => (
+            <li key={r.id} className="flex items-center gap-2 text-[13px]">
+              <button
+                onClick={() => planStore.completeReminder(r.id)}
+                aria-label={`Done: ${r.text}`}
+                className="w-4 h-4 flex-none rounded-full border border-donna-muted hover:border-donna-text hover:bg-donna-raised transition-colors"
+              />
+              <span className="min-w-0 truncate">{r.text}</span>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <form onSubmit={submit} className="mt-3 flex items-center gap-2">
         <input

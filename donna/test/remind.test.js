@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseReminder, dueRemindersAt } from "../src/lib/remind.js";
+import { parseReminder, dueRemindersAt, outstanding } from "../src/lib/remind.js";
 
 // Thu 2099-01-08, 14:00 local.
 const NOW = new Date(2099, 0, 8, 14, 0).getTime();
@@ -71,4 +71,23 @@ test("done and unscheduled reminders stay quiet", () => {
   const someday = { id: "r2", text: "Headphones", at: null, done: false };
 
   assert.deepEqual(dueRemindersAt([done, someday], NOW - 60_000, NOW), []);
+});
+
+test("a reminder stays outstanding after it has fired, until it is ticked off", () => {
+  const fired = { id: "r1", text: "Bins", at: NOW - 60_000, done: false };
+  const later = { id: "r2", text: "Headphones", at: NOW + 3_600_000, done: false };
+  const ticked = { id: "r3", text: "Washing", at: NOW - 60_000, done: true };
+
+  assert.deepEqual(outstanding([fired, later, ticked], NOW).map((r) => r.id), ["r1"]);
+});
+
+test("outstanding reminders come oldest first, because that's the one you forgot longest ago", () => {
+  const old = { id: "old", text: "Bins", at: NOW - 7_200_000, done: false };
+  const recent = { id: "recent", text: "Washing", at: NOW - 60_000, done: false };
+
+  assert.deepEqual(outstanding([recent, old], NOW).map((r) => r.id), ["old", "recent"]);
+});
+
+test("a reminder with no time set is never outstanding, it is just waiting", () => {
+  assert.deepEqual(outstanding([{ id: "r1", text: "Someday", at: null, done: false }], NOW), []);
 });

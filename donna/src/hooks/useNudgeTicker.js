@@ -34,11 +34,10 @@ export function useNudgeTicker(items) {
       }
       // A two-minute job you asked to be reminded of fires even if slept through:
       // forgetting it is the whole reason it exists.
+      // Fired once, but left outstanding: it stays in the orb until it's ticked off,
+      // because a notification you missed is the thing forgotten all over again.
       const nudged = dueRemindersAt(reminders, since, now);
-      for (const r of nudged) {
-        notify("Donna", r.text);
-        planStore.completeReminder(r.id);
-      }
+      for (const r of nudged) notify("Donna", r.text);
 
       // The orb appears unfocused, so it never swallows what you're typing elsewhere.
       if (sessionReminders.length || nudged.length) revealOrb();

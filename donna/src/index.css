@@ -50,6 +50,11 @@ input, textarea {
   content: ""; position: absolute; inset: 7px; border-radius: 50%;
   border: 1.5px solid theme('colors.donna.accent'); opacity: 0.85;
 }
+.orb.has-waiting::before {
+  content: ""; position: absolute; top: 2px; right: 2px; width: 9px; height: 9px;
+  border-radius: 50%; background: theme('colors.donna.text');
+  box-shadow: 0 0 0 2.5px theme('colors.donna.surface');
+}
 .orb:hover { transform: scale(1.06); }
 .orb:hover::after { opacity: 0.8; }
 .orb:active { transform: scale(0.97); }
