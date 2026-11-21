@@ -161,7 +161,7 @@ test("the prompt separates one-off sessions and weekly commitments from goals be
   const prompt = systemPrompt({ plan: { blocks: [], fixed: [] }, items: [], profile: "" });
 
   const oneOff = prompt.indexOf("schedule_block");
-  const goalRule = prompt.indexOf("minutes a day and a deadline");
+  const goalRule = prompt.indexOf("Only for a goal");  // stable anchor: survives rewording the questions
   assert.ok(oneOff > -1 && oneOff < goalRule, "the one-off rule must come before the goal rule");
   assert.match(prompt, /set_fixed/);
   assert.match(prompt, /only (for )?a goal/i, "the goal questions must not apply to everything");
@@ -409,4 +409,12 @@ test("booking over a session is refused with what it would cost, not silently re
   await runTurn([{ role: "user", content: "valorant at 7, yes im sure" }], api);
   assert.equal(booked.length, 1, "confirmed goes through");
   restore();
+});
+
+test("the prompt makes Donna ask how much a goal matters rather than guess it", () => {
+  const prompt = systemPrompt({ plan: { blocks: [], fixed: [] }, items: [], profile: "" });
+
+  assert.match(prompt, /how much it matters/i);
+  assert.match(prompt, /how badly they want it|could wait/i);
+  assert.match(prompt, /never guess it from the deadline/i, "a far deadline is not the same as not caring");
 });

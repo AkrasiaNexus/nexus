@@ -32,9 +32,16 @@ export function dailyBrief({ items, plan, date, nowMinutes }) {
   const covered = coveredIds(plan.blocks);
   const due = pendingDeadlines(items, date).map(({ id, title }) => ({ id, title, booked: covered.has(id) }));
 
+  // A session inherits how much its goal matters. A one-off has no goal, so no opinion.
+  const priorityOf = (block) => {
+    if (!block.itemId) return null;
+    const goal = items.find((i) => i.id === block.itemId);
+    return goal ? (goal.priority ?? "medium") : null;
+  };
   const next = plan.blocks
     .filter((b) => b.date === date && !b.done && toMin(b.start) + b.minutes > nowMinutes)
-    .sort((a, b) => toMin(a.start) - toMin(b.start));
+    .sort((a, b) => toMin(a.start) - toMin(b.start))
+    .map((b) => ({ ...b, priority: priorityOf(b) }));
 
   return { free, freeMinutes, due, next, text: say({ free, freeMinutes, due, next }) };
 }
@@ -59,8 +66,20 @@ function say({ free, freeMinutes, due, next }) {
     );
   }
 
-  if (next.length) lines.push(`next up ${next[0].start}, ${next[0].title}.`);
-  else if (free.length && !due.length) lines.push("nothing booked. dump something and i'll slot it.");
+  if (next.length) {
+    const soonest = next[0];
+    const matters = next.some((b) => b.priority === "high");
+    // Knowing what is booked is half the answer; knowing whether it can slide is the rest.
+    if (soonest.priority === "high") lines.push(`next up ${soonest.start}, ${soonest.title} — that's the one that matters today.`);
+    else if (soonest.priority === "low") lines.push(`next up ${soonest.start}, ${soonest.title}. low priority though, walk away from it if something better turns up.`);
+    else lines.push(`next up ${soonest.start}, ${soonest.title}.`);
+
+    if (!matters && !due.length && next.every((b) => b.priority === "low")) {
+      lines.push("nothing today is urgent. go have fun if you want.");
+    }
+  } else if (free.length && !due.length) {
+    lines.push("nothing booked. dump something and i'll slot it.");
+  }
 
   return lines.join(" ");
 }

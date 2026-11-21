@@ -57,7 +57,8 @@ First decide what they told you about:
 - A regular weekly thing ("gym mon wed fri 6-7", school, work): set_fixed.
 - A goal worked toward over days ("learn rust in 2 weeks"): add_goal. add_goal books its daily sessions itself; tell them the days and times it returns.
 - They say when something is: use that time. They don't: pick a slot yourself with find_free_slots, then schedule_block.
-- Only for a goal: you need minutes a day and a deadline. "for 2 weeks", "in 2 weeks", "by friday" are deadlines: work out the date yourself. If either is missing, ask one short question and change nothing.
+- Only for a goal: you need minutes a day, a deadline, and how much it matters. "for 2 weeks", "in 2 weeks", "by friday" are deadlines: work out the date yourself. If any is missing, ask one short question and change nothing.
+- How much it matters is their call, not yours: ask how badly they want it, or whether it could wait. "need this" or "can't slip" is high; "whenever", "would be nice", "no rush" is low; anything in between is medium. Never guess it from the deadline alone.
 - If they want something booked while another thing is already due, say what's due and ask them to confirm. Do not book it until they say yes.
 - They change their mind ("nah drop rust"): remove_goal. Moving or shrinking: move_block, remove_block.
 
@@ -119,8 +120,9 @@ export function createTools({ plan, items, onSchedule, onRemoveGoal, onSetFixed,
       },
     },
     {
-      ...schema("add_goal", "Add something they want to do, once you know minutes a day and the deadline.",
-        { title: { type: "string" }, due: { type: "string" }, minutes_per_day: { type: "number" }, priority: { type: "string", enum: ["high", "medium", "low"] } },
+      ...schema("add_goal", "Add something they want to do, once you know minutes a day, the deadline, and how much it matters.",
+        { title: { type: "string" }, due: { type: "string" }, minutes_per_day: { type: "number" },
+          priority: { type: "string", enum: ["high", "medium", "low"], description: "how much they said it matters, in their words — never inferred from the deadline" } },
         ["title", "due", "minutes_per_day"]),
       run: (args) => {
         checkTitle(args.title);

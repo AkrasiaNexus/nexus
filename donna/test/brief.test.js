@@ -121,3 +121,69 @@ test("a day with no time left says so instead of offering an empty list", () => 
   assert.deepEqual(brief.free, []);
   assert.match(brief.text, /day'?s? (gone|done)|nothing left/i);
 });
+
+const goalItem = (overrides = {}) => ({ id: "g1", title: "Learn Rust", status: "active", deadline: `${TOMORROW}T23:00:00`, minutesPerDay: 60, priority: "medium", ...overrides });
+
+test("today's sessions carry the priority of the goal behind them", () => {
+  const brief = dailyBrief({
+    items: [goalItem({ priority: "high" })],
+    plan: plan({ blocks: [block({ itemId: "g1" })] }),
+    date: DATE,
+    nowMinutes: 7 * 60,
+  });
+
+  assert.equal(brief.next[0].priority, "high");
+});
+
+test("a session that matters is named as the one that matters", () => {
+  const brief = dailyBrief({
+    items: [goalItem({ priority: "high" })],
+    plan: plan({ blocks: [block({ itemId: "g1" })] }),
+    date: DATE,
+    nowMinutes: 7 * 60,
+  });
+
+  assert.match(brief.text, /matters/i);
+  assert.doesNotMatch(brief.text, /skip it|go have fun/i);
+});
+
+test("a low-priority session is flagged as one you can walk away from", () => {
+  const brief = dailyBrief({
+    items: [goalItem({ priority: "low" })],
+    plan: plan({ blocks: [block({ itemId: "g1" })] }),
+    date: DATE,
+    nowMinutes: 7 * 60,
+  });
+
+  assert.match(brief.text, /low priority/i);
+});
+
+test("a day where nothing booked is urgent says so plainly", () => {
+  const brief = dailyBrief({
+    items: [goalItem({ priority: "low" }), goalItem({ id: "g2", title: "Guitar", priority: "low" })],
+    plan: plan({ blocks: [block({ itemId: "g1" }), block({ id: "b2", itemId: "g2", title: "Guitar", start: "21:00", minutes: 30 })] }),
+    date: DATE,
+    nowMinutes: 7 * 60,
+  });
+
+  assert.match(brief.text, /nothing today is urgent|go do something|go have fun/i);
+});
+
+test("a one-off with no goal behind it is not fussed over either way", () => {
+  const brief = dailyBrief({ items: [], plan: plan({ blocks: [block({ itemId: null })] }), date: DATE, nowMinutes: 7 * 60 });
+
+  assert.equal(brief.next[0].priority, null);
+  assert.doesNotMatch(brief.text, /matters|low priority/i);
+});
+
+test("a goal with no priority set behaves like a middling one", () => {
+  const brief = dailyBrief({
+    items: [goalItem({ priority: undefined })],
+    plan: plan({ blocks: [block({ itemId: "g1" })] }),
+    date: DATE,
+    nowMinutes: 7 * 60,
+  });
+
+  assert.equal(brief.next[0].priority, "medium");
+  assert.doesNotMatch(brief.text, /matters|low priority/i);
+});
