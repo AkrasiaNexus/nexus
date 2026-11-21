@@ -6,7 +6,7 @@ import { blockStartMs } from "../lib/reminders";
 
 // New data, so a new key: `nudge_items` still holds the dumped thoughts.
 const STORAGE_KEY = "donna_plan";
-const EMPTY = { blocks: [], fixed: [], reminders: [], sweptOn: null, askedOn: null };
+const EMPTY = { blocks: [], fixed: [], reminders: [], memories: [], sweptOn: null, askedOn: null };
 
 function load() {
   try {
@@ -75,6 +75,18 @@ export const planStore = {
 
   completeReminder(id) {
     commit({ ...plan, reminders: plan.reminders.map((r) => (r.id === id ? { ...r, done: true } : r)) });
+  },
+
+  // What she knows about you. Donna's defining trait, and the one the port dropped.
+  remember(text) {
+    const memory = { id: crypto.randomUUID(), text, at: Date.now() };
+    commit({ ...plan, memories: [...plan.memories, memory] });
+    return { id: memory.id };
+  },
+
+  forget(id) {
+    commit({ ...plan, memories: plan.memories.filter((m) => m.id !== id) });
+    return "ok";
   },
 
   // Remembers that the evening question has been put today, so it is asked once.

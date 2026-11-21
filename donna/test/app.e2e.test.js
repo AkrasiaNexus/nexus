@@ -440,3 +440,40 @@ test("in the evening Donna asks about what you didn't get to, unprompted", async
 
   await context.close();
 });
+
+test("what Donna remembers survives a restart and goes back into her prompt", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const replies = [
+    { content: "", tool_calls: [{ function: { name: "remember", arguments: { text: "codes best late in the evening" } } }] },
+    { content: "noted." },
+  ];
+  const sent = [];
+  await page.route("http://127.0.0.1:11434/api/chat", async (route) => {
+    sent.push(JSON.parse(route.request().postData()));
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ message: replies.shift() ?? { content: "ok" } }) });
+  });
+  await page.goto(base + "?view=orb");
+  await page.getByRole("button", { name: /Ask Donna/ }).click();
+
+  const input = page.getByLabel("Tell Donna");
+  await input.fill("i code best late in the evening");
+  await input.press("Enter");
+
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("donna_plan")).memories?.length === 1);
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("donna_plan")).memories[0]);
+  assert.equal(stored.text, "codes best late in the evening");
+
+  // reload: she still knows it, and it is in what she is sent next time
+  await page.reload();
+  await page.getByRole("button", { name: /Ask Donna/ }).click();
+  await page.getByLabel("Tell Donna").fill("when should i do rust");
+  await page.getByLabel("Tell Donna").press("Enter");
+  await page.waitForFunction(() => true);
+  await page.waitForTimeout(500);
+
+  const system = sent.at(-1).messages[0].content;
+  assert.match(system, /codes best late in the evening/, "she is told what she knows");
+
+  await context.close();
+});

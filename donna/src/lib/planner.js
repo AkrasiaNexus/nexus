@@ -33,6 +33,7 @@ const DONE = {
   remove_block: "removed the session",
   remove_goal: "dropped the goal",
   clear_day: "cleared that day",
+  remember: "noted that",
 };
 
 // A model that returns nothing would leave Donna silent, which reads as the app being broken.
@@ -62,13 +63,14 @@ First decide what they told you about:
 - How much it matters is their call, not yours: ask how badly they want it, or whether it could wait. "need this" or "can't slip" is high; "whenever", "would be nice", "no rush" is low; anything in between is medium. Never guess it from the deadline alone.
 - If they want something booked while another thing is already due, say what's due and ask them to confirm. Do not book it until they say yes.
 - They change their mind ("nah drop rust"): remove_goal. Moving or shrinking: move_block, remove_block.
+- Anything lasting they tell you about themselves — when they work best, what they can't do on a Tuesday, a constraint, a preference — remember it, without being asked. Use what you know about them when you pick a slot: find_free_slots takes earliest and latest, so "i code best late" means searching the evening, not booking the first gap of the day.
 
 Reply in 1-3 short casual sentences, lowercase, matching their tone. Say what you changed, with the day and time.
 
 How they write: ${profile}
 
 Their plan now:
-${JSON.stringify({ goals, sessions: plan.blocks, fixed: plan.fixed })}
+${JSON.stringify({ goals, sessions: plan.blocks, fixed: plan.fixed, memories: plan.memories ?? [] })}
 
 Right now: ${WEEKDAYS[now.getDay()]} ${today()} ${fromMin(nowMin())}.`;
 }
@@ -79,7 +81,7 @@ const schema = (name, description, properties, required) => ({
 });
 
 // The tools close over the stores so the planner stays testable with fakes.
-export function createTools({ plan, items, onSchedule, onRemoveGoal, onSetFixed, onMoveBlock, onRemoveBlock, onAddGoal }) {
+export function createTools({ plan, items, onSchedule, onRemoveGoal, onSetFixed, onMoveBlock, onRemoveBlock, onAddGoal, onRemember, onForget }) {
   // Booked in code, not by the model: Gemma said "i'll book those now" and booked nothing.
   // Never throws: the goal is already saved, and an error would make the model add it twice.
   // A day where something else is due is left for that thing rather than asked about.
@@ -109,14 +111,19 @@ export function createTools({ plan, items, onSchedule, onRemoveGoal, onSetFixed,
 
   return [
     {
-      ...schema("find_free_slots", "Free gaps of at least `minutes`, searching forward from a date.",
-        { from_date: { type: "string" }, minutes: { type: "number" }, days: { type: "number" } }, ["from_date", "minutes"]),
-      run: ({ from_date, minutes, days = 7 }) => {
+      ...schema("find_free_slots", "Free gaps of at least `minutes`, searching forward from a date. Narrow with earliest/latest to respect what you know about when they work.",
+        { from_date: { type: "string" }, minutes: { type: "number" }, days: { type: "number" },
+          earliest: { type: "string", description: "HH:MM, defaults to 07:00" }, latest: { type: "string", description: "HH:MM, defaults to 23:00" } },
+        ["from_date", "minutes"]),
+      run: ({ from_date, minutes, days = 7, earliest, latest }) => {
         checkDate(from_date);
-        checkMinutes(minutes, DAY_END - DAY_START);
+        const from = earliest === undefined ? DAY_START : toMin(earliest);
+        const until = latest === undefined ? DAY_END : toMin(latest);
+        check(until > from, "latest must be after earliest");
+        checkMinutes(minutes, until - from);
         check(Number.isInteger(days) && days >= 1 && days <= MAX_SEARCH_DAYS, `days must be 1-${MAX_SEARCH_DAYS}`);
         const out = [];
-        for (let i = 0; i < days && out.length < 12; i++) out.push(...freeSlots(plan(), addDays(from_date, i), minutes, DAY_START, DAY_END));
+        for (let i = 0; i < days && out.length < 12; i++) out.push(...freeSlots(plan(), addDays(from_date, i), minutes, from, until));
         return out.slice(0, 12);
       },
     },
@@ -157,6 +164,18 @@ export function createTools({ plan, items, onSchedule, onRemoveGoal, onSetFixed,
           if (cost) return { blocked: true, ask: cost.warning };
         }
         return onSchedule(block);
+      },
+    },
+    {
+      ...schema("remember", "Save a lasting fact or preference about them — when they work best, a constraint, something that is always true. Or forget one by id.",
+        { text: { type: "string" }, forget_id: { type: "string" } }, []),
+      run: ({ text, forget_id }) => {
+        if (forget_id !== undefined) {
+          checkId(plan().memories ?? [], forget_id, "memory");
+          return onForget({ id: forget_id });
+        }
+        checkTitle(text);
+        return onRemember(String(text).trim().slice(0, 200));
       },
     },
     {

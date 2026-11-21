@@ -470,3 +470,62 @@ test("a malformed date is refused rather than clearing the wrong day", () => {
 
   assert.throws(() => api.find((t) => t.function.name === "clear_day").run({ date: "tomorrow" }));
 });
+
+test("she can save a lasting fact, and it reaches the prompt so she can use it", () => {
+  const saved = [];
+  const api = createTools({
+    plan: () => ({ blocks: [], fixed: [], memories: [] }), items: () => [],
+    onRemember: (text) => { saved.push(text); return { id: "m1" }; },
+    onForget: () => "ok",
+    onSchedule: () => ({}), onAddGoal: () => ({}), onRemoveGoal: () => "ok", onSetFixed: () => ({}), onMoveBlock: () => "ok", onRemoveBlock: () => "ok",
+  });
+
+  api.find((t) => t.function.name === "remember").run({ text: "codes best late in the evening" });
+
+  assert.deepEqual(saved, ["codes best late in the evening"]);
+  const prompt = systemPrompt({
+    plan: { blocks: [], fixed: [], memories: [{ id: "m1", text: "codes best late in the evening" }] },
+    items: [], profile: "",
+  });
+  assert.match(prompt, /codes best late in the evening/);
+});
+
+test("what she remembers is something she is told to actually use", () => {
+  const prompt = systemPrompt({ plan: { blocks: [], fixed: [], memories: [] }, items: [], profile: "" });
+
+  assert.match(prompt, /remember/i);
+  assert.match(prompt, /what you know about them|memories/i);
+});
+
+test("a fact can be forgotten, but only one that exists", () => {
+  const forgotten = [];
+  const api = createTools({
+    plan: () => ({ blocks: [], fixed: [], memories: [{ id: "m1", text: "hates mornings" }] }), items: () => [],
+    onRemember: () => ({}), onForget: ({ id }) => { forgotten.push(id); return "ok"; },
+    onSchedule: () => ({}), onAddGoal: () => ({}), onRemoveGoal: () => "ok", onSetFixed: () => ({}), onMoveBlock: () => "ok", onRemoveBlock: () => "ok",
+  });
+  const remember = api.find((t) => t.function.name === "remember");
+
+  remember.run({ forget_id: "m1" });
+  assert.deepEqual(forgotten, ["m1"]);
+  assert.throws(() => remember.run({ forget_id: "ghost" }), /no memory/i);
+});
+
+test("an empty memory is refused rather than stored as a blank", () => {
+  const { api } = tools();
+
+  assert.throws(() => api.find((t) => t.function.name === "remember").run({ text: "   " }));
+});
+
+test("she can look for free time inside a window, so 'i work late' is usable", () => {
+  const api = createTools({
+    plan: () => ({ blocks: [], fixed: [], memories: [] }), items: () => [],
+    onRemember: () => ({}), onForget: () => "ok",
+    onSchedule: () => ({}), onAddGoal: () => ({}), onRemoveGoal: () => "ok", onSetFixed: () => ({}), onMoveBlock: () => "ok", onRemoveBlock: () => "ok",
+  });
+
+  const slots = api.find((t) => t.function.name === "find_free_slots").run({ from_date: TODAY, minutes: 60, earliest: "22:00", latest: "23:59" });
+
+  assert.ok(slots.length > 0);
+  assert.ok(slots.every((s) => s.start >= "22:00"), `expected only late slots, got ${JSON.stringify(slots)}`);
+});

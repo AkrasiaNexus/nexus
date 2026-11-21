@@ -31,6 +31,8 @@ const tools = createTools({
     return "removed";
   },
   onSetFixed: (entry) => planStore.setFixed(entry),
+  onRemember: (text) => planStore.remember(text),
+  onForget: ({ id }) => planStore.forget(id),
 });
 
 // One conversation with Donna. `say` never throws: failures come back as Donna's line,
