@@ -6,6 +6,7 @@ import { planStore } from "../stores/planStore";
 import { itemStore } from "../stores/itemStore";
 import { dailyBrief, unplanned } from "../lib/brief";
 import { suggestions } from "../lib/suggest";
+import { observations } from "../lib/patterns";
 import { outstanding } from "../lib/remind";
 import { unfinishedToday, shouldAskAboutToday } from "../lib/dayend";
 import { useStore } from "../hooks/useStore";
@@ -75,6 +76,9 @@ export default function Orb() {
   // has none of it. Shown when you open her, never pushed — a reminder earns an
   // interruption, an opinion does not.
   const ideas = suggestions({ items, plan, date: today(), nowMinutes: nowMin() });
+  // What she'd have noticed on her own. She has the whole history; saying nothing about it
+  // is the difference between a calendar and someone paying attention.
+  const noticed = observations({ items, plan, date: today() });
   // A suggestion is the same thing with a slot and a reason attached, so anything she can
   // propose properly is not also listed as a bare title.
   const proposed = new Set(ideas.map((i) => i.item.id));
@@ -212,6 +216,17 @@ export default function Orb() {
                 className="w-4 h-4 flex-none rounded-full border border-donna-muted hover:border-donna-text hover:bg-donna-raised active:scale-90 transition-all duration-150"
               />
               <span className="min-w-0 truncate">{r.text}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {noticed.length > 0 && unfinished.length === 0 && (
+        <ul className="orb-waiting mt-3 flex flex-col gap-2">
+          {noticed.map((o, i) => (
+            <li key={o.kind + o.itemId} style={{ "--i": i }} className="flex items-start gap-2 text-[13px] leading-snug">
+              <span className={`mt-1.5 w-1 h-1 flex-none rounded-full ${o.kind === "streak" ? "bg-donna-text" : "bg-donna-muted"}`} />
+              <span className="min-w-0 flex-1">{o.text}</span>
             </li>
           ))}
         </ul>

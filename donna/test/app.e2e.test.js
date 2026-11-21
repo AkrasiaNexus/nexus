@@ -506,3 +506,31 @@ test("she raises profile work against real free time, before being asked", async
 
   await context.close();
 });
+
+test("she calls out a weekday you never deliver on, unprompted", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    Date.prototype.getHours = () => 9;
+    Date.prototype.getMinutes = () => 0;
+    const d = new Date();
+    const q = (n) => String(n).padStart(2, "0");
+    const ymd = (x) => `${x.getFullYear()}-${q(x.getMonth() + 1)}-${q(x.getDate())}`;
+    const back = (n) => { const x = new Date(d); x.setDate(d.getDate() - n); return ymd(x); };
+    const blocks = [7, 14, 21].map((n, i) => ({ id: `b${i}`, itemId: "g1", title: "Gym", date: back(n), start: "18:00", minutes: 60, done: false }));
+    localStorage.setItem("donna_plan", JSON.stringify({ fixed: [], blocks, reminders: [], memories: [], sweptOn: ymd(d), askedOn: ymd(d) }));
+    localStorage.setItem("nudge_items", JSON.stringify([{
+      id: "g1", title: "Gym", category: "habit", status: "active",
+      deadline: new Date(Date.now() + 30 * 86_400_000).toISOString(),
+      createdAt: `${back(25)}T08:00:00`, minutesPerDay: 60, priority: "medium", nudges: [],
+    }]));
+  });
+  await page.goto(base + "?view=orb");
+  await page.getByRole("button", { name: /Ask Donna/ }).click();
+
+  await assert.doesNotReject(page.getByText(/want me to stop booking/).waitFor(), "she offers to act on what she noticed");
+  const said = (await page.locator("li").allInnerTexts()).join(" ");
+  assert.match(said, /3 .*booked for gym, 3 missed/i, "she names the count, not a vague feeling");
+
+  await context.close();
+});
