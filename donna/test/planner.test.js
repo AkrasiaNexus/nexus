@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createTools, runTurn, systemPrompt } from "../src/lib/planner.js";
+import { today, addDays, parseYmd, WEEKDAYS } from "../src/lib/time.js";
 
 const TODAY = "2026-11-24";
 
@@ -29,6 +30,8 @@ function tools({ items = [], blocks = [], fixed = [] } = {}) {
     onSetFixed: () => ({ id: "f1" }),
     onMoveBlock: () => "ok",
     onRemoveBlock: () => "ok",
+    onRemember: () => ({ id: "m1" }),
+    onForget: () => "ok",
   });
   return { api, booked };
 }
@@ -46,10 +49,12 @@ test("a reply with no tool calls comes straight back", async () => {
   restore();
 });
 
-test("a tool call runs, and its result is fed back for the next round", async () => {
+test("a finished booking is confirmed from the tool's own result, without asking the model again", async () => {
+  // The second call was a full re-prefill of the whole prompt — ~29s on the user's machine —
+  // spent wording a sentence the tool result already contains.
   const { sent, restore } = stubReplies(
     toolCall("schedule_block", { title: "Rust", date: TODAY, start: "19:00", minutes: 60 }),
-    says("booked rust at 7."),
+    says("this reply should never be asked for."),
   );
   const { api, booked } = tools();
 
@@ -57,8 +62,71 @@ test("a tool call runs, and its result is fed back for the next round", async ()
 
   assert.equal(booked.length, 1, "the session was actually booked");
   assert.deepEqual(changes, ["schedule_block"]);
-  assert.equal(text, "booked rust at 7.");
+  assert.equal(sent.length, 1, "exactly one model call");
+  assert.equal(text, "booked rust tue 19:00.");
+  restore();
+});
+
+test("a weekly commitment is confirmed with the days that were set", async () => {
+  const { sent, restore } = stubReplies(
+    toolCall("set_fixed", { title: "Gym", days: [1, 3, 5], start: "18:00", end: "19:00" }),
+    says("never asked for."),
+  );
+  const { api } = tools();
+
+  const { text } = await runTurn([{ role: "user", content: "gym mon wed fri 6-7" }], api);
+
+  assert.equal(sent.length, 1, "exactly one model call");
+  assert.equal(text, "gym's in mon wed fri, 18:00-19:00.", "the days are the point; dropping them loses the answer");
+  restore();
+});
+
+test("a read still goes back to the model, because it asked for it to decide", async () => {
+  const { sent, restore } = stubReplies(
+    toolCall("find_free_slots", { minutes: 60 }),
+    says("you're free 19:00."),
+  );
+  const { api } = tools();
+
+  const { text } = await runTurn([{ role: "user", content: "when am i free" }], api);
+
+  assert.equal(sent.length, 2, "the slots have to go back for her to pick one");
   assert.equal(sent[1].messages.at(-1).role, "tool", "the tool result went back to the model");
+  assert.equal(text, "you're free 19:00.");
+  restore();
+});
+
+test("a tool that failed goes back to the model so it can retry", async () => {
+  const { sent, restore } = stubReplies(
+    toolCall("schedule_block", { title: "Rust", date: TODAY, start: "nonsense", minutes: 60 }),
+    says("that time didn't work."),
+  );
+  const { api } = tools();
+
+  const { text } = await runTurn([{ role: "user", content: "book rust" }], api);
+
+  assert.equal(sent.length, 2, "an error is not something code should word for her");
+  assert.equal(text, "that time didn't work.");
+  restore();
+});
+
+test("a goal names the sessions it booked", async () => {
+  // Sessions are booked from the real today, and how many fit depends on the time of day, so
+  // the sentence is checked against what was actually booked rather than a day written here.
+  const due = addDays(today(), 2);
+  const { sent, restore } = stubReplies(
+    toolCall("add_goal", { title: "Learn Rust", due, minutes_per_day: 30, priority: "high" }),
+    says("never asked for."),
+  );
+  const { api, booked } = tools();
+
+  const { text } = await runTurn([{ role: "user", content: "learn rust, 30 mins a day" }], api);
+
+  assert.equal(sent.length, 1, "exactly one model call");
+  assert.ok(booked.length >= 2, "the next two days are free, whatever time it is now");
+  const first = booked[0];
+  const day = WEEKDAYS[parseYmd(first.date).getDay()].toLowerCase();
+  assert.equal(text, `added learn rust. ${booked.length} sessions, first ${day} ${first.start}.`);
   restore();
 });
 
@@ -568,4 +636,118 @@ test("profile work is a thing she can mark, and is told to", () => {
   const prompt = systemPrompt({ plan: { blocks: [], fixed: [], memories: [] }, items: [], profile: "" });
   assert.match(prompt, /portfolio|applications|CV/i);
   assert.match(prompt, /gets them in/i);
+});
+
+test("a remembered fact never ends the turn, because she is told to save one unprompted", async () => {
+  // "i code best late, book rust tmrw" is one request: remember, then book. Ending the turn on
+  // the remember would answer "noted." and silently never book.
+  const { sent, restore } = stubReplies(
+    toolCall("remember", { text: "codes best late" }),
+    toolCall("schedule_block", { title: "Rust", date: TODAY, start: "21:00", minutes: 60 }),
+  );
+  const { api, booked } = tools();
+
+  const { text, changes } = await runTurn([{ role: "user", content: "i code best late, book rust" }], api);
+
+  assert.equal(booked.length, 1, "the booking still happened");
+  assert.deepEqual(changes, ["remember", "schedule_block"]);
+  assert.equal(text, "booked rust tue 21:00.");
+  assert.equal(sent.length, 2, "the remember round went back to the model");
+  restore();
+});
+
+test("two writes in one round are both confirmed", async () => {
+  const { sent, restore } = stubReplies({
+    message: {
+      content: "",
+      tool_calls: [
+        { function: { name: "schedule_block", arguments: { title: "Rust", date: TODAY, start: "19:00", minutes: 60 } } },
+        { function: { name: "schedule_block", arguments: { title: "Gym", date: TODAY, start: "07:00", minutes: 60 } } },
+      ],
+    },
+  });
+  const { api, booked } = tools();
+
+  const { text } = await runTurn([{ role: "user", content: "book rust 7pm and gym 7am" }], api);
+
+  assert.equal(booked.length, 2);
+  assert.equal(sent.length, 1, "exactly one model call");
+  assert.equal(text, "booked rust tue 19:00. booked gym tue 07:00.");
+  restore();
+});
+
+test("a write beside a read hands the whole round back to her", async () => {
+  const { sent, restore } = stubReplies({
+    message: {
+      content: "",
+      tool_calls: [
+        { function: { name: "schedule_block", arguments: { title: "Rust", date: TODAY, start: "19:00", minutes: 60 } } },
+        { function: { name: "find_free_slots", arguments: { minutes: 60 } } },
+      ],
+    },
+  }, says("booked rust, and you're free after."));
+  const { api } = tools();
+
+  const { text } = await runTurn([{ role: "user", content: "book rust then what's left" }], api);
+
+  assert.equal(sent.length, 2, "she asked for the slots, so she gets them");
+  assert.equal(text, "booked rust, and you're free after.");
+  restore();
+});
+
+test("clearing part of a day says which part", async () => {
+  const blocks = [
+    { id: "b1", itemId: "i1", title: "Rust", date: TODAY, start: "19:00", minutes: 60, done: false },
+    { id: "b2", itemId: "i2", title: "Gym", date: TODAY, start: "07:00", minutes: 60, done: false },
+  ];
+  const items = [
+    { id: "i1", title: "Learn Rust", status: "active", priority: "low", deadline: `${TODAY}T23:00:00` },
+    { id: "i2", title: "Gym", status: "active", priority: "high", deadline: `${TODAY}T23:00:00` },
+  ];
+  const { sent, restore } = stubReplies(toolCall("clear_day", { date: TODAY, priority: "low" }));
+  const { api } = tools({ blocks, items });
+
+  const { text } = await runTurn([{ role: "user", content: "clear my low priority today" }], api);
+
+  assert.equal(sent.length, 1);
+  assert.equal(text, "cleared 1 low priority session off tue.", "saying 'cleared the day' would be a lie");
+  restore();
+});
+
+test("clearing a day with nothing on it says so", async () => {
+  const { restore } = stubReplies(toolCall("clear_day", { date: TODAY }));
+  const { api } = tools();
+
+  const { text } = await runTurn([{ role: "user", content: "clear today" }], api);
+
+  assert.equal(text, "nothing was booked tue.");
+  restore();
+});
+
+test("portfolio work goes back to her, because she is told to say what it is", async () => {
+  const { sent, restore } = stubReplies(
+    toolCall("add_goal", { title: "Hackathon project", due: addDays(today(), 2), minutes_per_day: 30, priority: "high", for_profile: true }),
+    says("added it. that's the kind that gets you in."),
+  );
+  const { api } = tools();
+
+  const { text } = await runTurn([{ role: "user", content: "hackathon project 30 mins a day" }], api);
+
+  assert.equal(sent.length, 2, "the profile remark is hers to make");
+  assert.equal(text, "added it. that's the kind that gets you in.");
+  restore();
+});
+
+test("moving and removing are confirmed too", async () => {
+  const blocks = [{ id: "b1", itemId: null, title: "Rust", date: TODAY, start: "19:00", minutes: 60, done: false }];
+
+  let { restore } = stubReplies(toolCall("move_block", { id: "b1", date: TODAY, start: "20:00" }));
+  let { api } = tools({ blocks });
+  assert.equal((await runTurn([{ role: "user", content: "push it an hour" }], api)).text, "moved it to tue 20:00.");
+  restore();
+
+  ({ restore } = stubReplies(toolCall("remove_block", { id: "b1" })));
+  ({ api } = tools({ blocks }));
+  assert.equal((await runTurn([{ role: "user", content: "drop that session" }], api)).text, "removed that session.");
+  restore();
 });

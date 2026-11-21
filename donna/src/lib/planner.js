@@ -1,5 +1,5 @@
 import { chat } from "./ollama.js";
-import { today, addDays, ymd, fromMin, nowMin, toMin, isYmd, WEEKDAYS } from "./time.js";
+import { today, addDays, ymd, fromMin, nowMin, toMin, isYmd, parseYmd, WEEKDAYS } from "./time.js";
 import { freeSlots, goalSessions, DAY_START, DAY_END, MAX_GOAL_DAYS } from "./schedule.js";
 import { requiresConfirmation, objection } from "./pushback.js";
 import { displacementCost } from "./pressure.js";
@@ -23,6 +23,66 @@ const checkMinutes = (minutes, max = DAY_MINUTES) =>
   check(Number.isFinite(minutes) && minutes > 0 && minutes <= max, `minutes must be 1-${max}, got "${minutes}"`);
 // A null id would match every one-off session (their itemId is null), so ids must exist.
 const checkId = (list, id, what) => check(typeof id === "string" && list.some((x) => x.id === id), `no ${what} with id "${id}"`);
+
+// What a successful call did, in Donna's words, for when a later call in the round is refused.
+const dayName = (date) => WEEKDAYS[parseYmd(date).getDay()].toLowerCase();
+const plainly = (text) => String(text).trim().toLowerCase();
+
+// What a finished write already says for itself. Asking the model to word it costs a second
+// call, and a second call re-reads the entire prompt — ~29s on a 16GB Mac, because Ollama's
+// MLX engine reuses no prefix cache. So a confirmation is computed, the way the daily brief is.
+//
+// Returning null hands the turn back to her, and that is the default for anything with a
+// judgement in it: a read she asked for so she can choose, an error worth rewording, a goal
+// where something was skipped or that builds their portfolio. She only loses the sentences
+// that were never hers to write.
+//
+// `remember` is deliberately absent. The prompt tells her to save a fact "without being asked",
+// so a round holding it is never proof the request is finished — "i code best late, book rust
+// tmrw" would answer "noted." and never book.
+//
+// shortcut: a request the model splits across rounds instead of calling both tools at once
+// ("book rust tmrw and gym friday") still ends after the first round; drop the early return if
+// that ever shows up in real use.
+const SAID = {
+  schedule_block: (a) => `booked ${plainly(a.title)} ${dayName(a.date)} ${a.start}.`,
+  set_fixed: (a) =>
+    `${plainly(a.title)}'s in ${a.days.map((d) => WEEKDAYS[d].toLowerCase()).join(" ")}, ${a.start}-${a.end}.`,
+  move_block: (a) => `moved it to ${dayName(a.date)} ${a.start}.`,
+  remove_block: () => "removed that session.",
+  remove_goal: () => "dropped it, sessions and all.",
+  clear_day: (a, r) => {
+    const what = a.priority ? `${a.priority} priority session` : "session";
+    if (!r.removed) return `nothing ${a.priority ? `${a.priority} priority ` : ""}was booked ${dayName(a.date)}.`;
+    return `cleared ${r.removed} ${what}${r.removed === 1 ? "" : "s"} off ${dayName(a.date)}.`;
+  },
+  add_goal: (a, r) => {
+    // Anything she needs to explain — nothing fit, a day skipped, a horizon cut short — is hers.
+    if (!r.booked?.length || r.skipped?.length || r.note || a.for_profile) return null;
+    const [date, start] = r.booked[0].split(" ");
+    return `added ${plainly(a.title)}. ${r.booked.length} session${r.booked.length === 1 ? "" : "s"}, first ${dayName(date)} ${start}.`;
+  },
+};
+
+// One line per call, or null if any of them is not code's to speak for.
+function confirm(calls, results) {
+  try {
+    const lines = [];
+    for (const [i, call] of calls.entries()) {
+      const result = results[i];
+      if (!result || result.error || result.blocked) return null;
+      const say = SAID[call.function.name];
+      if (!say) return null;
+      const line = say(call.function.arguments ?? {}, result);
+      if (!line) return null;
+      lines.push(line);
+    }
+    return lines.length ? lines.join(" ") : null;
+  } catch {
+    // A confirmation is an optimisation; if it cannot be written, she writes it.
+    return null;
+  }
+}
 
 // What a successful call did, in Donna's words, for when a later call in the round is refused.
 const DONE = {
@@ -245,6 +305,7 @@ export async function runTurn(messages, tools, { signal } = {}) {
 
     thread.push({ role: "assistant", content: text, tool_calls: toolCalls });
     let ask = null;
+    const results = [];
     for (const call of toolCalls) {
       const tool = tools.find((t) => t.function.name === call.function.name);
       let result;
@@ -255,6 +316,7 @@ export async function runTurn(messages, tools, { signal } = {}) {
       }
       if (result?.blocked) ask = result.ask;
       else if (tool && !result?.error) changes.push(call.function.name);
+      results.push(result);
       thread.push({ role: "tool", content: JSON.stringify(result) });
     }
     // Gemma was seen saying "i put it in" over a blocked call; the guard speaks for itself.
@@ -262,6 +324,11 @@ export async function runTurn(messages, tools, { signal } = {}) {
       const done = [...new Set(changes.map((name) => DONE[name]))];
       return { text: done.length ? `${done.join(", ")}. but ${ask}` : ask, changes };
     }
+
+    // Everything asked for is done and nothing is left to judge: say so, rather than spending
+    // a whole second prefill on a sentence that is already known.
+    const said = confirm(toolCalls, results);
+    if (said) return { text: said, changes };
   }
 
   // Out of rounds: answer with words rather than looping forever.
