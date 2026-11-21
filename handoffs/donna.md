@@ -165,7 +165,7 @@ the override one would need a code-side "pending objection" so a yes confirms wi
   read instead of crashing; an Ollama failure now says Ollama's reason ("out of memory").
 - **The week shows deadlines and reminders** on the calendar itself, plus a session's goal/priority/due
   on hover and one "not booked:" line that only appears when needed.
-- **`test/fuzz.test.js`**: seeded property tests over ~2,800 random plans (never double-books, never
+- **`test/fuzz.test.js`**: seeded property tests over 4,400 random inputs (never double-books, never
   says "undefined"); checked for teeth by planting two bugs, both caught.
 
 ## Next, in order

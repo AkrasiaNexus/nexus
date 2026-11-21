@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Donna — film</title>
+<!--
+  The explainer film. Every frame is a pure function of time: renderAt(t) sets the whole stage for
+  second t, so build-film.mjs can screenshot frame after frame and get the same picture every run,
+  locked to the narration. Nothing here animates on its own — no CSS transitions, no timers.
+-->
+<style>
+  :root {
+    --bg: #040506; --panel: #0b0e10; --line: #1a2126; --text: #e9eef0; --dim: #6a767d; --faint: #2a3338;
+    --cyan: #29f0ff; --red: #ff3355; --amber: #ffb020;
+    --mono: "JetBrains Mono", ui-monospace, monospace; --sans: "Inter", system-ui, sans-serif; --display: "Inter Display", "Inter", sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); width: 1280px; height: 720px; overflow: hidden; }
+  #stage { position: relative; width: 1280px; height: 720px; overflow: hidden; color: var(--text); font-family: var(--sans); }
+  .grid { position: absolute; inset: -40px; background-image:
+    linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 40px 40px; opacity: .35; }
+  .scan { position: absolute; inset: 0; pointer-events: none; z-index: 50;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 3px); }
+  .vignette { position: absolute; inset: 0; pointer-events: none; z-index: 49; box-shadow: inset 0 0 180px 40px rgba(0,0,0,.85); }
+  .scene { position: absolute; inset: 0; opacity: 0; }
+  .mono { font-family: var(--mono); }
+  .hud { position: absolute; z-index: 60; font: 500 11px var(--mono); letter-spacing: .14em; color: var(--dim); text-transform: uppercase; }
+  .cap { position: absolute; z-index: 60; left: 50%; bottom: 34px; transform: translateX(-50%); max-width: 1000px; text-align: center;
+    font: 500 19px/1.4 var(--sans); color: var(--text); background: rgba(0,0,0,.72); padding: 6px 14px; border-left: 2px solid var(--cyan); }
+  .bar { position: absolute; z-index: 60; left: 0; bottom: 0; height: 2px; background: var(--cyan); }
+
+  .week { position: absolute; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .col { position: relative; border: 1px solid var(--line); background: var(--panel); }
+  .col .day { font: 500 10px var(--mono); color: var(--dim); text-align: center; padding: 6px 0; border-bottom: 1px solid var(--line); letter-spacing: .1em; }
+  .blk { position: absolute; left: 4px; right: 4px; border-left: 2px solid var(--dim); background: #141a1e; font: 500 10px var(--mono); color: #aab4b9; padding: 4px 5px; overflow: hidden; white-space: nowrap; }
+  .blk.hot { border-color: var(--cyan); background: rgba(41,240,255,.09); color: var(--cyan); }
+  .blk.miss { border-color: var(--red); color: var(--dim); text-decoration: line-through; }
+  .blk.miss::after { content: "✕"; position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center;
+    font: 700 54px var(--sans); color: var(--red); text-decoration: none; text-shadow: 0 0 18px rgba(255,51,85,.55); }
+
+  .card { position: absolute; background: rgba(11,14,16,.96); border: 1px solid #22303a; padding: 18px 20px; }
+  .say { font: 400 15px/1.5 var(--mono); color: var(--dim); }
+  .say b { color: var(--text); font-weight: 500; }
+  .reply { font: 400 16px/1.55 var(--sans); color: var(--text); }
+  .caret { display: inline-block; width: 8px; height: 17px; background: var(--cyan); vertical-align: -3px; margin-left: 2px; }
+  .key { display: inline-flex; align-items: center; justify-content: center; min-width: 64px; height: 64px; padding: 0 14px;
+    border: 1px solid #3a4850; border-bottom-width: 4px; border-radius: 8px; font: 600 26px var(--mono); color: var(--text); background: #0e1316; }
+  .stamp { position: absolute; font: 800 64px var(--display); letter-spacing: .08em; color: var(--red); border: 4px solid var(--red); padding: 2px 18px; }
+  .tag { font: 500 11px var(--mono); letter-spacing: .16em; text-transform: uppercase; }
+  .row { font: 500 15px var(--mono); color: var(--text); padding: 10px 0; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 30px; }
+  .box { position: absolute; border: 1px solid; padding: 14px 16px; background: rgba(11,14,16,.94); }
+  svg line, svg path { fill: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="grid" id="grid"></div>
+
+  <!-- 1. hook -->
+  <section class="scene" id="s-hook">
+    <div class="mono" id="hook-a" style="position:absolute;left:0;right:0;top:300px;text-align:center;font-size:30px;font-weight:500;letter-spacing:.04em;color:var(--text)"></div>
+    <div id="hook-b" style="position:absolute;left:0;right:0;top:360px;text-align:center;font:800 96px var(--display);letter-spacing:-.02em;color:var(--red)">Donna doesn't.</div>
+  </section>
+
+  <!-- 2. problem -->
+  <section class="scene" id="s-problem">
+    <div class="tag" style="position:absolute;left:150px;top:96px;color:var(--dim)">your week // as it actually goes</div>
+    <div class="week" id="p-week" style="left:150px;top:124px;width:980px;height:420px"></div>
+  </section>
+
+  <!-- 3. orb -->
+  <section class="scene" id="s-orb">
+    <div id="o-orb" style="position:absolute;width:88px;height:88px;border-radius:50%;border:2px solid var(--cyan);box-shadow:0 0 36px rgba(41,240,255,.45), inset 0 0 22px rgba(41,240,255,.25)"></div>
+    <div id="o-keys" style="position:absolute;left:150px;top:150px;display:flex;gap:12px;align-items:center">
+      <span class="key">⌥</span><span class="mono" style="color:var(--dim);font-size:22px">+</span><span class="key">D</span>
+    </div>
+    <div class="card" id="o-card" style="left:150px;top:270px;width:560px">
+      <div class="tag" style="color:var(--cyan);margin-bottom:12px">tell donna</div>
+      <div class="say" id="o-say"></div>
+      <div class="reply" id="o-reply" style="margin-top:14px"></div>
+    </div>
+    <div class="week" id="o-week" style="left:760px;top:150px;width:390px;height:380px"></div>
+  </section>
+
+  <!-- 4. refuse -->
+  <section class="scene" id="s-refuse">
+    <div class="card" style="left:150px;top:150px;width:700px">
+      <div class="tag" style="color:var(--cyan);margin-bottom:12px">tell donna</div>
+      <div class="say" id="r-say"></div>
+      <div class="reply" id="r-reply" style="margin-top:16px;min-height:76px"></div>
+    </div>
+    <div class="stamp" id="r-stamp" style="left:760px;top:390px">REFUSED</div>
+  </section>
+
+  <!-- 5. patterns -->
+  <section class="scene" id="s-patterns">
+    <div class="tag" style="position:absolute;left:150px;top:110px;color:var(--dim)">three saturdays</div>
+    <div class="week" id="pt-week" style="left:150px;top:140px;width:640px;height:300px;grid-template-columns:repeat(3,1fr)"></div>
+    <div class="card" style="left:150px;top:470px;width:980px">
+      <div class="reply" id="pt-reply"></div>
+    </div>
+  </section>
+
+  <!-- 6. night -->
+  <section class="scene" id="s-night">
+    <div id="n-scan" style="position:absolute;top:0;bottom:0;width:2px;background:var(--cyan);box-shadow:0 0 24px 4px rgba(41,240,255,.5)"></div>
+    <div class="tag" style="position:absolute;left:150px;top:110px;color:var(--cyan)" id="n-head">overnight // searching</div>
+    <div id="n-rows" style="position:absolute;left:150px;top:140px;width:760px"></div>
+    <div class="card" id="n-brief" style="left:150px;top:430px;width:760px">
+      <div class="tag" style="color:var(--amber);margin-bottom:10px">morning brief</div>
+      <div class="reply" id="n-brief-text"></div>
+    </div>
+  </section>
+
+  <!-- 7. local -->
+  <section class="scene" id="s-local">
+    <svg width="1280" height="720" style="position:absolute;inset:0">
+      <path id="l-p1" d="M 300 360 L 520 360" stroke="#3a4850" stroke-width="2"/>
+      <path id="l-p2" d="M 700 340 C 780 340, 790 230, 860 230" stroke="#29f0ff" stroke-width="2"/>
+      <path id="l-p3" d="M 700 380 C 780 380, 790 490, 860 490" stroke="#ffb020" stroke-width="2"/>
+    </svg>
+    <div class="box" id="l-you" style="left:150px;top:322px;width:150px;border-color:#3a4850"><div class="tag" style="color:var(--dim)">you</div><div class="mono" style="font-size:14px;margin-top:6px">anything</div></div>
+    <div class="box" id="l-donna" style="left:520px;top:312px;width:180px;border-color:var(--text)"><div class="tag" style="color:var(--text)">donna</div><div class="mono" style="font-size:14px;margin-top:6px;color:var(--dim)">on your mac</div></div>
+    <div class="box" id="l-comp" style="left:860px;top:182px;width:300px;border-color:var(--cyan)"><div class="tag" style="color:var(--cyan)">computed · instant · exact</div><div class="mono" style="font-size:14px;margin-top:8px">free time · clashes · your day</div></div>
+    <div class="box" id="l-model" style="left:860px;top:442px;width:300px;border-color:var(--amber)"><div class="tag" style="color:var(--amber)">local model · on-device</div><div class="mono" style="font-size:14px;margin-top:8px">only what's genuinely ambiguous</div></div>
+    <div class="tag" id="l-badge" style="position:absolute;left:150px;top:560px;color:var(--text);border:1px solid var(--red);padding:8px 12px">no subscription // no cloud model</div>
+  </section>
+
+  <!-- 8. clock -->
+  <section class="scene" id="s-clock">
+    <div class="week" id="c-week" style="left:150px;top:130px;width:640px;height:420px;grid-template-columns:repeat(3,1fr)"></div>
+    <div class="mono" id="c-time" style="position:absolute;left:840px;top:200px;font-size:56px;font-weight:500;letter-spacing:.02em"></div>
+    <div class="card" id="c-toast" style="left:840px;top:300px;width:300px;border-color:var(--cyan)">
+      <div class="tag" style="color:var(--cyan);margin-bottom:6px">donna</div>
+      <div class="reply">Call mum</div>
+    </div>
+  </section>
+
+  <!-- 9. end -->
+  <section class="scene" id="s-end">
+    <div id="e-name" style="position:absolute;left:0;right:0;top:230px;text-align:center;font:800 150px var(--display);letter-spacing:.06em">DONNA</div>
+    <div id="e-line" style="position:absolute;left:0;right:0;top:420px;text-align:center;font:500 24px var(--sans);color:var(--dim)">She doesn't get told what to do.</div>
+    <div id="e-key" style="position:absolute;left:0;right:0;top:490px;display:flex;justify-content:center;gap:10px;align-items:center">
+      <span class="key" style="height:44px;min-width:44px;font-size:18px">⌥</span><span class="key" style="height:44px;min-width:44px;font-size:18px">D</span>
+      <span class="tag" style="color:var(--dim);margin-left:12px">local-first planner for macOS</span>
+    </div>
+  </section>
+
+  <div class="hud" style="left:28px;top:22px"><span style="color:var(--cyan)">donna</span>//os &nbsp; <span id="hud-scene">01/09</span></div>
+  <div class="hud" style="right:28px;top:22px"><span id="hud-rec" style="color:var(--red)">●</span> &nbsp;<span id="hud-tc">00:00:00</span></div>
+  <div class="cap" id="cap"></div>
+  <div class="bar" id="bar"></div>
+  <div class="vignette"></div>
+  <div class="scan"></div>
+</div>
+
+<script>
+// Filled in by build-film.mjs from the measured narration: [{ id, start, speechStart, speechEnd, end, text }].
+window.TIMELINE = window.TIMELINE || [];
+const FPS = 30;
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const ramp = (t, a, b) => ease((t - a) / (b - a));
+const typed = (text, t, start, cps = 24) => text.slice(0, Math.max(0, Math.floor((t - start) * cps)));
+// Deterministic jitter: the same frame always glitches the same way.
+const noise = (n) => { const x = Math.sin(n * 127.1) * 43758.5453; return x - Math.floor(x); };
+const scene = (id) => TIMELINE.find((s) => s.id === id);
+// A scene fades in over its first 0.4s and out over its last 0.4s; neighbours never overlap.
+const presence = (s, t) => (t < s.start || t > s.end ? 0 : Math.min(ramp(t, s.start, s.start + 0.4), 1 - ramp(t, s.end - 0.4, s.end)));
+const glitch = (el, t, until, frame) => {
+  const on = t < until;
+  const dx = on ? (noise(frame) - 0.5) * 14 : 0;
+  el.style.textShadow = on ? `${dx}px 0 var(--cyan), ${-dx}px 0 var(--red)` : "none";
+  el.style.transform = on ? `translateX(${(noise(frame + 7) - 0.5) * 6}px)` : "none";
+};
+
+function weekBlocks(el, cols, blocks) {
+  el.innerHTML = cols.map((c, i) => `<div class="col"><div class="day">${c}</div>${
+    blocks.filter((b) => b.col === i).map((b) =>
+      `<div class="blk ${b.cls || ""}" style="top:${b.top}px;height:${b.h}px;opacity:${b.o ?? 1};transform:translateY(${b.dy ?? 0}px)">${b.label}</div>`).join("")
+  }</div>`).join("");
+}
+
+const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+
+function renderAt(t) {
+  const frame = Math.round(t * FPS);
+  const total = TIMELINE.length ? TIMELINE[TIMELINE.length - 1].end : 1;
+  $("grid").style.transform = `translate(${-(t * 6) % 40}px, ${-(t * 3) % 40}px)`;
+
+  for (const s of TIMELINE) {
+    const el = $(`s-${s.id === "turn" ? "hook" : s.id}`);
+    if (el && s.id !== "turn") el.style.opacity = s.id === "hook" ? Math.max(presence(s, t), presence({ ...scene("turn") }, t)) : presence(s, t);
+  }
+
+  // 1. hook + turn share one stage
+  const h = scene("hook"), tn = scene("turn");
+  if (h && tn) {
+    $("s-hook").style.opacity = t < h.start || t > tn.end ? 0 : Math.min(ramp(t, h.start, h.start + 0.3), 1 - ramp(t, tn.end - 0.4, tn.end));
+    $("hook-a").textContent = typed("EVERY PLANNER DOES WHAT YOU TELL IT.", t, h.speechStart, 26);
+    $("hook-a").style.opacity = 1 - ramp(t, tn.speechStart - 0.1, tn.speechStart + 0.4) * 0.6;
+    const b = $("hook-b");
+    b.style.opacity = t >= tn.speechStart ? 1 : 0;
+    glitch(b, t, tn.speechStart + 0.45, frame);
+  }
+
+  // 2. problem: the week fills with noise and the one thing that matters slips off it
+  const p = scene("problem");
+  if (p && presence(p, t) > 0) {
+    const noiseBlocks = [
+      [0, 60, 50, "group chat"], [1, 200, 70, "valorant"], [2, 120, 40, "errands"], [3, 260, 80, "youtube"],
+      [4, 80, 60, "gym"], [5, 160, 110, "valorant"], [6, 60, 70, "errands"], [0, 300, 60, "scrolling"],
+      [2, 220, 90, "group chat"], [4, 250, 70, "valorant"], [6, 220, 60, "youtube"], [1, 60, 60, "errands"],
+    ].map(([col, top, hgt, label], i) => {
+      const at = p.speechStart + 3.2 + i * 0.38;
+      return { col, top, h: hgt, label, o: ramp(t, at, at + 0.25), dy: (1 - ramp(t, at, at + 0.25)) * -14 };
+    });
+    const slipStart = p.speechStart + 7.6;
+    const slip = ramp(t, slipStart, slipStart + 2.2);
+    weekBlocks($("p-week"), DAYS, [
+      ...noiseBlocks,
+      { col: 3, top: 120, h: 90, label: "PORTFOLIO PROJECT", cls: "hot", o: ramp(t, p.speechStart + 0.6, p.speechStart + 1.2) * (1 - slip), dy: slip * 260 },
+    ]);
+  }
+
+  // 3. the orb: Option+D, a sentence in your own words, sessions in the time you have
+  const o = scene("orb");
+  if (o && presence(o, t) > 0) {
+    const grow = ramp(t, o.speechStart + 2.0, o.speechStart + 2.8);
+    const orb = $("o-orb");
+    const pulse = 1 + Math.sin(t * 4) * 0.04 * (1 - grow);
+    orb.style.left = `${1110 - grow * 20}px`; orb.style.top = `${560 - grow * 10}px`;
+    orb.style.transform = `scale(${pulse})`; orb.style.opacity = 1 - ramp(t, o.speechStart + 2.6, o.speechStart + 3.0);
+    const press = t > o.speechStart + 1.4 && t < o.speechStart + 1.9;
+    $("o-keys").style.opacity = ramp(t, o.speechStart + 0.6, o.speechStart + 1.0) * (1 - ramp(t, o.speechStart + 2.6, o.speechStart + 3.0));
+    for (const k of $("o-keys").querySelectorAll(".key")) k.style.transform = press ? "translateY(3px)" : "none";
+    $("o-card").style.opacity = ramp(t, o.speechStart + 2.6, o.speechStart + 3.1);
+    const blurt = "lowk wanna learn rust 30 mins a day for 2 wks";
+    const typing = typed(blurt, t, o.speechStart + 3.2, 22);
+    $("o-say").innerHTML = `<b>${typing}</b>${typing.length < blurt.length && t > o.speechStart + 3.1 ? '<span class="caret"></span>' : ""}`;
+    const answerAt = o.speechStart + 3.2 + blurt.length / 22 + 0.5;
+    $("o-reply").textContent = typed("added learn rust. 14 sessions, first mon 19:00.", t, answerAt, 34);
+    const booked = [0, 1, 2, 3, 4, 5, 6].map((col) => {
+      const at = answerAt + 0.25 + col * 0.18;
+      return { col, top: 210, h: 48, label: "rust · 30m", cls: "hot", o: ramp(t, at, at + 0.2) };
+    });
+    weekBlocks($("o-week"), ["M", "T", "W", "T", "F", "S", "S"], [{ col: 5, top: 90, h: 70, label: "gym" }, { col: 2, top: 60, h: 60, label: "school" }, ...booked]);
+    $("o-week").style.opacity = ramp(t, o.speechStart + 2.8, o.speechStart + 3.2);
+  }
+
+  // 4. she refuses, and names what it would cost
+  const r = scene("refuse");
+  if (r && presence(r, t) > 0) {
+    const ask = "book valorant tonight 7pm";
+    const typing = typed(ask, t, r.speechStart + 1.0, 20);
+    $("r-say").innerHTML = `<b>${typing}</b>${typing.length < ask.length ? '<span class="caret"></span>' : ""}`;
+    const stampAt = r.speechStart + 2.9;
+    const stamp = $("r-stamp");
+    stamp.style.opacity = t >= stampAt ? 1 : 0;
+    stamp.style.transform = `rotate(-7deg) scale(${1 + (1 - ramp(t, stampAt, stampAt + 0.25)) * 0.9})`;
+    glitch(stamp, t, stampAt + 0.35, frame);
+    $("r-reply").textContent = typed("that's your rust session. 4 left and 4 days to do them in. drop one and it doesn't get finished. still?", t, r.speechStart + 4.2, 26);
+  }
+
+  // 5. she notices the pattern you'd rather not see
+  const pt = scene("patterns");
+  if (pt && presence(pt, t) > 0) {
+    const sats = ["SAT 01", "SAT 08", "SAT 15"];
+    const blocks = sats.map((_, col) => {
+      const at = pt.speechStart + 1.6 + col * 0.55;
+      return { col, top: 90, h: 120, label: "rust · 60m", cls: t > at + 0.35 ? "miss" : "hot", o: ramp(t, pt.speechStart + 0.3 + col * 0.2, pt.speechStart + 0.6 + col * 0.2) };
+    });
+    weekBlocks($("pt-week"), sats, blocks);
+    $("pt-reply").textContent = typed("3 saturdays booked, 3 missed. want me to stop booking saturdays?", t, pt.speechStart + 3.4, 26);
+  }
+
+  // 6. at night she goes looking
+  const n = scene("night");
+  if (n && presence(n, t) > 0) {
+    $("n-scan").style.left = `${((t - n.start) * 420) % 1400 - 60}px`;
+    const found = [["HACKATHON", "closes dec 04"], ["SUMMER RESEARCH PROGRAMME", "closes jan 15"], ["OPEN-SOURCE GRANT", "rolling"]];
+    $("n-rows").innerHTML = found.map(([name, when], i) => {
+      const at = n.speechStart + 1.4 + i * 0.7;
+      return `<div class="row" style="opacity:${ramp(t, at, at + 0.3)}"><span>${name}</span><span style="color:var(--amber)">${when}</span></div>`;
+    }).join("");
+    $("n-brief").style.opacity = ramp(t, n.speechStart + 4.2, n.speechStart + 4.6);
+    $("n-brief-text").textContent = typed("found 3 overnight: hackathon (closes dec 04), summer research programme (closes jan 15) and open-source grant.", t, n.speechStart + 4.6, 60);
+  }
+
+  // 7. what runs where
+  const l = scene("local");
+  if (l && presence(l, t) > 0) {
+    const draw = (id, a, b) => {
+      const el = $(id); const len = el.getTotalLength();
+      el.style.strokeDasharray = len; el.style.strokeDashoffset = len * (1 - ramp(t, a, b));
+    };
+    const s0 = l.speechStart;
+    $("l-you").style.opacity = ramp(t, s0 + 0.2, s0 + 0.6);
+    draw("l-p1", s0 + 0.6, s0 + 1.3);
+    $("l-donna").style.opacity = ramp(t, s0 + 1.1, s0 + 1.5);
+    $("l-badge").style.opacity = ramp(t, s0 + 3.2, s0 + 3.7);
+    draw("l-p2", s0 + 5.4, s0 + 6.2);
+    $("l-comp").style.opacity = ramp(t, s0 + 6.0, s0 + 6.5);
+    draw("l-p3", s0 + 9.6, s0 + 10.4);
+    $("l-model").style.opacity = ramp(t, s0 + 10.2, s0 + 10.7);
+  }
+
+  // 8. the calendar you keep, and a reminder on the minute
+  const c = scene("clock");
+  if (c && presence(c, t) > 0) {
+    weekBlocks($("c-week"), ["TUE", "WED", "THU"], [
+      { col: 0, top: 150, h: 90, label: "physics tuition", o: ramp(t, c.start + 0.3, c.start + 0.7) },
+      { col: 1, top: 70, h: 60, label: "essay draft", cls: "hot" },
+      { col: 2, top: 190, h: 60, label: "rust · 30m", cls: "hot" },
+    ]);
+    // The clock reaches 17:30:00 exactly as the toast lands.
+    const toastAt = c.speechStart + 2.4;
+    const secs = 17 * 3600 + 30 * 60 - Math.max(0, Math.round((toastAt - t) * 4));
+    const pad = (x) => String(x).padStart(2, "0");
+    $("c-time").textContent = `${pad(Math.floor(secs / 3600))}:${pad(Math.floor(secs / 60) % 60)}:${pad(secs % 60)}`;
+    $("c-time").style.color = t >= toastAt ? "var(--cyan)" : "var(--text)";
+    $("c-toast").style.opacity = ramp(t, toastAt, toastAt + 0.2);
+    $("c-toast").style.transform = `translateX(${(1 - ramp(t, toastAt, toastAt + 0.3)) * 40}px)`;
+  }
+
+  // 9. name and the line
+  const e = scene("end");
+  if (e) {
+    $("s-end").style.opacity = t < e.start ? 0 : ramp(t, e.start, e.start + 0.3) * (1 - ramp(t, e.end - 0.6, e.end));
+    const name = $("e-name");
+    name.style.opacity = ramp(t, e.start, e.start + 0.2);
+    glitch(name, t, e.start + 0.5, frame);
+    $("e-line").style.opacity = ramp(t, e.speechStart + 0.6, e.speechStart + 1.1);
+    $("e-key").style.opacity = ramp(t, e.speechEnd + 0.2, e.speechEnd + 0.7);
+  }
+
+  // HUD, captions and progress
+  const current = TIMELINE.findIndex((s) => t >= s.start && t < s.end);
+  const shown = current === -1 ? TIMELINE.length - 1 : current;
+  const visible = ["hook", "problem", "orb", "refuse", "patterns", "night", "local", "clock", "end"];
+  const idx = Math.max(0, visible.indexOf(TIMELINE[shown]?.id === "turn" ? "hook" : TIMELINE[shown]?.id));
+  $("hud-scene").textContent = `${String(idx + 1).padStart(2, "0")}/09`;
+  const pad2 = (x) => String(x).padStart(2, "0");
+  $("hud-tc").textContent = `${pad2(Math.floor(t / 60))}:${pad2(Math.floor(t) % 60)}:${pad2(frame % FPS)}`;
+  $("hud-rec").style.opacity = Math.floor(t * 1.5) % 2 ? 0.25 : 1;
+  $("bar").style.width = `${(t / total) * 100}%`;
+
+  // Captions follow the voice sentence by sentence, timed by each sentence's share of the line.
+  const speaking = TIMELINE.find((s) => t >= s.speechStart && t <= s.speechEnd + 0.25);
+  let caption = "";
+  if (speaking) {
+    const sentences = speaking.text.match(/[^.?!]+[.?!]+/g) || [speaking.text];
+    const lengths = sentences.map((x) => x.length);
+    const whole = lengths.reduce((a, b) => a + b, 0);
+    let at = speaking.speechStart;
+    for (const [i, sentence] of sentences.entries()) {
+      const until = at + ((speaking.speechEnd - speaking.speechStart) * lengths[i]) / whole;
+      if (t <= until + 0.25 || i === sentences.length - 1) { caption = sentence.trim(); break; }
+      at = until;
+    }
+  }
+  $("cap").textContent = caption;
+  $("cap").style.opacity = caption ? 1 : 0;
+}
+
+window.renderAt = renderAt;
+window.filmLength = () => (TIMELINE.length ? TIMELINE[TIMELINE.length - 1].end : 0);
+if (TIMELINE.length) renderAt(0);
+</script>
+</body>
+</html>
