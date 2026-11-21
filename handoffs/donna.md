@@ -39,7 +39,7 @@ It is for personal use. The name is Donna Paulsen, from Suits.
   survives; the new plan data lives under `donna_plan`.
 
 ## What is built and verified
-305 tests pass: `cd donna && npm test` (284 unit + 21 Playwright e2e). The e2e suite takes
+386 tests pass: `cd donna && npm test` (unit, fuzz and Playwright e2e), plus 5 Rust tests via `cargo test` in `src-tauri`. The e2e suite takes
 `CHROMIUM_PATH` so it can run against a browser Playwright didn't install itself — in the cloud
 container, `CHROMIUM_PATH=/opt/pw-browsers/chromium npm test`.
 
@@ -148,14 +148,39 @@ Don't re-derive these.
 Not switched: the model choice is the user's call. Qwen's failures are behavioural, not speed;
 the override one would need a code-side "pending objection" so a yes confirms without the model.
 
+## Fixed overnight, 21-22 Nov (all tested, all pushed)
+- **Reminders never fired in the background.** Tauri's default suspends a hidden webview's timers
+  after ~5 min; Donna is hidden nearly always. Both windows now set `backgroundThrottling: "disabled"`
+  (macOS 14+), pinned by `test/config.test.js` since only a Mac can show it.
+- **Reminders fired on the wrong day / wrong half of the day / not at all.** `tomorrow at 9am` fired
+  today, `at 5` at 2pm meant 05:00, `tomorrow at 5` meant 05:00, and anything the old regex missed
+  fell to the model, which has no reminder tool. Now chrono-node; bare hours follow the waking-day
+  rule; no time gets "when?" and a reply of just a time finishes it. They fire within ~3s of their
+  moment (a timer aimed at the next one), and she says the real time back: "i'll say fri 09:00".
+- **Broken saved data blanked the window** (10 of 18 seeded shapes crashed). Both stores sanitise on
+  load; independent review confirmed nothing the app itself writes is ever dropped.
+- **Coming back after a break piled every missed session onto tomorrow** (14 on one day). Misses older
+  than a week are left as history; at most the three most recent carry forward.
+- **Model replies in other shapes** — string tool arguments, malformed calls, non-JSON bodies — are
+  read instead of crashing; an Ollama failure now says Ollama's reason ("out of memory").
+- **The week shows deadlines and reminders** on the calendar itself, plus a session's goal/priority/due
+  on hover and one "not booked:" line that only appears when needed.
+- **`test/fuzz.test.js`**: seeded property tests over ~2,800 random plans (never double-books, never
+  says "undefined"); checked for teeth by planting two bugs, both caught.
+
 ## Next, in order
-1. **Speed is the blocker** (48s/turn on Gemma). Options: (a) cut prefill (below);
-   (b) Qwen 4B plus code-side fixes for its two failures — the user decides; (c) find out why
-   gemma4's prefix cache isn't reused on MLX — fixing that alone roughly halves a turn.
-   **Cut prefill.** ~900 of ~2000 prompt tokens are `profile.md`, which is the *generic*
-   slang baseline a 12B already knows. Options, best first: send the user text through
-   `idiolect.normalize` and drop the profile from the prompt; shorten tool descriptions; find out
-   why the MLX runner rarely reuses the prefix cache. Measure with the timing fields after each.
+1. **Speed: the cause is found, the fix is one command on the Mac.** Measured on the user's Mac
+   (22 Nov 2026): an identical 1,620-token prompt sent twice took **30.1s then 31.3s** — zero prefix
+   cache reuse. That is Ollama's MLX engine ([ollama/ollama#17829](https://github.com/ollama/ollama/issues/17829));
+   since v0.40 MLX is the default on Apple Silicon, and `ollama ps` shows `RUNNER mlx`. Prefill is
+   **54 tok/s**; a call carries **~935 tokens of prompt + ~605 of tool schemas = ~1,540** (the old
+   "900-token profile" figure was wrong: `profileForPrompt` already strips the tables, so only 212
+   reach the model — do not cut the profile on that basis). Fix to try first:
+   `ollama pull --runner llamacpp gemma4:12b`, then confirm `ollama ps` says `llamacpp` and re-run
+   the two-shot probe — run 2 should fall to near zero. Already done in code: a finished booking is
+   confirmed without a second model call (halves a booking turn). Generation was also 2-4 tok/s
+   against 12 the day before, with 5.9GB of 7.2GB swap in use — memory pressure with `tauri dev`
+   running; a 4B model (Qwen 3.5) would not swap at all.
 2. **Check the desktop panel by eye.** `npm run tauri dev` builds (1m47s) and runs with no
    panics, but macOS blocked both synthetic keystrokes and screenshots for Claude, so nobody has
    seen the panel yet: press Option+D, check it anchors right, a blurt reaches Ollama (CSP),
