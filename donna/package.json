@@ -9,12 +9,13 @@
     "build": "vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "test": "node --test test/"
+    "test": "node --test test/*.test.js"
   },
   "license": "MIT",
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/plugin-notification": "^2.8.1",
+    "chrono-node": "^2.10.3",
     "date-fns": "^4.4.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"

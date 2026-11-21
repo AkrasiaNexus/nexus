@@ -2,10 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { parseBlurt, getNudgeSchedule } from "../src/lib/parser.js";
 
-const NOW = Date.UTC(2026, 10, 10, 9, 0, 0);
+const NOW = new Date(2026, 10, 10, 9, 0, 0).getTime(); // Tuesday 10 November 2026, local
 const DAY = 86_400_000;
 const parse = (text) => parseBlurt(text, NOW);
-const days = (item) => item.timeframeMs / DAY;
+const days = (item) => Math.round(item.timeframeMs / DAY);
 
 test("reads a plain timeframe and turns the rest into a title", () => {
   const item = parse("learn rust 2 weeks");
@@ -34,8 +34,8 @@ test("understands minutes, hours, days, months and short forms", () => {
   assert.equal(parse("call mom in 30 mins").timeframeMs, 30 * 60_000);
   assert.equal(parse("stretch 2h").timeframeMs, 2 * 3_600_000);
   assert.equal(days(parse("read the paper 3 days")), 3);
-  assert.equal(days(parse("get into piano 3 months")), 90);
-  assert.equal(days(parse("ship it next week")), 14);
+  assert.equal(days(parse("get into piano 3 months")), 92);
+  assert.equal(days(parse("ship it next week")), 7);
 });
 
 test("defaults to one week when no timeframe is given", () => {
@@ -64,4 +64,60 @@ test("nudge schedule checks in at 25, 50, 75 and 100 percent", () => {
   assert.deepEqual(schedule.map((n) => n.pct), [25, 50, 75, 100]);
   assert.deepEqual(schedule.map((n) => n.at), [2, 4, 6, 8].map((d) => new Date(NOW + d * DAY).toISOString()));
   assert.deepEqual(schedule.map((n) => n.tone), ["gentle", "firm", "firm", "urgent"]);
+});
+
+test("reads a weekday, an absolute date and a time of day", () => {
+  // Bare "friday" is the one coming up; "next friday" is next week's. NOW is a Tuesday.
+  assert.equal(new Date(parse("essay due friday").deadline).getDate(), 13);
+  const friday = new Date(parse("essay due next friday").deadline);
+  assert.equal(friday.getDay(), 5);
+  assert.equal(friday.getDate(), 20);
+
+  const ucas = new Date(parse("submit UCAS by jan 15").deadline);
+  assert.equal(ucas.getFullYear(), 2027);
+  assert.equal(ucas.getMonth(), 0);
+  assert.equal(ucas.getDate(), 15);
+
+  const gym = new Date(parse("gym tomorrow at 6am").deadline);
+  assert.equal(gym.getDate(), 11);
+  assert.equal(gym.getHours(), 6);
+});
+
+test("the date it read is taken out of the title", () => {
+  assert.equal(parse("essay due next friday").title, "Essay due");
+  assert.equal(parse("interview next tuesday 2pm").title, "Interview");
+  assert.equal(parse("submit UCAS by jan 15").title, "Submit UCAS");
+});
+
+test("abbreviated units still read", () => {
+  assert.equal(days(parse("learn rust 2 wks")), 14);
+  assert.equal(days(parse("do it in 3 mo")), 92);
+  assert.equal(parse("stretch 30 min").timeframeMs, 30 * 60_000);
+});
+
+test("'this week' and 'this month' mean by the end of one, not the start", () => {
+  assert.equal(days(parse("gym 3x this week")), 7);
+  assert.equal(days(parse("build 2 drones this month")), 30);
+});
+
+test("a date already gone is not a deadline", () => {
+  assert.equal(days(parse("essay due yesterday")), 7);
+});
+
+test("'today' is due by the end of today, not seven days out", () => {
+  assert.equal(parse("gym today").timeframeMs, 12 * 3_600_000);
+  assert.equal(parse("gym today").title, "Gym");
+});
+
+test("a bare month name in prose is not a deadline", () => {
+  const march = parse("march madness bracket");
+  assert.equal(days(march), 7, "no date was given, so the default stands");
+  assert.equal(march.title, "March madness bracket", "and the word stays in the title");
+  assert.equal(parse("august plans").title, "August plans");
+  // A written-out duration keeps working: it is a number of months, not a month.
+  assert.equal(days(parse("get into piano 3 months")), 92);
+});
+
+test("a timeframe under a minute is not a deadline", () => {
+  assert.equal(days(parse("see you in a sec")), 7);
 });
