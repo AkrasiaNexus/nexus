@@ -1,4 +1,4 @@
-import { today, nowMin, toMin, fromMin, addDays } from "../lib/time";
+import { today, nowMin, toMin, fromMin, addDays, isYmd } from "../lib/time";
 import { findClash, freeSlots, DAY_START, DAY_END } from "../lib/schedule";
 import { rollOverMissed } from "../lib/backlog";
 import { topUpGoals } from "../lib/topup";
@@ -8,10 +8,48 @@ import { blockStartMs } from "../lib/reminders";
 const STORAGE_KEY = "donna_plan";
 const EMPTY = { blocks: [], fixed: [], reminders: [], memories: [], findings: [], events: [], sweptOn: null, askedOn: null, researchedOn: null, calendarAt: null };
 
+const isObject = (x) => x !== null && typeof x === "object" && !Array.isArray(x);
+const isText = (x) => typeof x === "string" && x.length > 0;
+const isClock = (x) => {
+  try {
+    toMin(x);
+    return true;
+  } catch {
+    return false;
+  }
+};
+const listOf = (value, keep) => (Array.isArray(value) ? value.filter((x) => isObject(x) && keep(x)) : []);
+const isTimed = (x) => isText(x.id) && isText(x.title) && isYmd(x.date) && isClock(x.start) && Number.isFinite(x.minutes) && x.minutes > 0;
+
+// Saved data is untrusted input: it was written by older versions of this app, survived a
+// crash, or was edited by hand, and one malformed entry used to take the whole window down
+// (seen as a blank white window on the first desktop run). Anything that cannot be drawn or
+// scheduled is dropped here, once, rather than guarded against everywhere it is read.
+function sanitize(saved) {
+  if (!isObject(saved)) return { ...EMPTY };
+  return {
+    ...EMPTY,
+    blocks: listOf(saved.blocks, (b) => isTimed(b) && (b.itemId === null || b.itemId === undefined || isText(b.itemId))),
+    events: listOf(saved.events, isTimed),
+    fixed: listOf(saved.fixed, (f) =>
+      isText(f.id) && isText(f.title) && Array.isArray(f.days) && f.days.length > 0 &&
+      f.days.every((d) => Number.isInteger(d) && d >= 0 && d <= 6) && isClock(f.start) && isClock(f.end)),
+    reminders: listOf(saved.reminders, (r) => isText(r.id) && isText(r.text) && (r.at === null || Number.isFinite(r.at))),
+    memories: listOf(saved.memories, (m) => isText(m.id) && isText(m.text)),
+    findings: listOf(saved.findings, (f) => isText(f.id) && isText(f.title)),
+    sweptOn: isYmd(saved.sweptOn) ? saved.sweptOn : null,
+    askedOn: isYmd(saved.askedOn) ? saved.askedOn : null,
+    researchedOn: isYmd(saved.researchedOn) ? saved.researchedOn : null,
+    // A non-number here made `now - calendarAt` NaN, and NaN is never stale: the calendar
+    // would have silently stopped refreshing for good.
+    calendarAt: Number.isFinite(saved.calendarAt) ? saved.calendarAt : null,
+  };
+}
+
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? { ...EMPTY, ...JSON.parse(raw) } : { ...EMPTY };
+    return raw ? sanitize(JSON.parse(raw)) : { ...EMPTY };
   } catch {
     return { ...EMPTY };
   }

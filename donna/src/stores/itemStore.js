@@ -7,10 +7,20 @@ const PROFILE = parseProfile(profileText);
 
 const STORAGE_KEY = "nudge_items";
 
+// Saved items are untrusted for the same reason the plan is (see sanitize in planStore): an
+// entry that is not an object, or has no title or no readable deadline, cannot be scheduled
+// or drawn, and used to crash the window instead.
+const isItem = (x) =>
+  x !== null && typeof x === "object" && typeof x.id === "string" && x.id &&
+  typeof x.title === "string" && typeof x.status === "string" && !isNaN(new Date(x.deadline));
+
 function loadItems() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const saved = raw ? JSON.parse(raw) : [];
+    return Array.isArray(saved)
+      ? saved.filter(isItem).map((item) => ({ ...item, nudges: Array.isArray(item.nudges) ? item.nudges : [] }))
+      : [];
   } catch {
     return [];
   }

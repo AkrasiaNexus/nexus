@@ -620,3 +620,48 @@ test("she offers to block time for a deadline she found, and booking it clears t
 
   await context.close();
 });
+
+// Whatever is already saved on a real machine came from older versions of this app, a crash,
+// or a hand edit. None of it may take the window down: a blank white window was seen on the
+// first real desktop run, and bad saved data produces exactly that.
+const CORRUPT = {
+  "items are null": { nudge_items: "null" },
+  "items are an object, not a list": { nudge_items: "{}" },
+  "items are not JSON": { nudge_items: "not json at all" },
+  "items hold junk entries": { nudge_items: JSON.stringify([null, 5, "x", { id: "a" }, { id: "b", title: "No deadline", status: "active" }]) },
+  "plan is null": { donna_plan: "null" },
+  "plan is a list": { donna_plan: "[1,2,3]" },
+  "plan is not JSON": { donna_plan: "{broken" },
+  "plan fields have the wrong types": { donna_plan: JSON.stringify({ blocks: null, fixed: "school", events: 5, reminders: {}, memories: "x", findings: null }) },
+  "plan entries are missing fields": {
+    donna_plan: JSON.stringify({
+      blocks: [null, { id: "b1" }, { id: "b2", title: "Half", date: "2026-11-24" }, { id: "b3", title: "Bad", date: "not a date", start: "25:99", minutes: -5 }],
+      fixed: [{ id: "f1" }, { id: "f2", title: "School", days: "weekdays", start: "08:00", end: "14:00" }],
+      events: [{ id: "e1" }, { title: "Bad", date: "2026-11-24", start: "nope", minutes: "lots" }],
+    }),
+  },
+};
+
+for (const [name, seed] of Object.entries(CORRUPT)) {
+  for (const view of ["", "?view=orb"]) {
+    test(`the ${view ? "orb" : "week"} still draws when saved data is broken: ${name}`, async () => {
+      const context = await browser.newContext();
+      const page = await context.newPage();
+      const errors = [];
+      page.on("pageerror", (e) => errors.push(String(e)));
+      await page.addInitScript((pairs) => {
+        for (const [key, value] of Object.entries(pairs)) localStorage.setItem(key, value);
+      }, seed);
+
+      await page.goto(base + view);
+      await page.waitForTimeout(800);
+
+      assert.deepEqual(errors, [], "nothing threw");
+      const drawn = view
+        ? await page.getByRole("button", { name: /Ask Donna|Donna/ }).count()
+        : await page.getByText(/This week|Nov|Dec|Jan/).count();
+      assert.ok(drawn > 0, "and something was drawn, not a blank window");
+      await context.close();
+    });
+  }
+}
