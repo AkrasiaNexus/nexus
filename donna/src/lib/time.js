@@ -25,7 +25,8 @@ export function toMin(clock) {
 
 export const fromMin = (minutes) => `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
 
-export const isYmd = (text) => /^\d{4}-\d{2}-\d{2}$/.test(String(text)) && !isNaN(parseYmd(text));
+// Round-trips so a date that doesn't exist (Feb 31 rolls over to Mar 3) is refused.
+export const isYmd = (text) => /^\d{4}-\d{2}-\d{2}$/.test(String(text)) && ymd(parseYmd(text)) === text;
 
 export const today = () => ymd(new Date());
 

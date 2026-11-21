@@ -33,7 +33,7 @@ test("a deadline late on the day itself still counts", () => {
 
 test("the soonest deadline is the one that leads", () => {
   const later = item({ id: "late", deadline: `${TODAY}T20:00:00` });
-  const sooner = item({ id: "soon", deadline: "2026-11-22T09:00:00" });
+  const sooner = item({ id: "soon", deadline: "2026-11-23T09:00:00" });
 
   assert.deepEqual(pendingDeadlines([later, sooner], TODAY).map((i) => i.id), ["soon", "late"]);
 });
@@ -53,4 +53,17 @@ test("the objection counts the others rather than listing them all", () => {
   const items = [item(), item({ id: "i2", title: "Essay" }), item({ id: "i3", title: "Lab report" })];
 
   assert.match(objection(items, TODAY), /\(and 2 more\)/);
+});
+
+test("something forgotten last week no longer blocks every booking forever", () => {
+  const forgotten = item({ deadline: "2026-11-17T18:00:00" });
+
+  assert.equal(requiresConfirmation([forgotten], TODAY), false);
+});
+
+test("something that went overdue yesterday still counts", () => {
+  const yesterday = item({ deadline: "2026-11-23T21:00:00" });
+
+  assert.equal(requiresConfirmation([yesterday], TODAY), true);
+  assert.match(objection([yesterday], TODAY), /already overdue/);
 });

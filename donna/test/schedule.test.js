@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { toMin, fromMin, addDays, isYmd, parseYmd } from "../src/lib/time.js";
-import { busyOn, freeSlots, findClash } from "../src/lib/schedule.js";
+import { busyOn, freeSlots, findClash, goalSessions } from "../src/lib/schedule.js";
 
 const DATE = "2026-11-24";
 const WD = parseYmd(DATE).getDay();
@@ -111,4 +111,42 @@ test("findClash ignores the block being moved so it does not clash with itself",
 
   assert.equal(findClash(s, DATE, toMin("19:00"), 60, "b1"), undefined);
   assert.equal(findClash(s, DATE, toMin("19:00"), 60).title, "Rust");
+});
+
+// Far-future dates so "today" never clamps the first slot to the current time.
+const MON = "2099-01-05";
+
+test("goal sessions: one a day from the start date through the due date, in each day's first free gap", () => {
+  const state = { blocks: [{ id: "b1", date: MON, start: "07:00", minutes: 60, title: "Gym" }], fixed: [] };
+
+  const sessions = goalSessions(state, { fromDate: MON, due: "2099-01-07", minutes: 30 });
+
+  assert.deepEqual(sessions, [
+    { date: "2099-01-05", start: "08:00", minutes: 30 },
+    { date: "2099-01-06", start: "07:00", minutes: 30 },
+    { date: "2099-01-07", start: "07:00", minutes: 30 },
+  ]);
+});
+
+test("goal sessions skip a day with no room rather than double-booking it", () => {
+  const state = { blocks: [], fixed: [{ id: "f1", title: "School", days: [1], start: "07:00", end: "23:00" }] };
+
+  const sessions = goalSessions(state, { fromDate: MON, due: "2099-01-06", minutes: 30 });
+
+  assert.deepEqual(sessions.map((s) => s.date), ["2099-01-06"]);
+});
+
+test("goal sessions stop at two weeks, however far off the deadline is", () => {
+  const sessions = goalSessions({ blocks: [], fixed: [] }, { fromDate: MON, due: "2099-06-01", minutes: 30 });
+
+  assert.equal(sessions.length, 14);
+});
+
+test("goal sessions are empty when the due date has already passed", () => {
+  assert.deepEqual(goalSessions({ blocks: [], fixed: [] }, { fromDate: MON, due: "2099-01-01", minutes: 30 }), []);
+});
+
+test("isYmd rejects dates that do not exist, like Feb 31", () => {
+  assert.equal(isYmd("2026-02-31"), false);
+  assert.equal(isYmd("2028-02-29"), true);
 });

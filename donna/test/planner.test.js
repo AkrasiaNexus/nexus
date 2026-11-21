@@ -221,7 +221,7 @@ test("a goal needs a real due date and a sane number of minutes a day", () => {
 
   assert.throws(() => run(api, "add_goal", { title: "Rust", due: "in 2 weeks", minutes_per_day: 30 }));
   assert.throws(() => run(api, "add_goal", { title: "Rust", due: "2026-12-05", minutes_per_day: 0 }));
-  assert.deepEqual(run(api, "add_goal", { title: "Rust", due: "2026-12-05", minutes_per_day: 30 }), { id: "g1" });
+  assert.equal(run(api, "add_goal", { title: "Rust", due: "2026-12-05", minutes_per_day: 30 }).id, "g1");
 });
 
 test("a weekly commitment needs weekdays 0-6 and an end after its start", () => {
@@ -316,4 +316,76 @@ test("only active goals reach the prompt, and a corrupt deadline does not print 
 
   assert.ok(!prompt.includes("Old essay"));
   assert.ok(!prompt.includes("NaN"));
+});
+
+test("adding a goal books its daily sessions in the same call and says when", async () => {
+  const { today: todayYmd, addDays: plusDays } = await import("../src/lib/time.js");
+  const { api, booked } = tools();
+  const due = plusDays(todayYmd(), 2);
+
+  const result = run(api, "add_goal", { title: "Rust", due, minutes_per_day: 30 });
+
+  assert.equal(result.id, "g1");
+  assert.ok(booked.length >= 2, "tomorrow and the day after at least");
+  assert.ok(booked.every((b) => b.goal_id === "g1" && b.minutes === 30 && b.title === "Rust"));
+  assert.deepEqual(result.booked, booked.map(({ date, start }) => `${date} ${start}`));
+});
+
+test("the prompt tells the model add_goal books the sessions, so it does not promise and forget", () => {
+  const prompt = systemPrompt({ plan: { blocks: [], fixed: [] }, items: [], profile: "" });
+
+  assert.match(prompt, /add_goal books (its|the) daily sessions/);
+});
+
+test("the prompt says a stated duration is the deadline, so 'for 2 weeks' is not asked again", () => {
+  const prompt = systemPrompt({ plan: { blocks: [], fixed: [] }, items: [], profile: "" });
+
+  assert.match(prompt, /"for 2 weeks".*deadline/);
+});
+
+test("add_goal never throws after the goal is saved, so the model cannot retry it into a duplicate", async () => {
+  const { today: todayYmd, addDays: plusDays } = await import("../src/lib/time.js");
+  let calls = 0;
+  const api = createTools({
+    plan: () => ({ blocks: [], fixed: [] }), items: () => [],
+    onAddGoal: () => ({ id: "g1" }),
+    onSchedule: () => { if (++calls === 2) throw new Error("clashes with Gym at 07:00"); return {}; },
+  });
+
+  const result = run(api, "add_goal", { title: "Rust", due: plusDays(todayYmd(), 3), minutes_per_day: 30 });
+
+  assert.equal(result.id, "g1");
+  assert.equal(result.skipped.length, 1);
+  assert.match(result.skipped[0], /clashes/);
+});
+
+test("auto-booked goal sessions leave a day alone when something else is due that day", async () => {
+  const { today: todayYmd, addDays: plusDays } = await import("../src/lib/time.js");
+  const tomorrow = plusDays(todayYmd(), 1);
+  const { api, booked } = tools({ items: [{ ...dueItem, deadline: `${tomorrow}T18:00:00` }] });
+
+  const result = run(api, "add_goal", { title: "Rust", due: plusDays(todayYmd(), 3), minutes_per_day: 30 });
+
+  assert.ok(!booked.some((b) => b.date === tomorrow), "tomorrow is for the physics pset");
+  assert.ok(result.skipped.some((s) => s.startsWith(tomorrow)));
+});
+
+test("a goal due in the past is refused, and one where nothing fits says so", async () => {
+  const { today: todayYmd, addDays: plusDays } = await import("../src/lib/time.js");
+  const full = { blocks: [], fixed: [{ id: "f", title: "Busy", days: [0, 1, 2, 3, 4, 5, 6], start: "07:00", end: "23:00" }] };
+  const api = createTools({ plan: () => full, items: () => [], onAddGoal: () => ({ id: "g1" }), onSchedule: () => ({}) });
+
+  assert.throws(() => run(api, "add_goal", { title: "Rust", due: plusDays(todayYmd(), -1), minutes_per_day: 30 }));
+  const result = run(api, "add_goal", { title: "Rust", due: plusDays(todayYmd(), 2), minutes_per_day: 30 });
+  assert.deepEqual(result.booked, []);
+  assert.match(result.note, /nothing fit/);
+});
+
+test("a goal longer than the booking horizon says the rest is not booked yet", async () => {
+  const { today: todayYmd, addDays: plusDays } = await import("../src/lib/time.js");
+  const { api } = tools();
+
+  const result = run(api, "add_goal", { title: "Rust", due: plusDays(todayYmd(), 40), minutes_per_day: 30 });
+
+  assert.match(result.note, /first 14 days/);
 });

@@ -39,7 +39,7 @@ It is for personal use. The name is Donna Paulsen, from Suits.
   survives; the new plan data lives under `donna_plan`.
 
 ## What is built and verified
-100 tests pass on the Mac: `cd donna && npm test` (93 unit + 7 Playwright e2e). The e2e tests
+114 tests pass on the Mac: `cd donna && npm test` (107 unit + 7 Playwright e2e). The e2e tests
 ran for the first time on 21 Nov 2026, after `npm ci` and `npx playwright install chromium`.
 
 | Area | Files |
@@ -89,25 +89,52 @@ Don't re-derive these.
 - Fixed from real runs: one-off sessions were treated as goals (asked for a deadline for "gym at
   6pm"); deadlines went over as UTC ISO and the model read 19:00Z as "due at 7pm"; the prompt
   had no clock time, so "in 5 mins" was booked at 07:05.
+- **Prefix cache is NOT reused by gemma4 on MLX**: the 2nd call of a turn re-prefills all
+  ~2050 tokens (31.7s). Qwen on the same MLX runner *does* reuse it (2317 tok in 0.7s).
+- **Goal sessions are booked in code** (`goalSessions` in `schedule.js`, called by `add_goal`):
+  one a day in each day's first free gap, up to the due date, max 14 days. Verified on real
+  Gemma: "learn rust 30 mins a day for 2 weeks" → goal due 12-05 + daily sessions, and the
+  reply named the real first slot. "for 2 weeks" now counts as the deadline (prompt).
+  `add_goal` never throws once the goal is saved (a throw made the model retry → duplicate
+  goal): failures come back in `skipped`, and `note` says when nothing fit or the 14-day
+  horizon cut it short. **Decision:** auto sessions *skip* a day where another deadline is
+  pending instead of asking — the user didn't request them, so that day's time is left for
+  what's due. A past `due` is refused.
+- **Pushback only blocks on deadlines due that day or overdue since yesterday**
+  (`OVERDUE_GRACE_DAYS = 1` in `pushback.js`); older items no longer wall off every booking.
+
+### Gemma 4 12B vs Qwen 3.5 4B, same probe (21 Nov 2026)
+| | gemma4:12b | qwen3.5:4b |
+|---|---|---|
+| booking turn (2 calls) | 48-66s | ~17s |
+| "gym at 9pm" / "gym mon wed fri" | ok / ok | ok / ok |
+| "lowk wanna learn rust" (no minutes, no deadline) | asks both | **invents both, books a week** |
+| "30 mins a day, 2 weeks" follow-up | adds goal | **adds a duplicate goal** |
+| pushback refuse | ok | ok |
+| "nah fr i need a break, book it" | books (`confirmed`) | **never confirms: user can't override** |
+Not switched: the model choice is the user's call. Qwen's failures are behavioural, not speed;
+the override one would need a code-side "pending objection" so a yes confirms without the model.
 
 ## Next, in order
-1. **Cut prefill.** ~900 of ~2000 prompt tokens are `profile.md`, which is the *generic*
+1. **Speed is the blocker** (48s/turn on Gemma). Options: (a) cut prefill (below);
+   (b) Qwen 4B plus code-side fixes for its two failures — the user decides; (c) find out why
+   gemma4's prefix cache isn't reused on MLX — fixing that alone roughly halves a turn.
+   **Cut prefill.** ~900 of ~2000 prompt tokens are `profile.md`, which is the *generic*
    slang baseline a 12B already knows. Options, best first: send the user text through
    `idiolect.normalize` and drop the profile from the prompt; shorten tool descriptions; find out
    why the MLX runner rarely reuses the prefix cache. Measure with the timing fields after each.
-2. **Run the app on the Mac**: `cd donna && npm run tauri dev`. Check the panel anchors right,
-   `focused(false)` holds on macOS, and the CSP change lets the webview reach Ollama.
-3. Gemma said "i'll start booking those 30 min sessions now" after `add_goal` and booked none.
-   Either make it book in the same turn (prompt) or have code book goal sessions.
+2. **Check the desktop panel by eye.** `npm run tauri dev` builds (1m47s) and runs with no
+   panics, but macOS blocked both synthetic keystrokes and screenshots for Claude, so nobody has
+   seen the panel yet: press Cmd+Shift+N, check it anchors right, a blurt reaches Ollama (CSP),
+   and a reminder appears without stealing focus.
+3. Goals book at most 14 days ahead; nothing books the weeks after that yet.
 4. The user is designing panel UI and will send references. Build on those when they arrive.
 
 ## Unverified / risks
-- **Desktop (Tauri) run not done yet** — everything above ran in Node and headless Chromium.
+- **Desktop panel unseen** — the app launched, but no one has looked at it (see Next 2).
 - A turn times out after 4 min (`TURN_TIMEOUT_MS` in `useDonna.js`) and unlocks the panel.
 - Reviewed (code + security) before commit; all HIGH/MEDIUM fixed. Not fixed, pre-existing:
   `toMin` in `time.js` accepts `24:01`-`24:59`, so a block can run past midnight.
-- An overdue active item blocks *every* booking until it is done or skipped — by design, but
-  now visible. If it nags, consider only blocking on today's deadlines.
 - `npm test` was silently running zero tests on Node 20 (quoted glob needs Node 21+); now
   `node --test test/`. CI uses Node 22 so it was fine there.
 - The Tauri `identifier` changed to `app.donna.desktop` during the rename, so the macOS app-data

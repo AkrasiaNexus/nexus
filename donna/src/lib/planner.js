@@ -1,6 +1,6 @@
 import { chat } from "./ollama.js";
 import { today, addDays, ymd, fromMin, nowMin, toMin, isYmd, WEEKDAYS } from "./time.js";
-import { freeSlots, DAY_START, DAY_END } from "./schedule.js";
+import { freeSlots, goalSessions, DAY_START, DAY_END, MAX_GOAL_DAYS } from "./schedule.js";
 import { requiresConfirmation, objection } from "./pushback.js";
 
 const MAX_TOOL_ROUNDS = 6;
@@ -53,9 +53,9 @@ Change the plan only through the tools. Never claim you changed something you di
 First decide what they told you about:
 - A one-off thing ("gym at 6pm today for an hour", "call mum tmrw"): schedule_block. It needs no goal and no questions. Missing length: assume 60 minutes.
 - A regular weekly thing ("gym mon wed fri 6-7", school, work): set_fixed.
-- A goal worked toward over days ("learn rust in 2 weeks"): add_goal, then book its sessions.
+- A goal worked toward over days ("learn rust in 2 weeks"): add_goal. add_goal books its daily sessions itself; tell them the days and times it returns.
 - They say when something is: use that time. They don't: pick a slot yourself with find_free_slots, then schedule_block.
-- Only for a goal: you need minutes a day and a deadline. If either is missing, ask one short question and change nothing.
+- Only for a goal: you need minutes a day and a deadline. "for 2 weeks", "in 2 weeks", "by friday" are deadlines: work out the date yourself. If either is missing, ask one short question and change nothing.
 - If they want something booked while another thing is already due, say what's due and ask them to confirm. Do not book it until they say yes.
 - They change their mind ("nah drop rust"): remove_goal. Moving or shrinking: move_block, remove_block.
 
@@ -76,6 +76,33 @@ const schema = (name, description, properties, required) => ({
 
 // The tools close over the stores so the planner stays testable with fakes.
 export function createTools({ plan, items, onSchedule, onRemoveGoal, onSetFixed, onMoveBlock, onRemoveBlock, onAddGoal }) {
+  // Booked in code, not by the model: Gemma said "i'll book those now" and booked nothing.
+  // Never throws: the goal is already saved, and an error would make the model add it twice.
+  // A day where something else is due is left for that thing rather than asked about.
+  function bookGoal(goalId, { title, due, minutes_per_day }) {
+    const others = items().filter((i) => i.id !== goalId);
+    const booked = [];
+    const skipped = [];
+    for (const session of goalSessions(plan(), { fromDate: today(), due, minutes: minutes_per_day })) {
+      const when = `${session.date} ${session.start}`;
+      if (requiresConfirmation(others, session.date)) {
+        skipped.push(`${when}: ${objection(others, session.date)}`);
+        continue;
+      }
+      try {
+        onSchedule({ title, goal_id: goalId, ...session });
+        booked.push(when);
+      } catch (e) {
+        skipped.push(`${when}: ${e.message}`);
+      }
+    }
+    const beyondHorizon = due > addDays(today(), MAX_GOAL_DAYS - 1);
+    const note = !booked.length
+      ? "nothing fit — tell them and offer another time"
+      : beyondHorizon ? `booked the first ${MAX_GOAL_DAYS} days only; the rest gets booked later` : undefined;
+    return { booked, skipped, ...(note && { note }) };
+  }
+
   return [
     {
       ...schema("find_free_slots", "Free gaps of at least `minutes`, searching forward from a date.",
@@ -98,7 +125,9 @@ export function createTools({ plan, items, onSchedule, onRemoveGoal, onSetFixed,
         checkDate(args.due);
         checkMinutes(args.minutes_per_day);
         check(args.priority === undefined || PRIORITIES.includes(args.priority), `priority must be one of ${PRIORITIES.join(", ")}`);
-        return onAddGoal(args);
+        check(args.due >= today(), `due date ${args.due} is already past`);
+        const goal = onAddGoal(args);
+        return { id: goal.id, ...bookGoal(goal.id, args) };
       },
     },
     {

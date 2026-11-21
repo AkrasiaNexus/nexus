@@ -1,12 +1,18 @@
-import { parseYmd, ymd } from "./time.js";
+import { parseYmd, ymd, addDays } from "./time.js";
 
-// Anything unfinished whose deadline lands on or before `onDate`, soonest first.
+// Only fresh deadlines block. Anything older is backlog, not an emergency: one forgotten
+// item from last week must not refuse every booking until it is hunted down.
+const OVERDUE_GRACE_DAYS = 1;
+
+// Anything unfinished due on `onDate`, or overdue since the day before, soonest first.
 export function pendingDeadlines(items, onDate) {
   const cutoff = parseYmd(onDate);
   cutoff.setHours(23, 59, 59, 999);
+  const oldest = parseYmd(addDays(onDate, -OVERDUE_GRACE_DAYS));
 
   return items
-    .filter((item) => item.status === "active" && new Date(item.deadline) <= cutoff)
+    .filter((item) => item.status === "active")
+    .filter((item) => new Date(item.deadline) >= oldest && new Date(item.deadline) <= cutoff)
     .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
 }
 
