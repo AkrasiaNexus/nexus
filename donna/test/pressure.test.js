@@ -78,3 +78,13 @@ test("the warning names the thing, what is left, and the time it has to fit in",
   assert.match(warning, /4/);
   assert.doesNotMatch(warning, /undefined|NaN/);
 });
+
+test("there is no displacement cost for an immovable commitment", () => {
+  const plan = {
+    fixed: [],
+    blocks: [],
+    events: [{ id: "ics:tuition:1", title: "Physics tuition", date: "2026-11-24", start: "16:00", minutes: 90 }],
+  };
+  // A calendar event cannot be traded away, so the caller refuses the slot rather than weighing it.
+  assert.equal(displacementCost(plan, [], { date: "2026-11-24", start: "16:30", minutes: 60 }), null);
+});

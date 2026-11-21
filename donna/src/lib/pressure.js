@@ -11,7 +11,9 @@ const DAY_MS = 86_400_000;
 // loud before anything gets replaced.
 export function displacementCost(plan, items, { date, start, minutes }, fromDate = ymd(new Date())) {
   const hit = findClash(plan, date, toMin(start), minutes);
-  if (!hit || hit.kind === "fixed") return null;
+  // Only a session Donna booked can be displaced. School and a calendar event are immovable,
+  // so there is no cost to weigh — the caller refuses the slot outright instead.
+  if (!hit || hit.kind !== "block") return null;
 
   const block = plan.blocks.find((b) => b.id === hit.id);
   if (!block) return null;

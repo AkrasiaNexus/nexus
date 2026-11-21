@@ -6,6 +6,7 @@ import { getNudgeMessage, getReminderMessage } from "../lib/nudgeMessages";
 import { notify, revealOrb } from "../lib/notify";
 import { planStore } from "../stores/planStore";
 import { shouldResearch, researchOnce } from "../lib/nightly";
+import { refreshCalendar, shouldRefreshCalendar } from "../lib/calendar";
 import { today, nowMin } from "../lib/time";
 
 const LAST_CHECK_KEY = "nudge_last_check";
@@ -49,6 +50,12 @@ export function useNudgeTicker(items) {
       for (const { item, nudge } of dueNudges(itemsRef.current, since, now)) {
         if (scheduled.has(item.id)) continue;
         notify("Donna", getNudgeMessage(nudge.tone, item.title));
+      }
+
+      // Before the sweep books anything: a lesson added to the calendar this morning has to
+      // be busy time before a goal gets topped up into it.
+      if (shouldRefreshCalendar(planStore.getAll(), now)) {
+        refreshCalendar(today()).then((events) => planStore.setEvents(events));
       }
 
       planStore.sweep(itemsRef.current);

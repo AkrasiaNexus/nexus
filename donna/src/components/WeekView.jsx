@@ -106,7 +106,16 @@ function Gutter() {
 
 function Day({ date, plan, categoryOf, minuteNow }) {
   const weekday = parseYmd(date).getDay();
-  const fixed = plan.fixed.filter((f) => f.days.includes(weekday));
+  // A weekly commitment and an event off the subscribed calendar are immovable in the same
+  // way, and neither is something Donna chose, so they draw alike.
+  const commitments = [
+    ...plan.fixed
+      .filter((f) => f.days.includes(weekday))
+      .map((f) => ({ id: f.id, title: f.title, start: f.start, minutes: toMin(f.end) - toMin(f.start) })),
+    ...(plan.events ?? [])
+      .filter((e) => e.date === date)
+      .map((e) => ({ id: e.id, title: e.title, start: e.start, minutes: e.minutes })),
+  ];
   const sessions = plan.blocks.filter((b) => b.date === date);
   const rows = (DAY_END - DAY_START) / 60;
 
@@ -122,13 +131,13 @@ function Day({ date, plan, categoryOf, minuteNow }) {
           <div key={i} className="h-[42px] border-b border-donna-border/40" />
         ))}
 
-        {fixed.map((f) => (
+        {commitments.map((c) => (
           <div
-            key={f.id}
+            key={c.id}
             className="absolute left-[3px] right-[3px] rounded px-1.5 py-1 overflow-hidden text-donna-faint text-[11px] leading-tight border-l-2 border-donna-border bg-[repeating-linear-gradient(135deg,#ffffff0a_0_4px,transparent_4px_8px)]"
-            style={{ top: yFor(toMin(f.start)), height: ((toMin(f.end) - toMin(f.start)) / 60) * HOUR_PX - 2 }}
+            style={{ top: yFor(toMin(c.start)), height: (c.minutes / 60) * HOUR_PX - 2 }}
           >
-            <span className="block truncate">{f.title}</span>
+            <span className="block truncate">{c.title}</span>
           </div>
         ))}
 

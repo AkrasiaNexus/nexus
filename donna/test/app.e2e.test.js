@@ -48,7 +48,10 @@ const seedWeek = () => {
   localStorage.setItem("donna_plan", JSON.stringify({
     fixed: [{ id: "f1", title: "School", days: [1, 2, 3, 4, 5], start: "08:00", end: "14:30" }],
     blocks: [{ id: "b1", itemId: "i1", title: "Rust ownership", date: day(0), start: "19:00", minutes: 60, done: false }],
+    events: [{ id: "ics:tuition:1", title: "Physics tuition", date: day(0), start: "16:00", minutes: 90 }],
     sweptOn: ymd(d),
+    // Already fresh, so the ticker does not try to fetch a feed inside the test.
+    calendarAt: Date.now(),
   }));
   localStorage.setItem("nudge_items", JSON.stringify([
     { id: "i1", title: "Learn Rust", category: "skill", status: "active", deadline: `${day(6)}T23:00:00`, createdAt: `${ymd(d)}T08:00:00`, nudges: [] },
@@ -63,6 +66,7 @@ test("the week draws booked sessions and fixed commitments where they actually f
 
   await assert.doesNotReject(page.getByText("Rust ownership").waitFor(), "the session is drawn");
   await assert.doesNotReject(page.getByText("School").first().waitFor(), "fixed commitments are drawn behind it");
+  await assert.doesNotReject(page.getByText("Physics tuition").waitFor(), "so is what the subscribed calendar says");
   assert.equal(await page.getByRole("button", { name: /Everything/ }).count(), 0, "the old dashboard is gone");
 
   await context.close();
@@ -359,7 +363,10 @@ test("things with no time booked are visible in the orb, not just sitting in sto
     const date = `${d.getFullYear()}-${q(d.getMonth() + 1)}-${q(d.getDate())}`;
     const far = new Date(Date.now() + 12 * 86_400_000);
     localStorage.setItem("donna_plan", JSON.stringify({
-      fixed: [], reminders: [], sweptOn: date,
+      // askedOn is set because that 19:00 session is already over: without it the evening
+      // question pops the orb open on its own after 21:00 and there is no circle left to
+      // click, which made this test pass or fail depending on the time of day.
+      fixed: [], reminders: [], sweptOn: date, askedOn: date,
       blocks: [{ id: "b1", itemId: "i2", title: "Physics", date, start: "19:00", minutes: 60, done: false }],
     }));
     localStorage.setItem("nudge_items", JSON.stringify([

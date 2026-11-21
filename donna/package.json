@@ -17,6 +17,7 @@
     "@tauri-apps/plugin-notification": "^2.8.1",
     "chrono-node": "^2.10.3",
     "date-fns": "^4.4.0",
+    "ical.js": "^2.2.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
