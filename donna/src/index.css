@@ -39,45 +39,98 @@ input, textarea {
   font: inherit;
 }
 
-/* The orb: a quiet ring, not a glowing blob. Colour lives on calendar blocks, not here. */
+/* The orb. Motion language borrowed from .claude/skills/taste-skill (timing tokens, the one
+   UI ease, reduced-motion rules) and ui-ux-pro-max (stagger values): transforms and opacity
+   only, so everything stays on the compositor thread. No animation library for this. */
+:root {
+  --m-in: 150ms;
+  --m-out: 120ms;
+  --m-press: 90ms;
+  --m-panel: 220ms;
+  --m-ease: cubic-bezier(.2, .8, .2, 1);
+  --m-enter: cubic-bezier(.22, 1, .36, 1);
+  --m-live: 2.4s;
+}
+
 .orb {
   width: 56px; height: 56px; border-radius: 50%; border: 0; cursor: pointer;
   background: theme('colors.donna.surface');
   box-shadow: 0 0 0 1px theme('colors.donna.border'), 0 8px 24px -8px rgb(0 0 0 / 0.6);
-  position: relative; transition: transform 140ms ease;
+  position: relative;
+  animation: orb-wake var(--m-panel) var(--m-enter) both;
+  transition: transform var(--m-out) var(--m-ease);
 }
 .orb::after {
   content: ""; position: absolute; inset: 7px; border-radius: 50%;
-  border: 1.5px solid theme('colors.donna.accent'); opacity: 0.85;
+  border: 1.5px solid theme('colors.donna.text'); opacity: 0.5;
+  transition: opacity var(--m-in) var(--m-ease), inset var(--m-in) var(--m-ease);
 }
+.orb:hover { transform: scale(1.06); }
+.orb:hover::after { opacity: 0.8; inset: 5px; }
+.orb:active { transform: scale(0.97); transition-duration: var(--m-press); }
+
+/* a life sign, not a klaxon: the one thing moving while something waits on you */
 .orb.has-waiting::before {
   content: ""; position: absolute; top: 2px; right: 2px; width: 9px; height: 9px;
   border-radius: 50%; background: theme('colors.donna.text');
   box-shadow: 0 0 0 2.5px theme('colors.donna.surface');
+  animation: orb-live var(--m-live) var(--m-ease) infinite;
 }
-.orb:hover { transform: scale(1.06); }
-.orb:hover::after { opacity: 0.8; }
-.orb:active { transform: scale(0.97); }
 
+/* the card grows out of the corner the orb sits in, not out of its own middle */
 .orb-card {
   margin: 12px; padding: 14px; border-radius: 16px;
   background: theme('colors.donna.surface');
   box-shadow: 0 0 0 1px theme('colors.donna.border'), 0 12px 32px -10px rgb(0 0 0 / 0.65);
+  transform-origin: 100% 100%;
+  animation: orb-open var(--m-panel) var(--m-enter) both;
 }
+
+/* Donna's mark. It has a filled core so it never reads as another empty checkbox
+   sitting above the reminders you can tick off. */
 .orb-mini {
   width: 18px; height: 18px; border-radius: 50%; flex: none; margin-top: 1px;
-  border: 1.5px solid theme('colors.donna.accent');
+  border: 1.5px solid theme('colors.donna.text');
+  position: relative;
 }
-.orb-mini.is-busy { animation: orb-breathe 1.4s ease-in-out infinite; }
-@keyframes orb-breathe { 50% { opacity: 0.35; transform: scale(0.88); } }
-@media (prefers-reduced-motion: reduce) { .orb-mini.is-busy { animation: none; opacity: 0.6; } }
+.orb-mini::after {
+  content: ""; position: absolute; inset: 4px; border-radius: 50%;
+  background: theme('colors.donna.text');
+  transition: inset var(--m-in) var(--m-ease);
+}
+.orb-mini.is-busy::after { inset: 5.5px; }
+.orb-mini.is-busy { animation: orb-breathe 1.4s var(--m-ease) infinite; }
+
+/* reminders arrive one after another, 8px and a beat apart (ui-ux-pro-max: stagger list) */
+.orb-waiting > li {
+  animation: orb-row 260ms var(--m-enter) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
 
 .orb-chip {
   flex: none; font-size: 11.5px; padding: 4px 9px; border-radius: 999px;
   color: theme('colors.donna.muted'); border: 1px solid theme('colors.donna.border');
+  transition: color var(--m-in) var(--m-ease), border-color var(--m-in) var(--m-ease);
 }
-.orb-chip:hover { color: theme('colors.donna.text'); }
+.orb-chip:hover { color: theme('colors.donna.text'); border-color: theme('colors.donna.muted'); }
+.orb-chip:active { transform: scale(.97); }
 
+@keyframes orb-wake { from { opacity: 0; transform: scale(.6); } }
+@keyframes orb-open { from { opacity: 0; transform: scale(.88) translate(6px, 6px); } }
+@keyframes orb-row { from { opacity: 0; transform: translateY(8px); } }
+@keyframes orb-breathe { 50% { opacity: .35; transform: scale(.88); } }
+@keyframes orb-live {
+  0%, 70%, 100% { transform: scale(1); opacity: 1; }
+  35% { transform: scale(1.35); opacity: .65; }
+}
+
+/* colours still change, nothing moves (taste-skill motion.md) */
+@media (prefers-reduced-motion: reduce) {
+  .orb, .orb-card, .orb-waiting > li { animation: none; }
+  .orb:hover, .orb:active, .orb-chip:active { transform: none; }
+  .orb.has-waiting::before { animation: none; }
+  .orb-mini.is-busy { animation: none; opacity: .6; }
+}
 
 /* Blocks are the one place colour carries meaning: which kind of thing a session is. */
 .cat-skill { border-left-color: theme('colors.cat.skill'); background: color-mix(in srgb, theme('colors.cat.skill') 16%, theme('colors.donna.raised')); color: theme('colors.donna.text'); }

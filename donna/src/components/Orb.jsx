@@ -135,13 +135,13 @@ export default function Orb() {
       </div>
 
       {waiting.length > 0 && (
-        <ul className="mt-3 flex flex-col gap-1.5">
-          {waiting.map((r) => (
-            <li key={r.id} className="flex items-center gap-2 text-[13px]">
+        <ul className="orb-waiting mt-3 flex flex-col gap-1.5">
+          {waiting.map((r, i) => (
+            <li key={r.id} style={{ "--i": i }} className="flex items-center gap-2 text-[13px]">
               <button
                 onClick={() => planStore.completeReminder(r.id)}
                 aria-label={`Done: ${r.text}`}
-                className="w-4 h-4 flex-none rounded-full border border-donna-muted hover:border-donna-text hover:bg-donna-raised transition-colors"
+                className="w-4 h-4 flex-none rounded-full border border-donna-muted hover:border-donna-text hover:bg-donna-raised active:scale-90 transition-all duration-150"
               />
               <span className="min-w-0 truncate">{r.text}</span>
             </li>
