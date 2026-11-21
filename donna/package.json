@@ -16,7 +16,6 @@
     "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/plugin-notification": "^2.8.1",
     "date-fns": "^4.4.0",
-    "lucide-react": "^1.71.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Mic } from "lucide-react";
 import { useDonna } from "../hooks/useDonna";
-import { useDictation } from "../hooks/useDictation";
 import { planStore } from "../stores/planStore";
 import { itemStore } from "../stores/itemStore";
 import { dailyBrief, unplanned } from "../lib/brief";
@@ -59,7 +57,6 @@ export default function Orb() {
   // wakes again on every press of the shortcut.
   const [wake, setWake] = useState(0);
   const [text, setText] = useState("");
-  const mic = useDictation((spoken) => { setText(""); say(spoken); });
   const plan = useStore(planStore);
   const items = useStore(itemStore);
   const card = useRef(null);
@@ -305,21 +302,11 @@ export default function Orb() {
         <input
           ref={input}
           id="orb-input"
-          value={mic.listening && mic.heard ? mic.heard : text}
+          value={text}
           onChange={(e) => setText(e.target.value)}
           aria-label="Tell Donna"
           className="flex-1 min-w-0 bg-transparent text-[13.5px] outline-none placeholder:text-donna-faint"
         />
-        <button
-          type="button"
-          onClick={mic.toggle}
-          disabled={!mic.supported}
-          aria-pressed={mic.listening}
-          aria-label={mic.supported ? "Talk to Donna" : "Dictation isn't available in this window"}
-          className={`p-1 rounded ${!mic.supported ? "text-donna-faint/50" : mic.listening ? "text-donna-text" : "text-donna-muted hover:text-donna-text"}`}
-        >
-          <Mic size={14} />
-        </button>
         <button type="button" onClick={brief} className="orb-chip">brief</button>
       </form>
     </div>
