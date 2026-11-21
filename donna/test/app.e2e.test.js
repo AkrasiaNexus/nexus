@@ -625,6 +625,7 @@ test("she offers to block time for a deadline she found, and booking it clears t
 // or a hand edit. None of it may take the window down: a blank white window was seen on the
 // first real desktop run, and bad saved data produces exactly that.
 const CORRUPT = {
+  "nothing saved at all, a first install": {},
   "items are null": { nudge_items: "null" },
   "items are an object, not a list": { nudge_items: "{}" },
   "items are not JSON": { nudge_items: "not json at all" },
