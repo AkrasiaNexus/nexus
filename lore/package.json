@@ -7,7 +7,7 @@
   "scripts": {
     "build": "node tools/build.js",
     "icons": "node tools/make-icons.js",
-    "test": "node --test \"test/*.test.js\""
+    "test": "node --test test/*.test.js"
   },
   "devDependencies": {
     "playwright": "^1.48.0"

@@ -6,6 +6,6 @@
   "license": "MIT",
   "private": true,
   "exports": { ".": "./src/crdt.js", "./code": "./src/code.js" },
-  "scripts": { "test": "node --test \"test/*.test.js\"" },
+  "scripts": { "test": "node --test test/*.test.js" },
   "engines": { "node": ">=22" }
 }
