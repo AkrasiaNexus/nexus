@@ -13,17 +13,18 @@ export async function notify(title, body) {
   if (Notification.permission === "granted") new Notification(title, { body });
 }
 
-export async function hideThisWindow() {
-  if (!isTauri()) return;
-  const { getCurrentWindow } = await import("@tauri-apps/api/window");
-  await getCurrentWindow().hide();
-}
-
 // Hides the orb from Rust, which also hands focus back to whatever was in front.
 export async function dismissOrb() {
   if (!isTauri()) return;
   const { invoke } = await import("@tauri-apps/api/core");
   await invoke("dismiss_orb").catch(() => {});
+}
+
+// Rust sends this when you switch desktop, so the orb is not left behind on every Space.
+export async function onOrbAway(handler) {
+  if (!isTauri()) return () => {};
+  const { listen } = await import("@tauri-apps/api/event");
+  return listen("orb-away", handler);
 }
 
 // Wakes the orb without taking keyboard focus (see `announce` in main.rs).

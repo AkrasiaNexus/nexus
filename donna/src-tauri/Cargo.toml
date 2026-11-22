@@ -17,3 +17,5 @@ serde_json = "1"
 # The orb has to show over other apps' full-screen Spaces, which a plain NSWindow cannot join.
 [target.'cfg(target_os = "macos")'.dependencies]
 tauri-nspanel = "2.1"
+# The block that hears about a desktop switch.
+block2 = "0.6"

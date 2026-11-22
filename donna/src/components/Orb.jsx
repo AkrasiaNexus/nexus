@@ -10,7 +10,7 @@ import { outstanding } from "../lib/remind";
 import { unfinishedToday, shouldAskAboutToday } from "../lib/dayend";
 import { useStore } from "../hooks/useStore";
 import { today, nowMin, parseYmd, ymd, clock12 } from "../lib/time";
-import { dismissOrb, hideThisWindow, openCalendar, resizeOrb, revealOrb } from "../lib/notify";
+import { dismissOrb, onOrbAway, openCalendar, resizeOrb, revealOrb } from "../lib/notify";
 
 const RESTING = 72;
 const TICK_MS = 20_000;
@@ -71,6 +71,21 @@ function useIdleDismiss(stay, restart) {
   }, [stay, hovering, restart]);
 }
 
+// Siri-like: clicking elsewhere or switching desktop puts her away, unless a reminder is up.
+function useAwayWhenLookedAway(mustBeSeen) {
+  const seen = useRef(mustBeSeen);
+  seen.current = mustBeSeen;
+  useEffect(() => {
+    const away = () => { if (!seen.current) dismissOrb(); };
+    window.addEventListener("blur", away);
+    const unlisten = onOrbAway(away);
+    return () => {
+      window.removeEventListener("blur", away);
+      unlisten.then((stop) => stop()).catch(() => {});
+    };
+  }, []);
+}
+
 function daysLeft(deadline) {
   const due = new Date(deadline);
   if (isNaN(due)) return "";
@@ -122,9 +137,13 @@ export default function Orb() {
   const unfinished = asking ? unfinishedToday(plan, today(), nowMin()) : [];
   const last = thread.at(-1);
   const speaking = last && last.role !== "user";
+  // A question waits for its answer, if you are there to give one. Shown while you were elsewhere,
+  // it never had focus, so neither a click away nor anything else would ever put it away.
+  const askingYou = speaking && /\?\s*$/.test(last.content) && document.hasFocus();
   // A reminder that fires pops the orb open where it sits, bottom-right. Dismissing
   // leaves the dot on the circle; only ticking it off clears it for good.
-  const isOpen = open || busy || speaking || ((waiting.length > 0 || unfinished.length > 0) && !dismissed);
+  // While she thinks the card folds back into the orb; it opens again with her answer.
+  const isOpen = !busy && (open || speaking || ((waiting.length > 0 || unfinished.length > 0) && !dismissed));
 
   const seen = useRef("");
   const ids = waiting.map((r) => r.id).join();
@@ -138,7 +157,16 @@ export default function Orb() {
 
   useWindowFitsContent(card, isOpen, wake);
   const mustBeSeen = (waiting.length > 0 || unfinished.length > 0) && !dismissed;
-  useIdleDismiss(busy || text.trim() !== "" || mustBeSeen, `${wake}:${thread.length}:${isOpen}`);
+  useIdleDismiss(busy || askingYou || text.trim() !== "" || mustBeSeen, `${wake}:${thread.length}:${isOpen}`);
+  useAwayWhenLookedAway(mustBeSeen);
+
+  // Her answer brings her back if you looked away while she was thinking.
+  useEffect(() => {
+    if (speaking && document.visibilityState !== "visible") revealOrb();
+  }, [thread.length, speaking]);
+  useEffect(() => {
+    if (busy) setOpen(false);
+  }, [busy]);
 
   useEffect(() => {
     const onVisible = () => {
@@ -162,7 +190,7 @@ export default function Orb() {
         if (unfinished.length) planStore.markAsked(today());
       }
       if (open) setOpen(false);
-      else if (!waiting.length && !unfinished.length) hideThisWindow();
+      else if (!waiting.length && !unfinished.length) dismissOrb();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -187,6 +215,14 @@ export default function Orb() {
       newFindings: current.researchedOn === today() ? current.findings.filter((f) => f.foundOn === today()) : undefined,
     });
     tell("what's my day looking like", line);
+  }
+
+  if (busy) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div key={wake} role="status" aria-label="Donna is thinking" className="orb is-busy" />
+      </div>
+    );
   }
 
   if (!isOpen) {

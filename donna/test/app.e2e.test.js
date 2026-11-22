@@ -197,7 +197,7 @@ test("the daily brief answers from the plan itself, without calling the model", 
 const OLLAMA_CHAT = "http://127.0.0.1:11434/api/chat";
 const ollamaSays = (message) => ({ status: 200, contentType: "application/json", body: JSON.stringify({ message }) });
 
-test("the orb hands the blurt to Donna, stays responsive while she thinks, and her goal lands in shared storage", async () => {
+test("the orb hands the blurt to Donna, folds away while she thinks, and her goal lands in shared storage", async () => {
   const context = await browser.newContext();
   const page = await context.newPage();
   let release;
@@ -217,11 +217,8 @@ test("the orb hands the blurt to Donna, stays responsive while she thinks, and h
   await input.fill("learn rust 30 mins a day till dec 5");
   await input.press("Enter");
 
-  assert.equal(await input.inputValue(), "", "the input clears before Donna answers");
   await assert.doesNotReject(page.getByRole("status", { name: "Donna is thinking" }).waitFor());
-  await input.fill("second thought");
-  await input.press("Enter");
-  assert.equal(await input.inputValue(), "second thought", "a send while busy keeps the text");
+  assert.equal(await page.getByLabel("Tell Donna").count(), 0, "the card folds back into the orb while she thinks");
 
   release();
   await assert.doesNotReject(page.getByText("added rust, 30 mins a day till dec 5.").waitFor());
@@ -870,9 +867,12 @@ test("with everything booked there is no summary line at all", async () => {
 // A stand-in for the Tauri bridge, so the orb's calls to the desktop side can be seen.
 const fakeTauri = () => {
   window.__calls = [];
+  window.__callbacks = [];
+  window.__TAURI_EVENT_PLUGIN_INTERNALS__ = { unregisterListener: () => {} };
   window.__TAURI_INTERNALS__ = {
     invoke: (cmd, args) => { window.__calls.push({ cmd, args }); return Promise.resolve(null); },
-    transformCallback: () => 0,
+    // Kept, so a test can deliver an event the way Rust would.
+    transformCallback: (callback) => { window.__callbacks.push(callback); return window.__callbacks.length - 1; },
     metadata: { currentWindow: { label: "orb" }, currentWebview: { windowLabel: "orb", label: "orb" } },
   };
 };
@@ -1078,5 +1078,168 @@ test("when 7 could be either, she asks am or pm before touching the week", async
   await page.getByLabel("Tell Donna").press("Enter");
   await page.getByText("booked.").waitFor();
   assert.match(lastUserLine(sent[0]), /gym today at 7pm/);
+  await context.close();
+});
+
+// Siri-like: she gets out of the way when you look elsewhere, and comes back with the answer.
+const send = async (page, text) => {
+  await page.getByLabel("Tell Donna").fill(text);
+  await page.getByLabel("Tell Donna").press("Enter");
+};
+const replyWith = async (page, content) => {
+  let release;
+  const held = new Promise((resolve) => { release = resolve; });
+  await page.route(OLLAMA_CHAT, async (route) => { await held; await route.fulfill(ollamaSays({ content })); });
+  return release;
+};
+const setVisible = (page, visible) => page.evaluate((state) => {
+  Object.defineProperty(document, "visibilityState", { configurable: true, get: () => state });
+  document.dispatchEvent(new Event("visibilitychange"));
+}, visible ? "visible" : "hidden");
+
+test("clicking somewhere else puts her away", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await openOrbForIdle(page);
+  await page.evaluate(() => document.documentElement.dispatchEvent(new MouseEvent("mouseenter")));
+
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+
+  assert.equal(await dismissed(page), true);
+  await context.close();
+});
+
+test("a reminder that fired is not put away by clicking elsewhere", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(fakeTauri);
+  await page.addInitScript(() => {
+    const d = new Date();
+    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    localStorage.setItem("donna_plan", JSON.stringify({
+      fixed: [], blocks: [], memories: [], sweptOn: date, askedOn: date,
+      reminders: [{ id: "r1", text: "Put the washing on", at: Date.now() - 60_000, done: false }],
+    }));
+  });
+  await page.goto(base + "?view=orb");
+  await page.getByText("Put the washing on").waitFor();
+
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+
+  assert.equal(await dismissed(page), false);
+  await context.close();
+});
+
+test("switching desktop puts her away", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await openOrbForIdle(page);
+  await page.evaluate(() => document.documentElement.dispatchEvent(new MouseEvent("mouseenter")));
+  await page.waitForFunction(() => window.__calls.some((c) => c.cmd === "plugin:event|listen" && c.args.event === "orb-away"));
+
+  await page.evaluate(() => {
+    const { handler } = window.__calls.find((c) => c.cmd === "plugin:event|listen" && c.args.event === "orb-away").args;
+    window.__callbacks[handler]({ event: "orb-away", id: 1, payload: null });
+  });
+
+  assert.equal(await dismissed(page), true);
+  await context.close();
+});
+
+test("an answer that lands while she is put away brings her back with it", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const release = await replyWith(page, "booked gym 7pm.");
+  await openOrbForIdle(page);
+  await send(page, "gym at 7pm");
+  await page.getByRole("status", { name: "Donna is thinking" }).waitFor();
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  await setVisible(page, false);
+
+  release();
+
+  await page.waitForFunction(() => window.__calls.some((c) => c.cmd === "announce"));
+  await setVisible(page, true);
+  await page.getByText("booked gym 7pm.").waitFor();
+  await context.close();
+});
+
+test("the four seconds start when her answer shows, not when you sent it", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const release = await replyWith(page, "booked gym 7pm.");
+  await openOrbForIdle(page);
+  await send(page, "gym at 7pm");
+  await leave(page);
+  await page.waitForTimeout(3000);
+
+  release();
+  await page.getByText("booked gym 7pm.").waitFor();
+  await page.waitForTimeout(3000);
+
+  assert.equal(await dismissed(page), false, "only three seconds since the answer");
+  await page.waitForTimeout(1600);
+  assert.equal(await dismissed(page), true);
+  await context.close();
+});
+
+test("a question from her stays up until it is answered", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const release = await replyWith(page, "how many mins a day?");
+  await openOrbForIdle(page);
+  await send(page, "wanna learn rust");
+  release();
+  await page.getByText("how many mins a day?").waitFor();
+  await leave(page);
+
+  await page.waitForTimeout(5000);
+  assert.equal(await dismissed(page), false);
+  await context.close();
+});
+
+test("her own 'am or pm?' stays up too", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const sent = await orbAt(page, 5);
+  await send(page, "gym today at 7");
+  await page.getByText("7am or 7pm?").waitFor();
+  await leave(page);
+
+  await page.waitForTimeout(5000);
+  assert.equal(await dismissed(page), false);
+  assert.equal(sent.length, 0);
+  await context.close();
+});
+
+test("a reminder in between drops the am-or-pm question", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const sent = await orbAt(page, 5);
+  await send(page, "gym today at 7");
+  await page.getByText("7am or 7pm?").waitFor();
+  await send(page, "remind me to call mum in 5 mins");
+  await page.getByText(/i'll say in 5 mins/).waitFor();
+
+  await send(page, "pm");
+  await page.getByText("booked.").waitFor();
+
+  assert.equal(lastUserLine(sent[0]), "pm", "the gym message was let go, not finished by a later reply");
+  await context.close();
+});
+
+test("a question that shows up while you're elsewhere still goes after four seconds", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const release = await replyWith(page, "how many mins a day?");
+  await openOrbForIdle(page);
+  await send(page, "wanna learn rust");
+  await page.evaluate(() => { document.hasFocus = () => false; });
+  release();
+  await page.getByText("how many mins a day?").waitFor();
+  await leave(page);
+
+  await page.waitForTimeout(4600);
+  assert.equal(await dismissed(page), true, "never focused, so nothing would ever put it away");
   await context.close();
 });

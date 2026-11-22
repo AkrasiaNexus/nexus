@@ -16,6 +16,8 @@ const ORB_MODS: Modifiers = Modifiers::ALT;
 const EDGE_MARGIN: i32 = 24;
 // Clears the macOS dock, which sits over the bottom of the screen.
 const BOTTOM_MARGIN: i32 = 96;
+// The orb at rest, as in Orb.jsx and tauri.conf.json.
+const RESTING: f64 = 72.0;
 
 // On macOS a plain window cannot join another app's full-screen Space, so the orb is an NSPanel:
 // non-activating (showing it never pulls you out of what you are in), able to take typing, and
@@ -49,6 +51,56 @@ fn make_orb_a_panel(app: &mut tauri::App) -> tauri::Result<()> {
     Ok(())
 }
 
+// Joining every Space is what lets the orb into a full-screen one, and it also made her follow
+// you to every desktop. So a desktop switch puts her away; the page decides whether it may.
+#[cfg(target_os = "macos")]
+fn put_orb_away_on_desktop_switch(app: &tauri::App) {
+    use tauri::Emitter;
+    use tauri_nspanel::objc2_app_kit::{NSWorkspace, NSWorkspaceActiveSpaceDidChangeNotification};
+    let handle = app.handle().clone();
+    let heard = block2::RcBlock::new(move |_: std::ptr::NonNull<tauri_nspanel::NSNotification>| {
+        let _ = handle.emit_to("orb", "orb-away", ());
+    });
+    let center = NSWorkspace::sharedWorkspace().notificationCenter();
+    let observer = unsafe {
+        center.addObserverForName_object_queue_usingBlock(Some(NSWorkspaceActiveSpaceDidChangeNotification), None, None, &heard)
+    };
+    // Listens for as long as Donna runs.
+    std::mem::forget(observer);
+}
+
+// One frame, sized and pinned bottom-right together. Sizing and then moving drew the orb twice,
+// the first time in the wrong place: the jump. The visible frame already leaves out the Dock.
+#[cfg(target_os = "macos")]
+fn place_panel(app: &AppHandle, size: Option<(f64, f64)>) -> bool {
+    use tauri_nspanel::{objc2_app_kit::{NSEvent, NSScreen}, objc2_foundation::MainThreadMarker, ManagerExt, NSPoint, NSRect, NSSize};
+    let Ok(panel) = app.get_webview_panel("orb") else {
+        return false;
+    };
+    // AppKit only from the main thread; hop there rather than fall back to the two-step jump.
+    let Some(main_thread) = MainThreadMarker::new() else {
+        let app = app.clone();
+        return app.clone().run_on_main_thread(move || { place_panel(&app, size); }).is_ok();
+    };
+    let window = panel.as_panel();
+    // The screen you are on, found by the pointer: a hidden panel remembers the one it left.
+    let pointer = NSEvent::mouseLocation();
+    let here = NSScreen::screens(main_thread).into_iter().find(|screen| {
+        let f = screen.frame();
+        (f.origin.x..f.origin.x + f.size.width).contains(&pointer.x) && (f.origin.y..f.origin.y + f.size.height).contains(&pointer.y)
+    });
+    let Some(screen) = here.or_else(|| window.screen()).or_else(|| NSScreen::mainScreen(main_thread)) else {
+        return false;
+    };
+    let area = screen.visibleFrame();
+    let now = window.frame().size;
+    let (width, height) = size.unwrap_or((now.width, now.height));
+    let margin = f64::from(EDGE_MARGIN);
+    let origin = NSPoint::new(area.origin.x + area.size.width - width - margin, area.origin.y + margin);
+    window.setFrame_display(NSRect::new(origin, NSSize::new(width, height)), true);
+    true
+}
+
 fn orb_shortcut() -> Shortcut {
     Shortcut::new(Some(ORB_MODS), Code::KeyD)
 }
@@ -71,11 +123,32 @@ fn anchor_bottom_right(app: &AppHandle, window: &WebviewWindow) {
     let _ = window.set_position(PhysicalPosition::new(x, y));
 }
 
+// The orb's size, if given, and its place in the corner.
+fn place_orb(app: &AppHandle, window: &WebviewWindow, size: Option<(f64, f64)>) {
+    #[cfg(target_os = "macos")]
+    if place_panel(app, size) {
+        return;
+    }
+    if let Some((width, height)) = size {
+        let _ = window.set_size(tauri::LogicalSize::new(width, height));
+    }
+    anchor_bottom_right(app, window);
+}
+
+// Put away as a circle, so next time it appears as one in the corner rather than as an empty
+// card-sized window with the circle in the middle of it.
+fn hide_orb(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("orb") {
+        let _ = window.hide();
+        place_orb(app, &window, Some((RESTING, RESTING)));
+    }
+}
+
 // `focus` is false when Donna speaks up on her own: a reminder must never swallow
 // the keystrokes of whatever the user is typing in another app.
 fn reveal_orb(app: &AppHandle, focus: bool) {
     if let Some(window) = app.get_webview_window("orb") {
-        anchor_bottom_right(app, &window);
+        place_orb(app, &window, None);
         // A panel is shown without activating Donna, so a full-screen app keeps its Space.
         #[cfg(target_os = "macos")]
         if let Ok(panel) = tauri_nspanel::ManagerExt::get_webview_panel(app, "orb") {
@@ -96,7 +169,7 @@ fn reveal_orb(app: &AppHandle, focus: bool) {
 fn toggle_orb(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("orb") {
         if window.is_visible().unwrap_or(false) {
-            let _ = window.hide();
+            hide_orb(app);
         } else {
             reveal_orb(app, true);
         }
@@ -122,8 +195,7 @@ fn announce(app: AppHandle) {
 #[tauri::command]
 fn resize_orb(app: AppHandle, width: f64, height: f64) {
     if let Some(window) = app.get_webview_window("orb") {
-        let _ = window.set_size(tauri::LogicalSize::new(width, height));
-        anchor_bottom_right(&app, &window);
+        place_orb(&app, &window, Some((width, height)));
     }
 }
 
@@ -132,16 +204,12 @@ fn resize_orb(app: AppHandle, width: f64, height: f64) {
 #[tauri::command]
 fn open_calendar(app: AppHandle) {
     show_main(&app);
-    if let Some(orb) = app.get_webview_window("orb") {
-        let _ = orb.hide();
-    }
+    hide_orb(&app);
 }
 
 #[tauri::command]
 fn dismiss_orb(app: AppHandle) {
-    if let Some(window) = app.get_webview_window("orb") {
-        let _ = window.hide();
-    }
+    hide_orb(&app);
 }
 
 // How much of a feed is worth reading; a calendar that big is not a calendar.
@@ -250,7 +318,10 @@ fn main() {
         .setup(|app| {
             app.global_shortcut().register(orb_shortcut())?;
             #[cfg(target_os = "macos")]
-            make_orb_a_panel(app)?;
+            {
+                make_orb_a_panel(app)?;
+                put_orb_away_on_desktop_switch(app);
+            }
 
             let orb = MenuItem::with_id(app, "orb", "Show Donna", true, Some("Alt+D"))?;
             let open = MenuItem::with_id(app, "open", "Open calendar", true, None::<&str>)?;

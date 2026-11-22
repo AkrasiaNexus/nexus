@@ -91,6 +91,9 @@ input, textarea {
 .orb:hover { transform: scale(1.06); }
 .orb:hover::after { opacity: 0.8; inset: 5px; }
 .orb:active { transform: scale(0.97); transition-duration: var(--m-press); }
+/* thinking: the ring breathes, so the wait is visible without a spinner */
+.orb.is-busy { cursor: default; }
+.orb.is-busy::after { animation: orb-breathe 1.4s var(--m-ease) infinite; }
 
 /* a life sign, not a klaxon: the one thing moving while something waits on you */
 .orb.has-waiting::before {
@@ -173,6 +176,7 @@ input, textarea {
   .orb:hover, .orb:active, .orb-chip:active { transform: none; }
   .orb.has-waiting::before { animation: none; }
   .orb-mini.is-busy { animation: none; opacity: .6; }
+  .orb.is-busy::after { animation: none; opacity: .3; }
 }
 
 /* Blocks are the one place colour carries meaning: which kind of thing a session is. */
