@@ -1,12 +1,12 @@
 [
   { "id": "hook", "text": "Every planner does what you tell it." },
   { "id": "turn", "text": "Donna doesn't." },
-  { "id": "problem", "text": "You already know what matters. The project. The application. The deadline three weeks out. But the week fills up with whatever's loudest, and the thing that matters quietly slips." },
-  { "id": "orb", "text": "Donna lives in the corner of your Mac. Press Option D, and tell her what's on your mind, the way you'd actually say it. She finds the time you really have, and books it." },
-  { "id": "refuse", "text": "Then she does what no planner does. She pushes back. Book over a deadline, and she tells you what it costs. Four sessions left, four days. Drop one, and it doesn't get finished." },
-  { "id": "patterns", "text": "She notices what you'd rather not. Three Saturdays booked. Three missed. She'll ask whether to stop booking them." },
-  { "id": "night", "text": "And at night, she goes looking. Competitions, programmes, deadlines for what you're building, waiting at the top of your morning brief." },
-  { "id": "local", "text": "Her thinking runs on a model on your own machine. No subscription, no cloud model. Anything that can be worked out, your free time, your clashes, your day, is computed, so it's instant, and it can't be made up." },
-  { "id": "clock", "text": "She reads the calendar you already keep, and reminds you on the minute." },
-  { "id": "end", "text": "Donna. She doesn't get told what to do." }
+  { "id": "problem", "text": "You know what matters. The project. The application. But the week fills up with whatever's loudest." },
+  { "id": "orb", "text": "Press Option D, and tell her what's on your mind, the way you'd actually say it. She books it into the time you really have." },
+  { "id": "refuse", "text": "Then she pushes back. Book over a deadline, and she tells you exactly what it costs." },
+  { "id": "patterns", "text": "Three Saturdays booked. Three missed. She noticed before you did." },
+  { "id": "night", "text": "At night, she goes looking for what you should be applying to." },
+  { "id": "local", "text": "Her thinking runs on your own Mac. Anything that can be worked out is computed, so it's instant, and it can't be made up." },
+  { "id": "clock", "text": "She reads your calendar, and reminds you right on time." },
+  { "id": "end", "text": "Donna. She doesn't get told what to do. She knows what to do for you." }
 ]

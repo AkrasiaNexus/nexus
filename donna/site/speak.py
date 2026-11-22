@@ -14,6 +14,8 @@ import soundfile as sf
 from kokoro_onnx import Kokoro
 
 model_dir, out_dir = sys.argv[1], sys.argv[2]
+# A touch quicker than natural: the film is cut to sixty seconds and reads better brisk.
+SPEED = 1.05
 os.makedirs(out_dir, exist_ok=True)
 kokoro = Kokoro(os.path.join(model_dir, "kokoro-v1.0.onnx"), os.path.join(model_dir, "voices-v1.0.bin"))
 here = os.path.dirname(os.path.abspath(__file__))
@@ -21,7 +23,7 @@ lines = json.load(open(os.path.join(here, "narration.json")))
 
 measured = []
 for line in lines:
-    samples, rate = kokoro.create(line["text"], voice="af_heart", speed=0.98, lang="en-us")
+    samples, rate = kokoro.create(line["text"], voice="af_heart", speed=SPEED, lang="en-us")
     sf.write(os.path.join(out_dir, f"{line['id']}.wav"), samples, rate)
     measured.append({"id": line["id"], "seconds": round(len(samples) / rate, 3), "peak": round(float(np.abs(samples).max()), 3)})
 
