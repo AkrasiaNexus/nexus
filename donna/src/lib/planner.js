@@ -244,8 +244,9 @@ export function createTools({ plan, items, onSchedule, onRemoveGoal, onSetFixed,
         toMin(block.start);
         checkMinutes(block.minutes);
         if (block.goal_id !== undefined) checkId(items(), block.goal_id, "goal");
-        // The model read "today at 7" as 7am at 10am. Only a yes books a time that has gone.
-        if (!confirmed && block.date === today() && toMin(block.start) < nowMin()) {
+        // The model read "today at 7" as 7am at 10am. Only a yes books a time that has gone;
+        // one already under way has not.
+        if (!confirmed && block.date === today() && toMin(block.start) + block.minutes <= nowMin()) {
           return { blocked: true, ask: pastToday(block.start) };
         }
         // A goal's own session never needs permission from that same goal's deadline.

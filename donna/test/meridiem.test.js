@@ -59,3 +59,11 @@ test("anything other than an answer is a new message", () => {
 test("o'clock keeps its place, and the half goes after it", () => {
   assert.deepEqual(readMeridiem("meet at 7 o'clock", at(10)), { text: "meet at 7 o'clock pm" });
 });
+
+test("the half goes after the hour, not after a date that shares its number", () => {
+  assert.equal(settleMeridiem("gym on 11/7 at 7", "pm", at(5)), "gym on 11/7 at 7pm");
+  assert.equal(settleMeridiem("gym November 7 at 7", "pm", at(5)), "gym November 7 at 7pm");
+  assert.equal(settleMeridiem("gym at 7 on 11/7", "pm", at(5)), "gym at 7pm on 11/7");
+  assert.equal(settleMeridiem("gym on the 7th at 7", "pm", at(5)), "gym on the 7th at 7pm");
+  assert.deepEqual(readMeridiem("gym at 7.", at(10)), { text: "gym at 7pm." });
+});

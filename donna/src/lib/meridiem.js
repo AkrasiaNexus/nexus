@@ -6,6 +6,9 @@ import { PART_OF_DAY } from "./remind.js";
 const LAST_SURE_PM = 6;
 const ANSWER = /^(?:(\d{1,2})(?::\d{2})?\s*)?(a\.?m\.?|in the morning|morning|p\.?m\.?|in the afternoon|afternoon|in the evening|evening|at night|night|tonight)(?:\s+(?:pls|plz|please))?$/i;
 
+// A number on the clock, not in a date: not beside / or -, not 7th, not after a month's name.
+const CLOCK = /(?<![\d/-]|\d\.)(?<!\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+)\d{1,2}(?::\d{2})?(?:\s*o'?\s?clock)?(?![\d/-]|\.\d|st|nd|rd|th)/gi;
+
 const clock = (hour, minute) => (minute ? `${hour}:${String(minute).padStart(2, "0")}` : String(hour));
 
 // "at 7", "tmrw at 7:30": an hour on the clock with nothing to say which half of the day.
@@ -18,7 +21,7 @@ function bareHour(text, now) {
   const minute = hit.start.get("minute") ?? 0;
   if (hour < 1 || hour > 11) return null;
   // Where the half goes: straight after the hour as they wrote it. No digits, nothing to settle.
-  const time = [...hit.text.matchAll(/\d{1,2}(?::\d{2})?(?:\s*o'?\s?clock)?/gi)].find((m) => parseInt(m[0], 10) === hour);
+  const time = [...hit.text.matchAll(CLOCK)].filter((m) => parseInt(m[0], 10) === hour).at(-1);
   if (!time) return null;
   // chrono moves an unnamed day to tomorrow once the morning hour has gone; people mean today.
   const named = hit.start.isCertain("day") || hit.start.isCertain("weekday");

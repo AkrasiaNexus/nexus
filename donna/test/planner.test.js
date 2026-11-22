@@ -826,3 +826,14 @@ test("a time gone today can still be booked once they say so", async (t) => {
 
   assert.equal(booked.length, 1);
 });
+
+test("a session already under way today can still be booked", async (t) => {
+  atTenToday(t);
+  const { restore } = stubReplies(toolCall("schedule_block", { title: "Gym", date: today(), start: "09:30", minutes: 60 }));
+  t.after(restore);
+  const { api, booked } = tools();
+
+  await runTurn([{ role: "user", content: "i'm at the gym, put it in from 9:30" }], api);
+
+  assert.equal(booked.length, 1);
+});

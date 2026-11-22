@@ -55,6 +55,9 @@ export function useDonna() {
     // so anything that is a reminder has to be finished here or it never fires.
     const pending = pendingRef.current;
     pendingRef.current = null;
+    // Taken now, so a reminder in between lets the am-or-pm question go too.
+    const unsure = unsureRef.current;
+    unsureRef.current = null;
     const reminder = (pending && completeReminder(pending, text)) || parseReminder(text);
     if (reminder?.at) {
       planStore.remind(reminder.text, reminder.at);
@@ -69,8 +72,6 @@ export function useDonna() {
     }
 
     // The model guesses am or pm, and guessed 7am at 10am. Settled here, or asked, before it sees it.
-    const unsure = unsureRef.current;
-    unsureRef.current = null;
     let meant = unsure && settleMeridiem(unsure, text);
     if (!meant) {
       const read = readMeridiem(text);
