@@ -22,3 +22,16 @@ test("closing the main window hides it rather than ending the ticker with it", (
   const main = fs.readFileSync(path.join(import.meta.dirname, "..", "src-tauri", "src", "main.rs"), "utf8");
   assert.match(main, /CloseRequested[\s\S]{0,200}prevent_close\(\)[\s\S]{0,80}hide\(\)/);
 });
+
+// Also macOS-only. A plain window cannot join another app's full-screen Space; a non-activating
+// panel from an app with no Dock icon can, and showing it must not activate Donna, which would
+// throw you out of the full-screen app.
+test("the orb can show over a full-screen app on macOS", () => {
+  const main = fs.readFileSync(path.join(import.meta.dirname, "..", "src-tauri", "src", "main.rs"), "utf8");
+  assert.match(main, /ActivationPolicy::Accessory/);
+  assert.match(main, /nonactivating_panel\(\)/);
+  assert.match(main, /full_screen_auxiliary\(\)/);
+  assert.match(main, /can_join_all_spaces\(\)/);
+  assert.match(main, /set_hides_on_deactivate\(false\)/);
+  assert.match(main, /get_webview_panel\(app, "orb"\)[\s\S]{0,200}show_and_make_key\(\)[\s\S]{0,80}order_front_regardless\(\)/);
+});

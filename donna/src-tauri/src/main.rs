@@ -17,6 +17,38 @@ const EDGE_MARGIN: i32 = 24;
 // Clears the macOS dock, which sits over the bottom of the screen.
 const BOTTOM_MARGIN: i32 = 96;
 
+// On macOS a plain window cannot join another app's full-screen Space, so the orb is an NSPanel:
+// non-activating (showing it never pulls you out of what you are in), able to take typing, and
+// allowed onto every Space including full-screen ones. This is the setup Apple's DTS recommends.
+#[cfg(target_os = "macos")]
+tauri_nspanel::tauri_panel! {
+    panel!(OrbPanel {
+        config: {
+            can_become_key_window: true,
+            is_floating_panel: true
+        }
+    })
+}
+
+#[cfg(target_os = "macos")]
+fn make_orb_a_panel(app: &mut tauri::App) -> tauri::Result<()> {
+    use tauri_nspanel::{CollectionBehavior, PanelLevel, StyleMask, WebviewWindowExt};
+    // Full-screen Spaces only admit panels from an app with no Dock icon.
+    app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+    let Some(window) = app.get_webview_window("orb") else {
+        return Ok(());
+    };
+    let panel = window.to_panel::<OrbPanel>()?;
+    panel.set_level(PanelLevel::Status.value());
+    let _ = panel.set_style_mask(StyleMask::empty().borderless().nonactivating_panel().value());
+    panel.set_collection_behavior(
+        CollectionBehavior::new().can_join_all_spaces().stationary().full_screen_auxiliary().ignores_cycle().value(),
+    );
+    // NSPanel hides itself whenever the app loses focus, which for a menu-bar app is always.
+    panel.set_hides_on_deactivate(false);
+    Ok(())
+}
+
 fn orb_shortcut() -> Shortcut {
     Shortcut::new(Some(ORB_MODS), Code::KeyD)
 }
@@ -44,6 +76,16 @@ fn anchor_bottom_right(app: &AppHandle, window: &WebviewWindow) {
 fn reveal_orb(app: &AppHandle, focus: bool) {
     if let Some(window) = app.get_webview_window("orb") {
         anchor_bottom_right(app, &window);
+        // A panel is shown without activating Donna, so a full-screen app keeps its Space.
+        #[cfg(target_os = "macos")]
+        if let Ok(panel) = tauri_nspanel::ManagerExt::get_webview_panel(app, "orb") {
+            if focus {
+                panel.show_and_make_key();
+            } else {
+                panel.order_front_regardless();
+            }
+            return;
+        }
         let _ = window.show();
         if focus {
             let _ = window.set_focus();
@@ -190,7 +232,10 @@ async fn fetch_calendar(url: String) -> Result<String, String> {
 }
 
 fn main() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    #[cfg(target_os = "macos")]
+    let builder = builder.plugin(tauri_nspanel::init());
+    builder
         .plugin(tauri_plugin_notification::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
@@ -204,6 +249,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![announce, dismiss_orb, fetch_calendar, open_calendar, resize_orb])
         .setup(|app| {
             app.global_shortcut().register(orb_shortcut())?;
+            #[cfg(target_os = "macos")]
+            make_orb_a_panel(app)?;
 
             let orb = MenuItem::with_id(app, "orb", "Show Donna", true, Some("Alt+D"))?;
             let open = MenuItem::with_id(app, "open", "Open calendar", true, None::<&str>)?;

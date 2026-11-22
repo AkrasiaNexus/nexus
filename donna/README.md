@@ -25,6 +25,8 @@ Ideas, skills to learn and side projects get thought about once and then forgott
 - **Check-ins that escalate:** for anything not yet given a time — gentle at 25%, firm at 50% and 75%, urgent at the deadline. If your laptop slept through several, you get one nudge, the latest, not a burst.
 - **Missed it? It's tomorrow's problem, first thing:** an end-of-day sweep moves anything you missed to the earliest free slot the next day and flags it as backlog.
 - **Runs in the background:** closing the main window hides it to the tray so nudges keep arriving.
+- **Shows over full-screen apps:** on macOS the orb is a non-activating panel, so it appears in any Space without pulling you out of it. That needs an app with no Dock icon; the calendar and Quit live in the menu-bar icon.
+- **Gets out of the way:** the orb hides after four seconds of nothing, unless the pointer is on it, something is half-typed, she is thinking, or a reminder is waiting to be seen.
 
 ## Architecture
 
