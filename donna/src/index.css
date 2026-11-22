@@ -11,6 +11,9 @@
 :root[data-view="orb"],
 :root[data-view="orb"] body {
   background: transparent;
+  /* The window is sized to the card, so there is never anything to scroll to; a page
+     scrollbar here only ever meant the size was wrong. */
+  overflow: hidden;
 }
 
 body {

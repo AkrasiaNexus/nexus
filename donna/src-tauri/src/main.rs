@@ -85,6 +85,16 @@ fn resize_orb(app: AppHandle, width: f64, height: f64) {
     }
 }
 
+// The orb's way back to the week: closing the main window only hides it, and nothing in the
+// orb could bring it back. The orb steps aside so the calendar is not covered.
+#[tauri::command]
+fn open_calendar(app: AppHandle) {
+    show_main(&app);
+    if let Some(orb) = app.get_webview_window("orb") {
+        let _ = orb.hide();
+    }
+}
+
 #[tauri::command]
 fn dismiss_orb(app: AppHandle) {
     if let Some(window) = app.get_webview_window("orb") {
@@ -191,12 +201,12 @@ fn main() {
                 })
                 .build(),
         )
-        .invoke_handler(tauri::generate_handler![announce, dismiss_orb, fetch_calendar, resize_orb])
+        .invoke_handler(tauri::generate_handler![announce, dismiss_orb, fetch_calendar, open_calendar, resize_orb])
         .setup(|app| {
             app.global_shortcut().register(orb_shortcut())?;
 
             let orb = MenuItem::with_id(app, "orb", "Show Donna", true, Some("Alt+D"))?;
-            let open = MenuItem::with_id(app, "open", "Open Donna", true, None::<&str>)?;
+            let open = MenuItem::with_id(app, "open", "Open calendar", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let separator = PredefinedMenuItem::separator(app)?;
             let menu = Menu::with_items(app, &[&orb, &separator, &open, &quit])?;

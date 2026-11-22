@@ -26,6 +26,13 @@ export async function revealOrb() {
   await invoke("announce").catch(() => {});
 }
 
+// The week lives in the main window, which closing only hides; this is how the orb brings it back.
+export async function openCalendar() {
+  if (!isTauri()) return;
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("open_calendar").catch((cause) => console.error("donna: the calendar window would not open", cause));
+}
+
 // The orb window is the orb: it follows its own content so the circle stays a circle.
 export async function resizeOrb(width, height) {
   if (!isTauri()) return;

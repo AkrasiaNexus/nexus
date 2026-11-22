@@ -10,7 +10,7 @@ import { outstanding } from "../lib/remind";
 import { unfinishedToday, shouldAskAboutToday } from "../lib/dayend";
 import { useStore } from "../hooks/useStore";
 import { today, nowMin, parseYmd, ymd, clock12 } from "../lib/time";
-import { hideThisWindow, resizeOrb, revealOrb } from "../lib/notify";
+import { hideThisWindow, openCalendar, resizeOrb, revealOrb } from "../lib/notify";
 
 const RESTING = 72;
 const TICK_MS = 20_000;
@@ -29,7 +29,10 @@ function useWindowFitsContent(ref, open, wake) {
       return undefined;
     }
     const fit = () => {
-      const height = Math.ceil(ref.current?.getBoundingClientRect().height ?? 0) + CARD_MARGIN * 2;
+      // Layout height, not the drawn box: the card opens from scale(.86), and measuring it drawn
+      // made the window 14% short — the card scrolled, its top clipped, a scrollbar showed — and
+      // a transform never triggers the ResizeObserver, so it was never corrected.
+      const height = (ref.current?.offsetHeight ?? 0) + CARD_MARGIN * 2;
       resizeOrb(OPEN_WIDTH, Math.max(MIN_OPEN_HEIGHT, height));
     };
     fit();
@@ -308,6 +311,7 @@ export default function Orb() {
           className="flex-1 min-w-0 bg-transparent text-[13.5px] outline-none placeholder:text-donna-faint"
         />
         <button type="button" onClick={brief} className="orb-chip">brief</button>
+        <button type="button" onClick={openCalendar} className="orb-chip">week</button>
       </form>
     </div>
   );

@@ -866,3 +866,68 @@ test("with everything booked there is no summary line at all", async () => {
   assert.equal(await page.getByText(/not booked:/).count(), 0, "clean when there is nothing to say");
   await context.close();
 });
+
+// A stand-in for the Tauri bridge, so the orb's calls to the desktop side can be seen.
+const fakeTauri = () => {
+  window.__calls = [];
+  window.__TAURI_INTERNALS__ = {
+    invoke: (cmd, args) => { window.__calls.push({ cmd, args }); return Promise.resolve(null); },
+    transformCallback: () => 0,
+    metadata: { currentWindow: { label: "orb" }, currentWebview: { windowLabel: "orb", label: "orb" } },
+  };
+};
+const seedOrbCard = () => {
+  const d = new Date();
+  const q = (n) => String(n).padStart(2, "0");
+  const date = `${d.getFullYear()}-${q(d.getMonth() + 1)}-${q(d.getDate())}`;
+  const later = new Date(d); later.setDate(d.getDate() + 6);
+  localStorage.setItem("donna_plan", JSON.stringify({ sweptOn: date, askedOn: date, calendarAt: Date.now() }));
+  localStorage.setItem("nudge_items", JSON.stringify([
+    { id: "g1", title: "Go gym 4 times a week", category: "habit", status: "active", deadline: later.toISOString(), createdAt: `${date}T08:00:00`, nudges: [] },
+  ]));
+};
+
+test("the orb's window is sized to the card's full height, not its height mid-animation", async () => {
+  // The card opens from scale(.86). Measured with getBoundingClientRect, the window was made
+  // 14% short, so the card scrolled, its top was clipped, and a scrollbar showed.
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(fakeTauri);
+  await page.addInitScript(seedOrbCard);
+  await page.goto(base + "?view=orb");
+  await page.getByRole("button", { name: /Ask Donna/ }).click();
+  await page.waitForTimeout(900);
+
+  const { asked, needed } = await page.evaluate(() => {
+    const sizes = window.__calls.filter((c) => c.cmd === "resize_orb");
+    const card = document.querySelector(".orb-card");
+    return { asked: sizes.at(-1)?.args.height, needed: card.offsetHeight + 24 };
+  });
+  assert.ok(asked >= needed, `asked for ${asked}px, the card needs ${needed}px`);
+  await context.close();
+});
+
+test("the orb never shows a page scrollbar", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(seedOrbCard);
+  await page.goto(base + "?view=orb");
+  await page.getByRole("button", { name: /Ask Donna/ }).click();
+
+  const overflow = await page.evaluate(() => [getComputedStyle(document.documentElement).overflow, getComputedStyle(document.body).overflow]);
+  assert.deepEqual(overflow, ["hidden", "hidden"]);
+  await context.close();
+});
+
+test("the orb opens the calendar", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(fakeTauri);
+  await page.addInitScript(seedOrbCard);
+  await page.goto(base + "?view=orb");
+  await page.getByRole("button", { name: /Ask Donna/ }).click();
+
+  await page.getByRole("button", { name: "week" }).click();
+  await page.waitForFunction(() => window.__calls.some((c) => c.cmd === "open_calendar"));
+  await context.close();
+});
