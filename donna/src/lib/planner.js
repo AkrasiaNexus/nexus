@@ -122,6 +122,15 @@ const localClock = (iso) => {
   return `${ymd(d)} ${fromMin(d.getHours() * 60 + d.getMinutes())}`;
 };
 
+// Every call re-reads the whole prompt, and every session ever booked was in it: weeks of
+// history added half a minute to each answer. History is for the code that spots patterns.
+// shortcut: a session more than a week out can't be moved by name; widen if that gets asked for.
+const WEEK_AHEAD = 6;
+const comingWeek = (blocks = []) =>
+  blocks
+    .filter((b) => !b.done && b.date >= today() && b.date <= addDays(today(), WEEK_AHEAD))
+    .map((b) => `${b.id} ${b.date} ${b.start} ${b.minutes}m ${b.title}${b.itemId ? ` (goal ${b.itemId})` : ""}`);
+
 // Donna is told how the user writes, so she reads "lowk wanna learn rust jus 2 wks"
 // without asking them to spell it again.
 export function systemPrompt({ plan, items, profile }) {
@@ -152,7 +161,10 @@ Reply in one or two short lowercase sentences in their register. Say what you ch
 How they write: ${profile}
 
 Their plan now:
-${JSON.stringify({ goals, sessions: plan.blocks, fixed: plan.fixed, memories: plan.memories ?? [] })}
+${JSON.stringify({ goals, fixed: plan.fixed, memories: plan.memories ?? [] })}
+
+Sessions booked this week (id date start length title):
+${comingWeek(plan.blocks).join("\n") || "none"}
 
 Right now: ${WEEKDAYS[now.getDay()]} ${today()} ${fromMin(nowMin())}.`;
 }

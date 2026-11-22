@@ -837,3 +837,37 @@ test("a session already under way today can still be booked", async (t) => {
 
   assert.equal(booked.length, 1);
 });
+
+// Every call re-reads the whole prompt, at about 54 tokens a second on the user's Mac, and
+// every session ever booked was in it: weeks of history added half a minute to each answer.
+const session = (id, date, extra = {}) => ({ id, itemId: null, title: `Session ${id}`, date, start: "19:00", minutes: 30, done: false, ...extra });
+
+test("the prompt carries the sessions still to come this week, not the history", () => {
+  const blocks = [
+    session("past", addDays(today(), -1)),
+    session("done", today(), { done: true }),
+    session("now", today()),
+    session("sunday", addDays(today(), 6)),
+    session("nextweek", addDays(today(), 7)),
+  ];
+  const prompt = systemPrompt({ plan: { blocks, fixed: [] }, items: [], profile: "" });
+
+  for (const id of ["now", "sunday"]) assert.match(prompt, new RegExp(`\\b${id}\\b`), id);
+  for (const id of ["past", "done", "nextweek"]) assert.doesNotMatch(prompt, new RegExp(`\\b${id}\\b`), id);
+});
+
+test("the prompt is no longer after months of use than on the first day", () => {
+  const week = [session("a", today()), session("b", addDays(today(), 3))];
+  const history = Array.from({ length: 400 }, (_, i) => session(`old${i}`, addDays(today(), -1 - (i % 90)), { done: i % 2 === 0 }));
+
+  const fresh = systemPrompt({ plan: { blocks: week, fixed: [] }, items: [], profile: "" });
+  const used = systemPrompt({ plan: { blocks: [...history, ...week], fixed: [] }, items: [], profile: "" });
+
+  assert.equal(used, fresh);
+});
+
+test("a session in the prompt keeps what the model needs to move it", () => {
+  const prompt = systemPrompt({ plan: { blocks: [session("b7", today(), { itemId: "g1", title: "Learn rust" })], fixed: [] }, items: [], profile: "" });
+
+  assert.match(prompt, new RegExp(`b7 ${today()} 19:00 30m Learn rust \\(goal g1\\)`));
+});
