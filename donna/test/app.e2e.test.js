@@ -931,3 +931,104 @@ test("the orb opens the calendar", async () => {
   await page.waitForFunction(() => window.__calls.some((c) => c.cmd === "open_calendar"));
   await context.close();
 });
+
+// Idle means: the pointer is off the orb, nothing is half-typed, and she isn't thinking.
+const openOrbForIdle = async (page) => {
+  await page.addInitScript(fakeTauri);
+  await page.addInitScript(seedOrbCard);
+  await page.goto(base + "?view=orb");
+  await page.getByRole("button", { name: /Ask Donna/ }).click();
+};
+const leave = (page) => page.evaluate(() => document.documentElement.dispatchEvent(new MouseEvent("mouseleave")));
+const dismissed = (page) => page.evaluate(() => window.__calls.some((c) => c.cmd === "dismiss_orb"));
+
+test("the orb goes away after four seconds of nothing", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await openOrbForIdle(page);
+  await leave(page);
+
+  await page.waitForTimeout(3000);
+  assert.equal(await dismissed(page), false, "not before four seconds");
+  await page.waitForTimeout(1600);
+  assert.equal(await dismissed(page), true, "gone after four");
+  await context.close();
+});
+
+test("the orb stays while the pointer rests on it", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await openOrbForIdle(page);
+  await page.evaluate(() => document.documentElement.dispatchEvent(new MouseEvent("mouseenter")));
+
+  await page.waitForTimeout(5000);
+  assert.equal(await dismissed(page), false, "hovering is how you keep it open to read");
+  await context.close();
+});
+
+test("the orb never throws away a half-typed message", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await openOrbForIdle(page);
+  await page.getByLabel("Tell Donna").fill("remind me to call");
+  await leave(page);
+
+  await page.waitForTimeout(5000);
+  assert.equal(await dismissed(page), false);
+  await context.close();
+});
+
+test("the orb stays while she is thinking", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.route("http://127.0.0.1:11434/**", () => new Promise(() => {}));
+  await openOrbForIdle(page);
+  await page.getByLabel("Tell Donna").fill("gym at 6pm today");
+  await page.getByLabel("Tell Donna").press("Enter");
+  await leave(page);
+
+  await page.waitForTimeout(5000);
+  assert.equal(await dismissed(page), false, "the answer would arrive into a hidden window");
+  await context.close();
+});
+
+test("a reminder that fired stays up until it is seen", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(fakeTauri);
+  await page.addInitScript(() => {
+    const d = new Date();
+    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    localStorage.setItem("donna_plan", JSON.stringify({
+      fixed: [], blocks: [], memories: [], sweptOn: date, askedOn: date,
+      reminders: [{ id: "r1", text: "Put the washing on", at: Date.now() - 60_000, done: false }],
+    }));
+  });
+  await page.goto(base + "?view=orb");
+  await page.getByText("Put the washing on").waitFor();
+  await leave(page);
+
+  await page.waitForTimeout(5000);
+  assert.equal(await dismissed(page), false, "you may be away from the screen when it fires");
+  await context.close();
+});
+
+test("hiding the orb under the pointer doesn't stop it going away next time", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await openOrbForIdle(page);
+  await page.evaluate(() => document.documentElement.dispatchEvent(new MouseEvent("mouseenter")));
+  // A hidden window gets no mouseleave, so the pointer was last seen on it.
+  await page.evaluate(() => {
+    const flip = (state) => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, get: () => state });
+      document.dispatchEvent(new Event("visibilitychange"));
+    };
+    flip("hidden");
+    flip("visible");
+  });
+
+  await page.waitForTimeout(4600);
+  assert.equal(await dismissed(page), true);
+  await context.close();
+});

@@ -19,6 +19,13 @@ export async function hideThisWindow() {
   await getCurrentWindow().hide();
 }
 
+// Hides the orb from Rust, which also hands focus back to whatever was in front.
+export async function dismissOrb() {
+  if (!isTauri()) return;
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("dismiss_orb").catch(() => {});
+}
+
 // Wakes the orb without taking keyboard focus (see `announce` in main.rs).
 export async function revealOrb() {
   if (!isTauri()) return;

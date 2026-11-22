@@ -10,7 +10,7 @@ import { outstanding } from "../lib/remind";
 import { unfinishedToday, shouldAskAboutToday } from "../lib/dayend";
 import { useStore } from "../hooks/useStore";
 import { today, nowMin, parseYmd, ymd, clock12 } from "../lib/time";
-import { hideThisWindow, openCalendar, resizeOrb, revealOrb } from "../lib/notify";
+import { dismissOrb, hideThisWindow, openCalendar, resizeOrb, revealOrb } from "../lib/notify";
 
 const RESTING = 72;
 const TICK_MS = 20_000;
@@ -18,6 +18,7 @@ const OPEN_WIDTH = 380;
 const CARD_MARGIN = 12;
 // A floor, so a measurement taken before the webfont lands cannot clip the card.
 const MIN_OPEN_HEIGHT = 108;
+const IDLE_MS = 4000;
 
 // The window is the orb, so it follows the content: a circle at rest, a card when it speaks.
 // `wake` is in the deps on purpose: it remounts the card, so without it the observer would
@@ -40,6 +41,34 @@ function useWindowFitsContent(ref, open, wake) {
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
   }, [ref, open, wake]);
+}
+
+// Four seconds of nothing and the orb gets out of the way. `stay` holds it: a half-typed message,
+// an answer on its way, or a reminder that has to be seen. `restart` changes on anything new to read.
+function useIdleDismiss(stay, restart) {
+  const [hovering, setHovering] = useState(false);
+  useEffect(() => {
+    const root = document.documentElement;
+    const enter = () => setHovering(true);
+    const leave = () => setHovering(false);
+    // A window hidden under the pointer never hears it leave.
+    const hidden = () => { if (document.visibilityState !== "visible") setHovering(false); };
+    root.addEventListener("mouseenter", enter);
+    root.addEventListener("mouseleave", leave);
+    document.addEventListener("visibilitychange", hidden);
+    return () => {
+      root.removeEventListener("mouseenter", enter);
+      root.removeEventListener("mouseleave", leave);
+      document.removeEventListener("visibilitychange", hidden);
+    };
+  }, []);
+  useEffect(() => {
+    if (stay || hovering) return undefined;
+    const id = setTimeout(() => {
+      if (document.visibilityState === "visible") dismissOrb();
+    }, IDLE_MS);
+    return () => clearTimeout(id);
+  }, [stay, hovering, restart]);
 }
 
 function daysLeft(deadline) {
@@ -108,6 +137,8 @@ export default function Orb() {
   }, [ids]);
 
   useWindowFitsContent(card, isOpen, wake);
+  const mustBeSeen = (waiting.length > 0 || unfinished.length > 0) && !dismissed;
+  useIdleDismiss(busy || text.trim() !== "" || mustBeSeen, `${wake}:${thread.length}:${isOpen}`);
 
   useEffect(() => {
     const onVisible = () => {
