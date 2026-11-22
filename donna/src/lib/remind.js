@@ -1,5 +1,5 @@
 import * as chrono from "chrono-node";
-import { WEEKDAYS } from "./time.js";
+import { WEEKDAYS, clock12, fromMin } from "./time.js";
 import { isProse } from "./parser.js";
 
 const MINUTE_MS = 60_000;
@@ -103,7 +103,7 @@ export function whenSaid(atMs, nowMs = Date.now()) {
   if (atMs - nowMs <= HOUR_MS) return `in ${Math.max(1, minutes)} min${Math.max(1, minutes) === 1 ? "" : "s"}`;
 
   const when = new Date(atMs);
-  const clock = `${String(when.getHours()).padStart(2, "0")}:${String(when.getMinutes()).padStart(2, "0")}`;
+  const clock = clock12(fromMin(when.getHours() * 60 + when.getMinutes()));
   return when.toDateString() === new Date(nowMs).toDateString()
     ? `at ${clock}`
     : `${WEEKDAYS[when.getDay()].toLowerCase()} ${clock}`;

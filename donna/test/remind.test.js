@@ -144,8 +144,8 @@ test("a word that only looks like a date stays in the reminder", () => {
 test("she says the time back on the real clock, so a wrong guess is seen at once", () => {
   assert.equal(whenSaid(NOW + 20 * 60_000, NOW), "in 20 mins");
   assert.equal(whenSaid(NOW + 1 * 60_000, NOW), "in 1 min");
-  assert.equal(whenSaid(new Date(2099, 0, 8, 23, 0).getTime(), NOW), "at 23:00");
-  assert.equal(whenSaid(new Date(2099, 0, 9, 9, 0).getTime(), NOW), "fri 09:00");
+  assert.equal(whenSaid(new Date(2099, 0, 8, 23, 0).getTime(), NOW), "at 11pm");
+  assert.equal(whenSaid(new Date(2099, 0, 9, 9, 0).getTime(), NOW), "fri 9am");
 });
 
 test("a deadline-style time leaves no dangling word, and a phrasal verb keeps its ending", () => {

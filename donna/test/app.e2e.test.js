@@ -679,7 +679,9 @@ async function chatbox(page) {
   await page.goto(base);
   return page.getByLabel("Tell Donna");
 }
-const savedReminders = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("donna_plan")).reminders);
+// A plan nobody has written since it was seeded has no reminders key at all: that is "none".
+// Reading it raw passed only after 22:00, when the overnight research happened to write the plan.
+const savedReminders = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("donna_plan")).reminders ?? []);
 
 test("typing a reminder saves it on the real clock and says when, without the model", async () => {
   const context = await browser.newContext();
@@ -731,7 +733,7 @@ test("a reminder for tomorrow is saved for tomorrow, and she says the day", asyn
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const day = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][tomorrow.getDay()];
-  await assert.doesNotReject(page.getByText(`got it. call mum — i'll say ${day} 09:00.`).waitFor());
+  await assert.doesNotReject(page.getByText(`got it. call mum — i'll say ${day} 9am.`).waitFor());
   const [saved] = await savedReminders(page);
   assert.equal(new Date(saved.at).getDate(), tomorrow.getDate(), "tomorrow — it used to fire today");
   assert.equal(new Date(saved.at).getHours(), 9);
@@ -827,7 +829,7 @@ test("a reminder is drawn at its time, and says what it is", async () => {
   await page.addInitScript(seedDetail);
   await page.goto(base);
 
-  await assert.doesNotReject(page.getByRole("img", { name: /reminder 17:30 — call mum/i }).waitFor());
+  await assert.doesNotReject(page.getByRole("img", { name: /reminder 5:30pm — call mum/i }).waitFor());
   await context.close();
 });
 

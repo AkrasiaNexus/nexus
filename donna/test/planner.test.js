@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createTools, runTurn, systemPrompt } from "../src/lib/planner.js";
-import { today, addDays, parseYmd, WEEKDAYS } from "../src/lib/time.js";
+import { today, addDays, parseYmd, clock12, WEEKDAYS } from "../src/lib/time.js";
 
 const TODAY = "2026-11-24";
 
@@ -63,7 +63,7 @@ test("a finished booking is confirmed from the tool's own result, without asking
   assert.equal(booked.length, 1, "the session was actually booked");
   assert.deepEqual(changes, ["schedule_block"]);
   assert.equal(sent.length, 1, "exactly one model call");
-  assert.equal(text, "booked rust tue 19:00.");
+  assert.equal(text, "booked rust tue 7pm.");
   restore();
 });
 
@@ -77,7 +77,7 @@ test("a weekly commitment is confirmed with the days that were set", async () =>
   const { text } = await runTurn([{ role: "user", content: "gym mon wed fri 6-7" }], api);
 
   assert.equal(sent.length, 1, "exactly one model call");
-  assert.equal(text, "gym's in mon wed fri, 18:00-19:00.", "the days are the point; dropping them loses the answer");
+  assert.equal(text, "gym's in mon wed fri, 6pm–7pm.", "the days are the point; dropping them loses the answer");
   restore();
 });
 
@@ -126,7 +126,7 @@ test("a goal names the sessions it booked", async () => {
   assert.ok(booked.length >= 2, "the next two days are free, whatever time it is now");
   const first = booked[0];
   const day = WEEKDAYS[parseYmd(first.date).getDay()].toLowerCase();
-  assert.equal(text, `added learn rust. ${booked.length} sessions, first ${day} ${first.start}.`);
+  assert.equal(text, `added learn rust. ${booked.length} sessions, first ${day} ${clock12(first.start)}.`);
   restore();
 });
 
@@ -651,7 +651,7 @@ test("a remembered fact never ends the turn, because she is told to save one unp
 
   assert.equal(booked.length, 1, "the booking still happened");
   assert.deepEqual(changes, ["remember", "schedule_block"]);
-  assert.equal(text, "booked rust tue 21:00.");
+  assert.equal(text, "booked rust tue 9pm.");
   assert.equal(sent.length, 2, "the remember round went back to the model");
   restore();
 });
@@ -672,7 +672,7 @@ test("two writes in one round are both confirmed", async () => {
 
   assert.equal(booked.length, 2);
   assert.equal(sent.length, 1, "exactly one model call");
-  assert.equal(text, "booked rust tue 19:00. booked gym tue 07:00.");
+  assert.equal(text, "booked rust tue 7pm. booked gym tue 7am.");
   restore();
 });
 
@@ -743,7 +743,7 @@ test("moving and removing are confirmed too", async () => {
 
   let { restore } = stubReplies(toolCall("move_block", { id: "b1", date: TODAY, start: "20:00" }));
   let { api } = tools({ blocks });
-  assert.equal((await runTurn([{ role: "user", content: "push it an hour" }], api)).text, "moved it to tue 20:00.");
+  assert.equal((await runTurn([{ role: "user", content: "push it an hour" }], api)).text, "moved it to tue 8pm.");
   restore();
 
   ({ restore } = stubReplies(toolCall("remove_block", { id: "b1" })));
@@ -763,7 +763,7 @@ test("arguments sent as a JSON string are read, so a booking works on any model"
   const { text } = await runTurn([{ role: "user", content: "book rust 7pm" }], api);
 
   assert.equal(booked.length, 1, "it was booked");
-  assert.equal(text, "booked rust tue 19:00.", "and the confirmation reads the parsed arguments, not the string");
+  assert.equal(text, "booked rust tue 7pm.", "and the confirmation reads the parsed arguments, not the string");
   assert.equal(sent.length, 1);
   restore();
 });

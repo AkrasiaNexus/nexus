@@ -9,7 +9,7 @@ import { applyProposals } from "../lib/apply";
 import { outstanding } from "../lib/remind";
 import { unfinishedToday, shouldAskAboutToday } from "../lib/dayend";
 import { useStore } from "../hooks/useStore";
-import { today, nowMin, parseYmd, ymd } from "../lib/time";
+import { today, nowMin, parseYmd, ymd, clock12 } from "../lib/time";
 import { hideThisWindow, resizeOrb, revealOrb } from "../lib/notify";
 
 const RESTING = 72;
@@ -203,7 +203,7 @@ export default function Orb() {
                   className="w-4 h-4 flex-none rounded-full border border-donna-muted hover:border-donna-text hover:bg-donna-raised active:scale-90 transition-all duration-150"
                 />
                 <span className="min-w-0 flex-1 truncate">{b.title}</span>
-                <span className="flex-none font-mono text-[10px] text-donna-faint">{b.start}</span>
+                <span className="flex-none font-mono text-[10px] text-donna-faint">{clock12(b.start)}</span>
               </li>
             ))}
           </ul>
@@ -231,7 +231,7 @@ export default function Orb() {
             <li key={p.finding.id} style={{ "--i": i }} className="flex items-start gap-2 text-[13px] leading-snug">
               <span className="mt-1.5 w-1 h-1 flex-none rounded-full bg-donna-text" />
               <span className="min-w-0 flex-1">
-                {p.finding.title} closes {p.finding.deadline}. {p.slot.date === today() ? "today" : p.slot.date} at {p.slot.start}?
+                {p.finding.title} closes {p.finding.deadline}. {p.slot.date === today() ? "today" : p.slot.date} at {clock12(p.slot.start)}?
               </span>
               <button onClick={() => planStore.blockForFinding(p.finding.id, { title: p.title, ...p.slot })} className="orb-chip flex-none">
                 block it

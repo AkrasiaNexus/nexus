@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { toMin, fromMin, addDays, isYmd, parseYmd, weekOf } from "../src/lib/time.js";
+import { toMin, fromMin, addDays, isYmd, parseYmd, weekOf, clock12 } from "../src/lib/time.js";
 import { busyOn, freeSlots, findClash, goalSessions } from "../src/lib/schedule.js";
 
 const DATE = "2026-11-24";
@@ -212,4 +212,15 @@ test("a clash reports a neutral label for a calendar event, never the feed's own
 
   // A commitment the user typed, and a session Donna booked, are the user's own words.
   assert.equal(busyOn(state(), DATE).find((b) => b.kind === "fixed").label, "School");
+});
+
+test("a clock time is shown the 12-hour way, with am or pm", () => {
+  assert.equal(clock12("19:00"), "7pm");
+  assert.equal(clock12("09:30"), "9:30am");
+  assert.equal(clock12("12:00"), "12pm", "noon");
+  assert.equal(clock12("00:00"), "12am", "midnight");
+  assert.equal(clock12("00:05"), "12:05am");
+  assert.equal(clock12("12:45"), "12:45pm");
+  assert.equal(clock12("23:00"), "11pm");
+  assert.equal(clock12("07:00"), "7am");
 });

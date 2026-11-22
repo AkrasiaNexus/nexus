@@ -1,4 +1,4 @@
-import { toMin, ymd, parseYmd } from "./time.js";
+import { toMin, ymd, parseYmd, clock12 } from "./time.js";
 import { findClash } from "./schedule.js";
 
 const DAY_MS = 86_400_000;
@@ -19,7 +19,7 @@ export function displacementCost(plan, items, { date, start, minutes }, fromDate
   if (!block) return null;
 
   const goal = items.find((i) => i.id === block.itemId && i.status === "active") ?? null;
-  if (!goal) return { block, goal: null, sessionsLeft: 0, daysLeft: 0, tight: false, warning: `that's ${block.title.toLowerCase()} at ${block.start}. replace it?` };
+  if (!goal) return { block, goal: null, sessionsLeft: 0, daysLeft: 0, tight: false, warning: `that's ${block.title.toLowerCase()} at ${clock12(block.start)}. replace it?` };
 
   const sessionsLeft = plan.blocks.filter((b) => b.itemId === goal.id && !b.done).length;
   const daysLeft = Math.max(0, Math.ceil((parseYmd(ymd(new Date(goal.deadline))) - parseYmd(fromDate)) / DAY_MS));

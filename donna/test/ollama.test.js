@@ -103,3 +103,10 @@ test("a reply that is not JSON is a readable error, not a SyntaxError", async ()
   await assert.rejects(chat([{ role: "user", content: "hi" }], []), (e) => !(e instanceof SyntaxError) && /unreadable/.test(e.message));
   restore();
 });
+
+test("the model can be chosen at build time, so trying a faster one is not a code change", async () => {
+  const { modelFrom } = await import("../src/lib/ollama.js");
+  assert.equal(modelFrom({}), "gemma4:12b", "unset means the default");
+  assert.equal(modelFrom({ VITE_OLLAMA_MODEL: "qwen3.5:4b" }), "qwen3.5:4b");
+  assert.equal(modelFrom({ VITE_OLLAMA_MODEL: "  " }), "gemma4:12b", "blank is unset");
+});

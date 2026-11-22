@@ -1,4 +1,4 @@
-import { today, nowMin, toMin, fromMin, addDays, isYmd } from "../lib/time";
+import { today, nowMin, toMin, fromMin, addDays, isYmd, clock12 } from "../lib/time";
 import { findClash, freeSlots, DAY_START, DAY_END } from "../lib/schedule";
 import { rollOverMissed } from "../lib/backlog";
 import { topUpGoals } from "../lib/topup";
@@ -89,7 +89,7 @@ export const planStore = {
   // Books a session. Throws with the clashing thing's name so the caller can say why.
   schedule({ itemId = null, title, date, start, minutes }) {
     const hit = findClash(plan, date, toMin(start), minutes);
-    if (hit) throw new Error(`clashes with ${hit.label} at ${fromMin(hit.s)}`);
+    if (hit) throw new Error(`clashes with ${hit.label} at ${clock12(fromMin(hit.s))}`);
     const block = { id: crypto.randomUUID(), itemId, title, date, start, minutes, done: false };
     commit({ ...plan, blocks: [...plan.blocks, block] });
     return block;
@@ -125,7 +125,7 @@ export const planStore = {
   // window where the session exists and she offers to book it again.
   blockForFinding(findingId, { title, date, start, minutes }) {
     const hit = findClash(plan, date, toMin(start), minutes);
-    if (hit) throw new Error(`clashes with ${hit.label} at ${fromMin(hit.s)}`);
+    if (hit) throw new Error(`clashes with ${hit.label} at ${clock12(fromMin(hit.s))}`);
     const block = { id: crypto.randomUUID(), itemId: null, title, date, start, minutes, done: false };
     commit({
       ...plan,
@@ -181,7 +181,7 @@ export const planStore = {
     const block = plan.blocks.find((b) => b.id === id);
     if (!block) throw new Error(`no session with id ${id}`);
     const hit = findClash(plan, date, toMin(start), block.minutes, id);
-    if (hit) throw new Error(`clashes with ${hit.label} at ${fromMin(hit.s)}`);
+    if (hit) throw new Error(`clashes with ${hit.label} at ${clock12(fromMin(hit.s))}`);
     const moved = { ...block, date, start };
     commit({ ...plan, blocks: plan.blocks.map((b) => (b.id === id ? moved : b)) });
     return moved;

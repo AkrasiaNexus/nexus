@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { planStore } from "../stores/planStore";
 import { itemStore } from "../stores/itemStore";
 import { useStore } from "../hooks/useStore";
-import { weekOf, today, nowMin, toMin, parseYmd, addDays, ymd, fromMin, WEEKDAYS } from "../lib/time";
+import { weekOf, today, nowMin, toMin, parseYmd, addDays, ymd, fromMin, clock12, WEEKDAYS } from "../lib/time";
 import { DAY_START, DAY_END } from "../lib/schedule";
 import { unplanned } from "../lib/brief";
 
@@ -129,7 +129,7 @@ function Gutter() {
           className="absolute right-1.5 -translate-y-1/2 font-mono text-[9.5px] text-donna-faint"
           style={{ top: yFor(h * 60) + 38 }}
         >
-          {String(h).padStart(2, "0")}
+          {clock12(fromMin(h * 60))}
         </span>
       ))}
     </div>
@@ -193,8 +193,8 @@ function Day({ date, plan, goalOf, deadlines, reminders, minuteNow }) {
           <span
             key={r.id}
             role="img"
-            aria-label={`reminder ${fromMin(minuteOf(r.when))} — ${r.text}`}
-            title={`${fromMin(minuteOf(r.when))} · ${r.text}${r.fired ? " — waiting to be ticked off" : ""}`}
+            aria-label={`reminder ${clock12(fromMin(minuteOf(r.when)))} — ${r.text}`}
+            title={`${clock12(fromMin(minuteOf(r.when)))} · ${r.text}${r.fired ? " — waiting to be ticked off" : ""}`}
             className={`absolute left-[2px] z-20 w-[7px] h-[7px] -translate-y-1/2 rounded-full border border-donna-muted ${r.fired ? "bg-donna-muted" : "bg-donna-surface"}`}
             style={{ top: yFor(onPage(minuteOf(r.when))) }}
           />
@@ -221,13 +221,13 @@ function Session({ block, goal }) {
   return (
     <button
       onClick={() => (block.done ? planStore.undo(block.id) : planStore.complete(block.id))}
-      title={`${block.start} · ${block.minutes}m${about} — click to ${block.done ? "undo" : "tick off"}`}
+      title={`${clock12(block.start)} · ${block.minutes}m${about} — click to ${block.done ? "undo" : "tick off"}`}
       className={`absolute left-[3px] right-[3px] rounded px-1.5 py-1 overflow-hidden text-left text-[11px] leading-tight border-l-2 ${category} ${block.done ? "opacity-40" : ""}`}
       style={{ top: yFor(toMin(block.start)), height: (block.minutes / 60) * HOUR_PX - 2 }}
     >
       <span className={`block truncate font-medium ${block.done ? "line-through" : ""}`}>{block.title}</span>
       <span className={`font-mono text-[9px] text-donna-muted ${short ? "ml-1" : "block"}`}>
-        {block.start} · {block.minutes}m
+        {clock12(block.start)} · {block.minutes}m
       </span>
       {block.isBacklog && !block.done && (
         <span className="ml-1 font-mono text-[8.5px] text-donna-muted border border-donna-border rounded px-1">backlog</span>

@@ -1,5 +1,5 @@
 import { chat } from "./ollama.js";
-import { today, addDays, ymd, fromMin, nowMin, toMin, isYmd, parseYmd, WEEKDAYS } from "./time.js";
+import { today, addDays, ymd, fromMin, nowMin, toMin, isYmd, parseYmd, clock12, WEEKDAYS } from "./time.js";
 import { freeSlots, goalSessions, DAY_START, DAY_END, MAX_GOAL_DAYS } from "./schedule.js";
 import { requiresConfirmation, objection } from "./pushback.js";
 import { displacementCost } from "./pressure.js";
@@ -45,10 +45,10 @@ const plainly = (text) => String(text).trim().toLowerCase();
 // ("book rust tmrw and gym friday") still ends after the first round; drop the early return if
 // that ever shows up in real use.
 const SAID = {
-  schedule_block: (a) => `booked ${plainly(a.title)} ${dayName(a.date)} ${a.start}.`,
+  schedule_block: (a) => `booked ${plainly(a.title)} ${dayName(a.date)} ${clock12(a.start)}.`,
   set_fixed: (a) =>
-    `${plainly(a.title)}'s in ${a.days.map((d) => WEEKDAYS[d].toLowerCase()).join(" ")}, ${a.start}-${a.end}.`,
-  move_block: (a) => `moved it to ${dayName(a.date)} ${a.start}.`,
+    `${plainly(a.title)}'s in ${a.days.map((d) => WEEKDAYS[d].toLowerCase()).join(" ")}, ${clock12(a.start)}–${clock12(a.end)}.`,
+  move_block: (a) => `moved it to ${dayName(a.date)} ${clock12(a.start)}.`,
   remove_block: () => "removed that session.",
   remove_goal: () => "dropped it, sessions and all.",
   clear_day: (a, r) => {
@@ -60,7 +60,7 @@ const SAID = {
     // Anything she needs to explain — nothing fit, a day skipped, a horizon cut short — is hers.
     if (!r.booked?.length || r.skipped?.length || r.note || a.for_profile) return null;
     const [date, start] = r.booked[0].split(" ");
-    return `added ${plainly(a.title)}. ${r.booked.length} session${r.booked.length === 1 ? "" : "s"}, first ${dayName(date)} ${start}.`;
+    return `added ${plainly(a.title)}. ${r.booked.length} session${r.booked.length === 1 ? "" : "s"}, first ${dayName(date)} ${clock12(start)}.`;
   },
 };
 
@@ -147,7 +147,7 @@ First decide what they told you about:
 - They change their mind ("nah drop rust"): remove_goal. Moving or shrinking: move_block, remove_block.
 - Anything lasting they tell you about themselves — when they work best, what they can't do on a Tuesday, a constraint, a preference — remember it, without being asked. Use what you know about them when you pick a slot: find_free_slots takes earliest and latest, so "i code best late" means searching the evening, not booking the first gap of the day.
 
-Reply in one or two short lowercase sentences in their register. Say what you changed, with the day and time.
+Reply in one or two short lowercase sentences in their register. Say what you changed, with the day and time. Say times the 12-hour way with am or pm, like 7pm or 9:30am — never 19:00.
 
 How they write: ${profile}
 

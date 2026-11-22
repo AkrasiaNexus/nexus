@@ -1,4 +1,4 @@
-import { toMin, fromMin } from "./time.js";
+import { toMin, fromMin, clock12 } from "./time.js";
 import { freeSlots, DAY_START, DAY_END } from "./schedule.js";
 import { pendingDeadlines } from "./pushback.js";
 import { dueSoonest } from "./research.js";
@@ -61,9 +61,9 @@ function say({ free, freeMinutes, due, next, found }) {
   const lines = [...opener];
 
   if (free.length) {
-    lines.push(`${hours(freeMinutes)} free — ${list(free.map((f) => `${f.start}–${f.end}`))}.`);
+    lines.push(`${hours(freeMinutes)} free — ${list(free.map((f) => `${clock12(f.start)}–${clock12(f.end)}`))}.`);
   } else {
-    lines.push(`nothing free left today, you're booked till ${fromMin(Math.max(...next.map((b) => toMin(b.start) + b.minutes)))}.`);
+    lines.push(`nothing free left today, you're booked till ${clock12(fromMin(Math.max(...next.map((b) => toMin(b.start) + b.minutes))))}.`);
   }
 
   const unbooked = due.filter((d) => !d.booked);
@@ -79,9 +79,9 @@ function say({ free, freeMinutes, due, next, found }) {
     const soonest = next[0];
     const matters = next.some((b) => b.priority === "high");
     // Knowing what is booked is half the answer; knowing whether it can slide is the rest.
-    if (soonest.priority === "high") lines.push(`next up ${soonest.start}, ${soonest.title} — that's the one that matters today.`);
-    else if (soonest.priority === "low") lines.push(`next up ${soonest.start}, ${soonest.title}. low priority though, walk away from it if something better turns up.`);
-    else lines.push(`next up ${soonest.start}, ${soonest.title}.`);
+    if (soonest.priority === "high") lines.push(`next up ${clock12(soonest.start)}, ${soonest.title} — that's the one that matters today.`);
+    else if (soonest.priority === "low") lines.push(`next up ${clock12(soonest.start)}, ${soonest.title}. low priority though, walk away from it if something better turns up.`);
+    else lines.push(`next up ${clock12(soonest.start)}, ${soonest.title}.`);
 
     if (!matters && !due.length && next.every((b) => b.priority === "low")) {
       lines.push("nothing today is urgent. go have fun if you want.");

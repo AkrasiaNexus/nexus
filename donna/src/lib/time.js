@@ -41,3 +41,14 @@ export function weekOf(date) {
   const monday = addDays(date, -shift);
   return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
 }
+
+// How a clock time is shown and said: the 12-hour way with am or pm, and no ":00" on the hour —
+// "7pm", "9:30am". Storage stays HH:MM, which the scheduling and the model's tools rely on.
+export function clock12(hhmm) {
+  const minutes = toMin(hhmm);
+  const hour = Math.floor(minutes / 60) % 24;
+  const minute = minutes % 60;
+  const suffix = hour < 12 ? "am" : "pm";
+  const shown = hour % 12 === 0 ? 12 : hour % 12;
+  return minute ? `${shown}:${pad(minute)}${suffix}` : `${shown}${suffix}`;
+}
