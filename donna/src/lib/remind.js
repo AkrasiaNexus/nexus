@@ -11,7 +11,7 @@ const START_OF_DAY = 9;
 // "to" is optional after "remind me" because the time often comes first.
 const ASK = /^\s*(?:(?:can you|could you|pls|plz|please|yo)\s+)?(?:remind me|ping me|nudge me|don'?t let me forget|remember to)\b\s*(?:to\b\s*)?/i;
 // Words that already place a time of day, so chrono's reading of them is kept as it is.
-const PART_OF_DAY = /\b(?:morning|afternoon|evening|night|tonight|noon|midday|midnight|lunch)\b/i;
+export const PART_OF_DAY = /\b(?:morning|afternoon|evening|night|tonight|noon|midday|midnight|lunch)\b/i;
 // "at 5" with no am or pm.
 const BARE_HOUR = /^(?:at\s+)?(\d{1,2})(?::(\d{2}))?$/i;
 // chrono sometimes leaves the word that introduced a time behind: "by 5pm" matches "5pm", "at

@@ -1032,3 +1032,51 @@ test("hiding the orb under the pointer doesn't stop it going away next time", as
   assert.equal(await dismissed(page), true);
   await context.close();
 });
+
+// Her clock is set before the page loads, so the hour of day is the test's, not the machine's.
+const orbAt = async (page, hour) => {
+  const when = new Date();
+  when.setHours(hour, 0, 0, 0);
+  await page.clock.setFixedTime(when);
+  await page.addInitScript(fakeTauri);
+  await page.addInitScript(seedOrbCard);
+  const sent = [];
+  await page.route(OLLAMA_CHAT, async (route) => {
+    sent.push(JSON.parse(route.request().postData()));
+    await route.fulfill(ollamaSays({ content: "booked." }));
+  });
+  await page.goto(base + "?view=orb");
+  await page.getByRole("button", { name: /Ask Donna/ }).click();
+  return sent;
+};
+const lastUserLine = (body) => body.messages.filter((m) => m.role === "user").at(-1).content;
+
+test("'today at 7' said after 7am goes to the model as 7pm", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const sent = await orbAt(page, 10);
+
+  await page.getByLabel("Tell Donna").fill("i wanna go gym today at 7");
+  await page.getByLabel("Tell Donna").press("Enter");
+  await page.getByText("booked.").waitFor();
+
+  assert.match(lastUserLine(sent[0]), /today at 7pm/);
+  await context.close();
+});
+
+test("when 7 could be either, she asks am or pm before touching the week", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const sent = await orbAt(page, 5);
+
+  await page.getByLabel("Tell Donna").fill("gym today at 7");
+  await page.getByLabel("Tell Donna").press("Enter");
+  await page.getByText("7am or 7pm?").waitFor();
+  assert.equal(sent.length, 0, "no model call for a question she can ask herself");
+
+  await page.getByLabel("Tell Donna").fill("pm");
+  await page.getByLabel("Tell Donna").press("Enter");
+  await page.getByText("booked.").waitFor();
+  assert.match(lastUserLine(sent[0]), /gym today at 7pm/);
+  await context.close();
+});

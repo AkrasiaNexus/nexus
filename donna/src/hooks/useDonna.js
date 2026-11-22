@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { createTools, runTurn, systemPrompt, messagesForModel } from "../lib/planner";
 import { parseReminder, completeReminder, whenSaid } from "../lib/remind";
+import { readMeridiem, settleMeridiem } from "../lib/meridiem";
 import { planStore } from "../stores/planStore";
 import { itemStore } from "../stores/itemStore";
 import profileText from "../lib/profile.md?raw";
@@ -43,6 +44,8 @@ export function useDonna() {
   const busyRef = useRef(false);
   // A reminder asked for without a time, waiting for the reply that names one.
   const pendingRef = useRef(null);
+  // A message with an hour that could be am or pm, waiting for the reply that says which.
+  const unsureRef = useRef(null);
 
   async function say(text) {
     if (busyRef.current) return false;
@@ -65,10 +68,24 @@ export function useDonna() {
       return true;
     }
 
+    // The model guesses am or pm, and guessed 7am at 10am. Settled here, or asked, before it sees it.
+    const unsure = unsureRef.current;
+    unsureRef.current = null;
+    let meant = unsure && settleMeridiem(unsure, text);
+    if (!meant) {
+      const read = readMeridiem(text);
+      if (read?.ask) {
+        unsureRef.current = text;
+        answer(text, read.ask);
+        return true;
+      }
+      meant = read?.text ?? text;
+    }
+
     busyRef.current = true;
     setBusy(true);
 
-    const history = [...thread, { role: "user", content: text }].slice(-HISTORY_LIMIT);
+    const history = [...thread, { role: "user", content: meant }].slice(-HISTORY_LIMIT);
     setThread(history);
     let reply;
     try {

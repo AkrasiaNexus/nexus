@@ -7,6 +7,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { parseBlurt } from "../src/lib/parser.js";
 import { parseReminder, completeReminder, whenSaid } from "../src/lib/remind.js";
+import { readMeridiem, settleMeridiem } from "../src/lib/meridiem.js";
 import { busyOn, freeSlots, findClash, goalSessions } from "../src/lib/schedule.js";
 import { dailyBrief, unplanned } from "../src/lib/brief.js";
 import { objection, requiresConfirmation } from "../src/lib/pushback.js";
@@ -120,6 +121,28 @@ test("a reminder is either not one, or has words and a time that is still to com
     if (reminder.at) clean("when", whenSaid(reminder.at, now), seed);
     const done = completeReminder(reminder.text, g.text(), now);
     assert.ok(done === null || (done.at > now && done.text === reminder.text), `seed ${seed}: completion went wrong`);
+  }
+});
+
+// True if `out` is `raw` with `added` inserted at one place and nothing else changed.
+const insertedOnce = (raw, out, added) =>
+  [...out.matchAll(new RegExp(added, "g"))].some((m) => out.slice(0, m.index) + out.slice(m.index + m[0].length) === raw);
+
+test("am or pm is only ever added to the hour they wrote, or asked about", () => {
+  for (let seed = 1; seed <= RUNS * 3; seed++) {
+    const g = gen(seed);
+    const raw = `${g.text()} at ${g.int(0, 13)}${g.pick(["", ":30", ":05"])} ${g.text()}`;
+    const now = new Date();
+    now.setHours(g.int(0, 23), g.int(0, 59), 0, 0);
+    const read = readMeridiem(raw, now);
+    if (read === null) continue;
+    if (read.ask) {
+      assert.match(read.ask, /^\d{1,2}(:\d{2})?am or \d{1,2}(:\d{2})?pm\?$/, `seed ${seed}: ${read.ask}`);
+      const settled = settleMeridiem(raw, g.pick(["am", "pm", "morning", "tonight", "nah"]), now);
+      assert.ok(settled === null || insertedOnce(raw, settled, " ?[ap]m"), `seed ${seed}: ${JSON.stringify(raw)} -> ${settled}`);
+    } else {
+      assert.ok(insertedOnce(raw, read.text, " ?pm"), `seed ${seed}: ${JSON.stringify(raw)} -> ${read.text}`);
+    }
   }
 });
 

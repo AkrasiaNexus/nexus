@@ -1,9 +1,10 @@
-import test from "node:test";
+import test, { mock } from "node:test";
 import assert from "node:assert/strict";
 import { createTools, runTurn, systemPrompt } from "../src/lib/planner.js";
 import { today, addDays, parseYmd, clock12, WEEKDAYS } from "../src/lib/time.js";
 
-const TODAY = "2026-11-24";
+// Ahead of the real clock, so a 7pm booking on it is never already past when the suite runs.
+const TODAY = addDays(today(), 2);
 
 function stubReplies(...replies) {
   const original = globalThis.fetch;
@@ -793,4 +794,35 @@ test("arguments that arrived as a string go back to the model as an object", asy
   const echoed = sent[1].messages.find((m) => m.role === "assistant" && m.tool_calls).tool_calls[0];
   assert.deepEqual(echoed.function.arguments, { minutes: 60 });
   restore();
+});
+
+// Pinned to 10am, so 7am today has gone whenever the suite runs.
+function atTenToday(t) {
+  const morning = new Date();
+  morning.setHours(10, 0, 0, 0);
+  mock.timers.enable({ apis: ["Date"], now: morning });
+  t.after(() => mock.timers.reset());
+}
+
+test("a time already gone today is not booked without asking", async (t) => {
+  atTenToday(t);
+  const { restore } = stubReplies(toolCall("schedule_block", { title: "Gym", date: today(), start: "07:00", minutes: 60 }));
+  t.after(restore);
+  const { api, booked } = tools();
+
+  const { text } = await runTurn([{ role: "user", content: "gym today at 7" }], api);
+
+  assert.equal(booked.length, 0);
+  assert.equal(text, "7am today's already gone. 7pm, or another day?");
+});
+
+test("a time gone today can still be booked once they say so", async (t) => {
+  atTenToday(t);
+  const { restore } = stubReplies(toolCall("schedule_block", { title: "Gym", date: today(), start: "07:00", minutes: 60, confirmed: true }));
+  t.after(restore);
+  const { api, booked } = tools();
+
+  await runTurn([{ role: "user", content: "i did go at 7, put it in" }], api);
+
+  assert.equal(booked.length, 1);
 });

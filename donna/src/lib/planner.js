@@ -162,6 +162,15 @@ const schema = (name, description, properties, required) => ({
   function: { name, description, parameters: { type: "object", properties, required } },
 });
 
+const HALF_DAY = 12 * 60;
+
+// Gone in the morning, the evening is the likely meaning; gone in the evening, only another day is.
+function pastToday(start) {
+  const minutes = toMin(start);
+  const evening = minutes < HALF_DAY && minutes + HALF_DAY > nowMin() ? `${clock12(fromMin(minutes + HALF_DAY))}, or another day` : "another day";
+  return `${clock12(start)} today's already gone. ${evening}?`;
+}
+
 // The tools close over the stores so the planner stays testable with fakes.
 export function createTools({ plan, items, onSchedule, onRemoveGoal, onSetFixed, onMoveBlock, onRemoveBlock, onAddGoal, onRemember, onForget }) {
   // Booked in code, not by the model: Gemma said "i'll book those now" and booked nothing.
@@ -235,6 +244,10 @@ export function createTools({ plan, items, onSchedule, onRemoveGoal, onSetFixed,
         toMin(block.start);
         checkMinutes(block.minutes);
         if (block.goal_id !== undefined) checkId(items(), block.goal_id, "goal");
+        // The model read "today at 7" as 7am at 10am. Only a yes books a time that has gone.
+        if (!confirmed && block.date === today() && toMin(block.start) < nowMin()) {
+          return { blocked: true, ask: pastToday(block.start) };
+        }
         // A goal's own session never needs permission from that same goal's deadline.
         const others = items().filter((i) => i.id !== block.goal_id);
         if (!confirmed && requiresConfirmation(others, block.date)) {
