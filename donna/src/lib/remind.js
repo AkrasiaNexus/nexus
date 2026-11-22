@@ -1,6 +1,7 @@
 import * as chrono from "chrono-node";
 import { WEEKDAYS, clock12, fromMin } from "./time.js";
 import { isProse } from "./parser.js";
+import { leadFor } from "./reminders.js";
 
 const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
@@ -111,9 +112,13 @@ export function whenSaid(atMs, nowMs = Date.now()) {
 
 // Reminders whose moment fell in (since, now]. Unlike a session, one slept through still
 // fires: a forgotten two-minute job is exactly what this is for.
+// When it comes up: on its minute, or a little before if it was set well ahead. One saved before
+// `setAt` existed keeps its minute.
+const showsAt = (r) => r.at - leadFor(r.at, r.setAt, 0) * MINUTE_MS;
+
 export function dueRemindersAt(reminders, since, now) {
   return reminders
-    .filter((r) => !r.done && r.at !== null && r.at > since && r.at <= now)
+    .filter((r) => !r.done && r.at !== null && showsAt(r) > since && showsAt(r) <= now)
     .sort((a, b) => a.at - b.at);
 }
 
@@ -121,7 +126,7 @@ export function dueRemindersAt(reminders, since, now) {
 // takes: a notification you missed is a thing forgotten again, which is the whole problem.
 export function outstanding(reminders, now = Date.now()) {
   return reminders
-    .filter((r) => !r.done && r.at !== null && r.at <= now)
+    .filter((r) => !r.done && r.at !== null && showsAt(r) <= now)
     .sort((a, b) => a.at - b.at);
 }
 
@@ -129,7 +134,7 @@ export function outstanding(reminders, now = Date.now()) {
 // minute-tick happens to come after it. Null when nothing is waiting.
 export function msUntilNext(reminders, now = Date.now()) {
   const next = reminders
-    .filter((r) => !r.done && r.at !== null && r.at > now)
-    .reduce((soonest, r) => Math.min(soonest, r.at), Infinity);
+    .filter((r) => !r.done && r.at !== null && showsAt(r) > now)
+    .reduce((soonest, r) => Math.min(soonest, showsAt(r)), Infinity);
   return next === Infinity ? null : next - now;
 }

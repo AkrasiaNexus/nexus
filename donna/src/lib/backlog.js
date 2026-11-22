@@ -30,7 +30,8 @@ export function rollOverMissed(state, onDate, nowMinutes) {
   for (const block of missed) {
     const slot = carried.includes(block) && freeSlots(next, target, block.minutes, DAY_START, DAY_END, false)[0];
     const placed = slot
-      ? { ...block, date: target, start: slot.start, isBacklog: true }
+      // Skipped today is not skipped tomorrow: it warns again where it lands.
+      ? { ...block, date: target, start: slot.start, isBacklog: true, answered: false }
       : { ...block, isBacklog: true };
     if (slot) moved.push(placed);
     next = { ...next, blocks: [...next.blocks, placed] };

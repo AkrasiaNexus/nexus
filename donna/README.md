@@ -27,6 +27,7 @@ Ideas, skills to learn and side projects get thought about once and then forgott
 - **Runs in the background:** closing the main window hides it to the tray so nudges keep arriving.
 - **Shows over full-screen apps:** on macOS the orb is a non-activating panel, so it appears in any Space without pulling you out of it. That needs an app with no Dock icon; the calendar and Quit live in the menu-bar icon.
 - **Gets out of the way, like Siri's orb:** while she thinks, the card folds back into a breathing orb, and it opens again with her answer. Click somewhere else or switch desktop and she goes; an answer that lands while she's away brings her back. She hides four seconds after her answer, but never while the pointer is on her, something is half-typed, she has asked you a question, or a reminder is waiting to be seen.
+- **Warns you before anything starts, the same way every time:** a session or reminder set under 45 minutes ahead comes up on its minute; up to two hours ahead, five minutes early; further out, ten. The orb holds it up until you answer: *on it*, *skip today* (it moves to tomorrow overnight), or type what you're doing instead and she reschedules it.
 - **Asks am or pm when it could be either:** "gym today at 7" said at 10am is 7pm; said at 5am she asks. 1 to 6 is always the afternoon, and nothing is booked in a time that has already gone today unless you say so.
 
 ## Architecture

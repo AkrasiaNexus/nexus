@@ -1243,3 +1243,105 @@ test("a question that shows up while you're elsewhere still goes after four seco
   assert.equal(await dismissed(page), true, "never focused, so nothing would ever put it away");
   await context.close();
 });
+
+// Every session warns you the same way, so nothing hangs on the model telling a reminder
+// from an event. The clock is pinned to 10:00 so "in 3 mins" never crosses midnight.
+const sessionSoon = async (page) => {
+  const ten = new Date();
+  ten.setHours(10, 0, 0, 0);
+  await page.clock.setFixedTime(ten);
+  await page.addInitScript(fakeTauri);
+  await page.addInitScript(() => {
+    const d = new Date();
+    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    localStorage.setItem("donna_plan", JSON.stringify({
+      fixed: [], reminders: [], memories: [], sweptOn: date, askedOn: date,
+      blocks: [{ id: "s1", itemId: null, title: "Call mum", date, start: "10:03", minutes: 30, done: false }],
+    }));
+  });
+  const sent = [];
+  await page.route(OLLAMA_CHAT, async (route) => {
+    sent.push(JSON.parse(route.request().postData()));
+    await route.fulfill(ollamaSays({ content: "moved it." }));
+  });
+  await page.goto(base + "?view=orb");
+  return sent;
+};
+const savedSession = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("donna_plan")).blocks.find((b) => b.id === "s1"));
+
+test("a session about to start opens the orb by itself and stays until answered", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await sessionSoon(page);
+
+  await page.getByText("call mum starts in 3 mins. get ready.").waitFor();
+  await leave(page);
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  await page.waitForTimeout(5000);
+
+  assert.equal(await dismissed(page), false, "not after four seconds, not on a click away");
+  await context.close();
+});
+
+test("'on it' ticks the session off and lets the orb go", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await sessionSoon(page);
+
+  await page.getByRole("button", { name: "on it" }).click();
+
+  assert.equal((await savedSession(page)).done, true);
+  await page.getByText("call mum starts in 3 mins. get ready.").waitFor({ state: "detached" });
+  await context.close();
+});
+
+test("'skip today' leaves it undone for the night sweep to carry, and stops asking", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await sessionSoon(page);
+
+  await page.getByRole("button", { name: "skip today" }).click();
+
+  const saved = await savedSession(page);
+  assert.equal(saved.done, false);
+  assert.equal(saved.answered, true);
+  await page.getByText("call mum starts in 3 mins. get ready.").waitFor({ state: "detached" });
+  await context.close();
+});
+
+test("doing something else instead goes to Donna with the session, so she can reschedule it", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const sent = await sessionSoon(page);
+
+  await page.getByLabel("Doing something else instead").fill("nah gonna finish my essay, do it tmrw");
+  await page.getByLabel("Doing something else instead").press("Enter");
+  await page.getByText("moved it.").waitFor();
+
+  assert.match(lastUserLine(sent[0]), /^not doing call mum at 10:03am today \(session s1\)\. instead: .*essay/i);
+  assert.equal((await savedSession(page)).answered, true);
+  await context.close();
+});
+
+test("a session she moves for you warns you again at its new time", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await sessionSoon(page);
+  await page.unroute(OLLAMA_CHAT);
+  const tomorrow = await page.evaluate(() => {
+    const d = new Date(Date.now() + 86_400_000);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
+  await page.route(OLLAMA_CHAT, (route) => route.fulfill(ollamaSays({
+    content: "", tool_calls: [{ function: { name: "move_block", arguments: { id: "s1", date: tomorrow, start: "10:03" } } }],
+  })));
+
+  await page.getByLabel("Doing something else instead").fill("finishing my essay, move it to tmrw same time");
+  await page.getByLabel("Doing something else instead").press("Enter");
+  await page.getByText(/moved it to/).waitFor();
+
+  const saved = await savedSession(page);
+  assert.equal(saved.date, tomorrow);
+  assert.equal(saved.answered, false);
+  await context.close();
+});

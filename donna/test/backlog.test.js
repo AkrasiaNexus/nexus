@@ -118,3 +118,12 @@ test("a miss from more than a week ago is history, left exactly as it was", () =
   assert.deepEqual(moved, []);
   assert.deepEqual(state.blocks, [old], "not moved, and not flagged as backlog either");
 });
+
+test("a session skipped today warns again on the day it is carried to", () => {
+  const before = { blocks: [block({ answered: true })], fixed: [] };
+
+  const { moved } = rollOverMissed(before, TODAY, END_OF_DAY);
+
+  assert.equal(moved[0].date, TOMORROW);
+  assert.equal(moved[0].answered, false);
+});

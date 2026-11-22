@@ -90,7 +90,7 @@ export const planStore = {
   schedule({ itemId = null, title, date, start, minutes }) {
     const hit = findClash(plan, date, toMin(start), minutes);
     if (hit) throw new Error(`clashes with ${hit.label} at ${clock12(fromMin(hit.s))}`);
-    const block = { id: crypto.randomUUID(), itemId, title, date, start, minutes, done: false };
+    const block = { id: crypto.randomUUID(), itemId, title, date, start, minutes, done: false, setAt: Date.now() };
     commit({ ...plan, blocks: [...plan.blocks, block] });
     return block;
   },
@@ -106,7 +106,7 @@ export const planStore = {
 
   // A two-minute job, not a calendar block: it takes no room in the week.
   remind(text, at) {
-    const reminder = { id: crypto.randomUUID(), text, at, done: false };
+    const reminder = { id: crypto.randomUUID(), text, at, done: false, setAt: Date.now() };
     commit({ ...plan, reminders: [...plan.reminders, reminder] });
     return reminder;
   },
@@ -126,7 +126,7 @@ export const planStore = {
   blockForFinding(findingId, { title, date, start, minutes }) {
     const hit = findClash(plan, date, toMin(start), minutes);
     if (hit) throw new Error(`clashes with ${hit.label} at ${clock12(fromMin(hit.s))}`);
-    const block = { id: crypto.randomUUID(), itemId: null, title, date, start, minutes, done: false };
+    const block = { id: crypto.randomUUID(), itemId: null, title, date, start, minutes, done: false, setAt: Date.now() };
     commit({
       ...plan,
       blocks: [...plan.blocks, block],
@@ -172,6 +172,11 @@ export const planStore = {
     commit({ ...plan, blocks: plan.blocks.map((b) => (b.id === id ? { ...b, done: true } : b)) });
   },
 
+  // Heard and not doing it now: left undone, so the night sweep carries it like any miss.
+  answer(id, answered = true) {
+    commit({ ...plan, blocks: plan.blocks.map((b) => (b.id === id ? { ...b, answered } : b)) });
+  },
+
   remove(id) {
     commit({ ...plan, blocks: plan.blocks.filter((b) => b.id !== id) });
   },
@@ -182,7 +187,8 @@ export const planStore = {
     if (!block) throw new Error(`no session with id ${id}`);
     const hit = findClash(plan, date, toMin(start), block.minutes, id);
     if (hit) throw new Error(`clashes with ${hit.label} at ${clock12(fromMin(hit.s))}`);
-    const moved = { ...block, date, start };
+    // A new time is a new warning, even for a session answered at its old one.
+    const moved = { ...block, date, start, setAt: Date.now(), answered: false };
     commit({ ...plan, blocks: plan.blocks.map((b) => (b.id === id ? moved : b)) });
     return moved;
   },

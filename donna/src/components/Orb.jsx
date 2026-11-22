@@ -7,6 +7,7 @@ import { suggestions } from "../lib/suggest";
 import { observations } from "../lib/patterns";
 import { applyProposals } from "../lib/apply";
 import { outstanding } from "../lib/remind";
+import { startingSoon, blockStartMs } from "../lib/reminders";
 import { unfinishedToday, shouldAskAboutToday } from "../lib/dayend";
 import { useStore } from "../hooks/useStore";
 import { today, nowMin, parseYmd, ymd, clock12 } from "../lib/time";
@@ -86,6 +87,12 @@ function useAwayWhenLookedAway(mustBeSeen) {
   }, []);
 }
 
+function startsIn(block, now) {
+  const minutes = Math.ceil((blockStartMs(block) - now) / 60_000);
+  const title = block.title.toLowerCase();
+  return minutes > 0 ? `${title} starts in ${minutes} min${minutes === 1 ? "" : "s"}. get ready.` : `${title} is on now.`;
+}
+
 function daysLeft(deadline) {
   const due = new Date(deadline);
   if (isNaN(due)) return "";
@@ -117,6 +124,11 @@ export default function Orb() {
   }, []);
 
   const waiting = outstanding(plan.reminders ?? [], now);
+  // A session about to start is held up like a fired reminder, until you answer it.
+  const starting = startingSoon(plan.blocks ?? [], now);
+  // What opens the orb by itself and keeps it open until dealt with.
+  const heldUp = waiting.length + starting.length;
+  const [insteadText, setInsteadText] = useState("");
   // What she'd raise before being asked: real empty time against something of yours that
   // has none of it. Shown when you open her, never pushed — a reminder earns an
   // interruption, an opinion does not.
@@ -143,10 +155,10 @@ export default function Orb() {
   // A reminder that fires pops the orb open where it sits, bottom-right. Dismissing
   // leaves the dot on the circle; only ticking it off clears it for good.
   // While she thinks the card folds back into the orb; it opens again with her answer.
-  const isOpen = !busy && (open || speaking || ((waiting.length > 0 || unfinished.length > 0) && !dismissed));
+  const isOpen = !busy && (open || speaking || ((heldUp > 0 || unfinished.length > 0) && !dismissed));
 
   const seen = useRef("");
-  const ids = waiting.map((r) => r.id).join();
+  const ids = [...waiting, ...starting].map((x) => x.id).join();
   useEffect(() => {
     if (ids && ids !== seen.current) {
       setDismissed(false);
@@ -156,7 +168,7 @@ export default function Orb() {
   }, [ids]);
 
   useWindowFitsContent(card, isOpen, wake);
-  const mustBeSeen = (waiting.length > 0 || unfinished.length > 0) && !dismissed;
+  const mustBeSeen = (heldUp > 0 || unfinished.length > 0) && !dismissed;
   useIdleDismiss(busy || askingYou || text.trim() !== "" || mustBeSeen, `${wake}:${thread.length}:${isOpen}`);
   useAwayWhenLookedAway(mustBeSeen);
 
@@ -171,6 +183,8 @@ export default function Orb() {
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState !== "visible") return;
+      // Woken on a reminder's minute, its own 20s clock may not have reached it yet.
+      setNow(Date.now());
       setWake((n) => n + 1);
       setOpen(false);
     };
@@ -185,16 +199,34 @@ export default function Orb() {
   useEffect(() => {
     const onKey = (e) => {
       if (e.key !== "Escape") return;
-      if ((waiting.length || unfinished.length) && !dismissed) {
+      if ((heldUp || unfinished.length) && !dismissed) {
         setDismissed(true);
         if (unfinished.length) planStore.markAsked(today());
       }
       if (open) setOpen(false);
-      else if (!waiting.length && !unfinished.length) dismissOrb();
+      else if (!heldUp && !unfinished.length) dismissOrb();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, waiting.length, unfinished.length, dismissed]);
+  }, [open, heldUp, unfinished.length, dismissed]);
+
+  // "nah, doing this instead": she gets the session with it, so she can move or replace it.
+  function instead(e) {
+    e.preventDefault();
+    const said = insteadText.trim();
+    const session = starting[0];
+    if (!said || busy || !session) return;
+    // Answered before she acts, so a move she makes clears it again; if she was busy after all,
+    // the session and the text are put back as they were.
+    planStore.answer(session.id);
+    setInsteadText("");
+    say(`not doing ${session.title.toLowerCase()} at ${clock12(session.start)} today (session ${session.id}). instead: ${said}`)
+      .then((heard) => {
+        if (heard) return;
+        planStore.answer(session.id, false);
+        setInsteadText(said);
+      });
+  }
 
   function submit(e) {
     e.preventDefault();
@@ -231,8 +263,8 @@ export default function Orb() {
         <button
           key={wake}
           onClick={() => { setOpen(true); setDismissed(false); }}
-          aria-label={waiting.length ? `Ask Donna — ${waiting.length} waiting` : "Ask Donna"}
-          className={`orb ${waiting.length ? "has-waiting" : ""}`}
+          aria-label={heldUp ? `Ask Donna — ${heldUp} waiting` : "Ask Donna"}
+          className={`orb ${heldUp ? "has-waiting" : ""}`}
         />
       </div>
     );
@@ -247,6 +279,8 @@ export default function Orb() {
             <p role="status" aria-label="Donna is thinking" className="text-[13.5px] text-donna-muted">
               thinking…
             </p>
+          ) : starting.length ? (
+            <p className="text-[13.5px] leading-snug text-donna-text">{startsIn(starting[0], now)}</p>
           ) : speaking ? (
             <p className={`text-[13.5px] leading-snug ${last.role === "error" ? "text-donna-red" : "text-donna-text"}`}>
               {last.content}
@@ -277,6 +311,30 @@ export default function Orb() {
               </li>
             ))}
           </ul>
+        </>
+      )}
+
+      {starting.length > 0 && (
+        <>
+          <ul className="orb-waiting mt-3 flex flex-col gap-1.5">
+            {starting.map((b, i) => (
+              <li key={b.id} style={{ "--i": i }} className="flex items-center gap-2 text-[13px]">
+                <span className="min-w-0 flex-1 truncate">{b.title}</span>
+                <span className="flex-none font-mono text-[10px] text-donna-faint">{clock12(b.start)}</span>
+                <button onClick={() => planStore.complete(b.id)} className="orb-chip flex-none">on it</button>
+                <button onClick={() => planStore.answer(b.id)} className="orb-chip flex-none">skip today</button>
+              </li>
+            ))}
+          </ul>
+          <form onSubmit={instead} className="mt-2">
+            <input
+              value={insteadText}
+              onChange={(e) => setInsteadText(e.target.value)}
+              aria-label="Doing something else instead"
+              placeholder="nah, doing this instead…"
+              className="w-full bg-transparent text-[13px] outline-none placeholder:text-donna-faint"
+            />
+          </form>
         </>
       )}
 

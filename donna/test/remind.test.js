@@ -207,3 +207,28 @@ test("the most natural answers to when? finish the reminder", () => {
 test("a time read without its preposition leaves no dangling word", () => {
   assert.equal(at("remind me to call mum at noon").text, "Call mum");
 });
+
+test("'remind me in 5 mins' comes up on its minute", () => {
+  const r = { id: "r1", text: "Call mum", at: NOW + 5 * 60_000, setAt: NOW, done: false };
+
+  assert.deepEqual(outstanding([r], NOW + 4 * 60_000), []);
+  assert.deepEqual(outstanding([r], NOW + 5 * 60_000).map((x) => x.id), ["r1"]);
+  assert.equal(msUntilNext([r], NOW), 5 * 60_000);
+});
+
+test("a reminder set hours ahead comes up ten minutes early, and is aimed at that", () => {
+  const r = { id: "r1", text: "Call mum", at: NOW + 3 * 3_600_000, setAt: NOW, done: false };
+  const early = r.at - 10 * 60_000;
+
+  assert.deepEqual(outstanding([r], early - 60_000), []);
+  assert.deepEqual(outstanding([r], early).map((x) => x.id), ["r1"]);
+  assert.deepEqual(dueRemindersAt([r], early - 60_000, early).map((x) => x.id), ["r1"]);
+  assert.equal(msUntilNext([r], NOW), early - NOW);
+});
+
+test("a reminder saved before this existed still comes up on its minute", () => {
+  const r = { id: "r1", text: "Call mum", at: NOW + 3 * 3_600_000, done: false };
+
+  assert.deepEqual(outstanding([r], r.at - 60_000), []);
+  assert.equal(msUntilNext([r], NOW), r.at - NOW);
+});
