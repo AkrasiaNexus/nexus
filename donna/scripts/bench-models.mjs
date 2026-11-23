@@ -78,19 +78,22 @@ for (const model of models) {
     const wall = (Date.now() - started) / 1000;
     const chose = body.message?.tool_calls?.[0]?.function?.name ?? "(replied in words)";
     const row = {
-      wall, chose, right: chose === turn.expect,
+      wall, chose, right: chose === turn.expect, said: body.message?.content ?? "",
       promptTokens: body.prompt_eval_count ?? 0,
       prefill: seconds(body.prompt_eval_duration),
       gen: body.eval_count ? body.eval_count / seconds(body.eval_duration) : 0,
     };
     rows.push(row);
     console.log(`  ${row.right ? "ok  " : "MISS"} ${wall.toFixed(1).padStart(5)}s  ${String(row.promptTokens).padStart(5)} prompt tok in ${row.prefill.toFixed(1)}s  ${row.gen.toFixed(0).padStart(3)} tok/s out  "${turn.say}" -> ${chose}`);
+    // What she said instead of acting is what tells a prompt problem from a model that can't do it.
+    if (!row.right && row.said) console.log(`         said: ${JSON.stringify(row.said.slice(0, 160))}`);
   }
 
-  // A working prompt cache reprocesses only what changed, so the later turns read far fewer tokens.
-  const first = rows[0].promptTokens;
-  const later = rows.slice(1).map((r) => r.promptTokens);
-  const cached = later.length && Math.max(...later) < first * 0.5;
+  // A working prompt cache reprocesses only what changed. Ollama's llama.cpp runner still reports the
+  // whole prompt as evaluated, so the tell is the time it took, not the token count.
+  const first = rows[0].prefill;
+  const later = rows.slice(1).map((r) => r.prefill);
+  const cached = later.length && Math.max(...later) < first * 0.25;
   const average = rows.reduce((sum, r) => sum + r.wall, 0) / rows.length;
   results.push({ model, average, right: rows.filter((r) => r.right).length, cached });
   console.log(`  prompt cache: ${cached ? "working" : "NOT reused — every turn re-reads the whole prompt"}`);
