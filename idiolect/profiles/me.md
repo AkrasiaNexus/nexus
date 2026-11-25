@@ -257,6 +257,8 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | calma | calma | it's fine, chill, nothing to worry about |
 | trig | trigonometry | trigonometry |
 | wahda | Wahda | Al Wahda Mall |
+| para | paragraph | paragraph |
+| paras | paragraphs | paragraphs |
 | todo | todo | to-do list |
 
 ## Typos
