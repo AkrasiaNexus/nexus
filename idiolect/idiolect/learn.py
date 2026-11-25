@@ -13,6 +13,7 @@ Everything else goes to a slang list for you to fill in by hand.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import re
@@ -214,12 +215,16 @@ def read_messages(path: str | Path, me: str | None = None) -> list[str]:
         return messages_from_instagram(threads, me or instagram_owner(threads))
     html_files = sorted(path.rglob("message_*.html")) if path.is_dir() else []
     if html_files:
-        chats = []
+        chats, seen = [], set()
         for n, f in enumerate(html_files, 1):  # each page parsed once; big exports take a while
-            chats.append(_html_messages(f.read_text(encoding="utf-8", errors="replace")))
+            html = f.read_text(encoding="utf-8", errors="replace")
+            digest = hashlib.sha256(html.encode()).digest()
+            if digest not in seen:  # an export unzipped twice holds every chat twice
+                seen.add(digest)
+                chats.append(_html_messages(html))
             if n % 25 == 0 or n == len(html_files):
                 print(f"\rread {n}/{len(html_files)} chat pages", end="", file=sys.stderr, flush=True)
-        print(file=sys.stderr)
+        print(f" ({len(html_files) - len(chats)} duplicate pages skipped)", file=sys.stderr)
         return _mine(chats, me or _html_owner(chats))
     if path.is_dir():
         return [m for f in sorted(path.rglob("*.jsonl")) for m in messages_from_claude_code(f.read_text(encoding="utf-8").splitlines())]
@@ -235,6 +240,34 @@ def edits1(word: str) -> set[str]:
     replaces = [a + c + b[1:] for a, b in splits if b for c in LETTERS]
     inserts = [a + c + b for a, b in splits for c in LETTERS]
     return set(deletes + transposes + replaces + inserts)
+
+
+STRETCH = re.compile(r"(.)\1\1")
+# Laughter and key-mashing: lmaoaoqoa, bahahqhq, hahahahq, yayayayq.
+LAUGH = re.compile(r"(?:l+m+f*a+o|b?a*h+a+h|y+a+y+a)[aohqiwpyf]*")
+
+
+VOWELS = set("aeiou")
+
+
+def _vowel_edit(typo: str, word: str) -> bool:
+    """One vowel swapped, added or dropped: a spelling slip ("seperate", "charactaer"), not a different word."""
+    if len(typo) == len(word):
+        diffs = [(x, y) for x, y in zip(typo, word) if x != y]
+        return len(diffs) == 1 and set(diffs[0]) <= VOWELS
+    longer, shorter = (typo, word) if len(typo) > len(word) else (word, typo)
+    i = next((k for k, (x, y) in enumerate(zip(longer, shorter)) if x != y), len(shorter))
+    return longer[i] in VOWELS
+
+
+def _merge_stretched(counts: Counter[str], zipf: Callable[[str], float]) -> dict[str, str]:
+    """Map each stretched token (3+ of a letter: "byeee", "goood") to its run cut to 1 or 2 letters: a form you wrote, then the more English one, then the more used."""
+    head = {}
+    for tok in counts:
+        if STRETCH.search(tok):
+            forms = [re.sub(r"(.)\1{2,}", r"\1", tok), re.sub(r"(.)\1{2,}", r"\1\1", tok)]
+            head[tok] = max(forms, key=lambda f: (f in counts, round(zipf(f), 1), counts.get(f, 0), f == forms[1]))
+    return head
 
 
 def _example(examples: list[str], private: bool) -> str:
@@ -267,13 +300,21 @@ def suggest(
     min_keyness: float = 3.0,
     max_examples: int = 2,
     min_count: int = 1,
+    limit: int | None = None,
 ) -> Suggestions:
+    """limit keeps the most used rows of each table."""
+    from .spell import slip_bonus  # spell imports this module
+
+    raw: Counter[str] = Counter()
+    for msg in messages:
+        raw.update(tokenize(msg))
+    head = _merge_stretched(raw, zipf)
     counts: Counter[str] = Counter()
+    for tok, n in raw.items():
+        counts[head.get(tok, tok)] += n
     examples: dict[str, list[str]] = defaultdict(list)
     for msg in messages:
-        toks = tokenize(msg)
-        counts.update(toks)
-        for tok in set(toks):
+        for tok in {head.get(t, t) for t in tokenize(msg)}:
             if len(examples[tok]) < max_examples:
                 examples[tok].append(" ".join(msg.split()))
     total = sum(counts.values()) or 1
@@ -284,17 +325,21 @@ def suggest(
 
     slang, typos = [], []
     for tok in sorted(counts, key=keyness, reverse=True):
-        if tok in skip or not tok.isalpha() or counts[tok] < min_count or keyness(tok) < min_keyness:
+        if tok in skip or not tok.isalpha() or counts[tok] < min_count or keyness(tok) < min_keyness or LAUGH.fullmatch(tok):
             continue
         fixes = []
         if len(tok) >= MIN_TYPO_LENGTH and zipf(tok) < MAX_TYPO_ZIPF:
-            fixes = [w for w in edits1(tok) if w in vocab_rank and zipf(w) - zipf(tok) >= MIN_FIX_GAIN]
+            # A typo is a finger slip, and rarer in your writing than the word you meant.
+            fixes = [w for w in edits1(tok) if w in vocab_rank and zipf(w) - zipf(tok) >= MIN_FIX_GAIN
+                     and (slip_bonus(tok, w) > 0 or _vowel_edit(tok, w)) and counts.get(w, counts[tok]) >= counts[tok]]
         if fixes:
             fix = min(fixes, key=lambda w: (w not in counts, vocab_rank[w]))
             typos.append((tok, fix, counts[tok], fix in counts))
         else:
             slang.append((tok, counts[tok], examples[tok]))
-    return Suggestions(slang=slang, typos=typos)
+    slang.sort(key=lambda row: -row[1])
+    typos.sort(key=lambda row: -row[2])
+    return Suggestions(slang=slang[:limit], typos=typos[:limit])
 
 
 def wordfreq_backend(vocab_size: int = 50000):

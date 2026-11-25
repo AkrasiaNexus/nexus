@@ -7,7 +7,13 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 - I type fast on a phone or laptop: all lowercase, almost no punctuation, one run-on thought per message. Infer the meaning and act; never ask me to fix spelling or rephrase.
 - My typos are finger slips, not spelling gaps: swapped letters (secerts, peronsal, uato, rmoe), dropped letters (acess, shedule, effiency), doubled letters (annd, rooll, randomlly) and the odd stutter ("and and", "try try"). Read the word I obviously meant.
 - A question often has no question mark: "how many installed so far", "whats rtx tho". If it asks for information, answer it.
-- ALL CAPS is emphasis, not anger. Treat it as the most important instruction in the message.
+- ALL CAPS is emphasis or excitement, not anger. Treat it as the most important instruction in the message.
+- On my phone the first letter is often auto-capitalised. That means nothing.
+- I stretch words to show feeling: "byeeee", "yeaaa", "sorryyy", "okayymaa". Read the plain word; more letters means more warmth or excitement, never a typo.
+- Laughter is key-mashed: "lmaoaoqoa", "bahahqhq", "hahahq", "yayayayq". Longer means funnier. 😭 is laughing or overwhelmed, not sad.
+- I shorten and nickname people and places, and add "s" for possessive with no apostrophe ("sams" = Sam's). An unknown word that looks like a name is a name: leave it alone, don't correct it.
+- I mix in Tamil, Hindi and Arabic words. "-ma"/"-maa" on the end ("sorrymaa", "okayma") is affectionate Tamil, not a typo.
+- Texts are short (median 3 words) and almost never end in punctuation.
 - "u" is you, the assistant. "urself" means your own setup and tools.
 - When I name a word instead of using it ("do the its ill fix"), it stays as written.
 
@@ -54,6 +60,87 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | bruh | bruh | exasperated; the thing is bad |
 | goat | goat | greatest of all time; affectionate |
 | insta | insta | Instagram |
+| yap | yap | talk a lot |
+| yapped | yapped | talked a lot |
+| yapping | yapping | talking a lot |
+| fr | for real | for real, agreeing |
+| frfr | for real | for real, strongly agreeing |
+| ong | on god | i swear, honestly |
+| istg | i swear to god | i swear |
+| isw | i swear | i swear |
+| deadass | deadass | seriously, for real |
+| wyd | what you doing | what are you doing |
+| wbu | what about you | what about you |
+| hru | how are you | how are you |
+| wya | where you at | where are you |
+| wdym | what do you mean | what do you mean |
+| ykw | you know what | you know what |
+| idk | i don't know | i don't know |
+| iono | i don't know | i don't know |
+| idts | i don't think so | i don't think so |
+| idc | i don't care | i don't care |
+| idrk | i don't really know | i don't really know |
+| ikr | i know right | agreeing |
+| nmm | not much | not much |
+| nthn | nothing | nothing |
+| mhm | mhm | yes |
+| rn | right now | right now |
+| tdy | today | today |
+| tmr | tomorrow | tomorrow |
+| ltr | later | later |
+| yest | yesterday | yesterday |
+| dw | don't worry | don't worry |
+| np | no problem | no problem |
+| ty | thank you | thank you |
+| tysm | thank you so much | thank you so much |
+| ttyl | talk to you later | talk to you later |
+| gtg | got to go | got to go |
+| brb | be right back | be right back |
+| tc | take care | take care |
+| imy | i miss you | i miss you |
+| imysm | i miss you so much | i miss you so much |
+| ilysm | i love you so much | i love you so much |
+| mssg | message | message |
+| mssgs | messages | messages |
+| ofc | of course | of course |
+| obv | obviously | obviously |
+| nvm | never mind | never mind |
+| pls | please | please |
+| plss | please | please |
+| abt | about | about |
+| anw | anyway | anyway |
+| btw | by the way | by the way |
+| vro | bro | bro |
+| bru | bro | bro |
+| broo | bro | bro |
+| gng | gang | the friend group, or "bro" |
+| tuff | tuff | cool, impressive |
+| ragebait | ragebait | saying something to make people angry on purpose |
+| ragebaiting | ragebaiting | trying to make people angry on purpose |
+| crashout | crashout | losing it, an angry outburst |
+| doomscrolling | doomscrolling | scrolling endlessly |
+| delulu | delulu | delusional, unrealistic |
+| sidequesting | sidequesting | doing a random spontaneous plan |
+| chalant | chalant | caring visibly; the opposite of nonchalant |
+| uncomfy | uncomfy | uncomfortable |
+| valo | Valorant | the game Valorant |
+| wallahi | wallahi | i swear (Arabic) |
+| seri | seri | okay (Tamil) |
+| illa | illa | no (Tamil) |
+| sollu | sollu | tell me (Tamil) |
+| finna | going to | going to |
+| bouta | about to | about to |
+| watchu | what you | what you |
+| goated | goated | the best, amazing |
+| mogged | mogged | outclassed, made to look worse |
+| sussy | sus | suspicious, playfully |
+| forgor | forgot | forgot (meme spelling) |
+| sadge | sad | sad (meme) |
+| copium | copium | coping, denial |
+| stawp | stop | stop (playful) |
+| khalas | khalas | enough, done (Arabic) |
+| wallah | wallah | i swear (Arabic) |
+| chapri | chapri | tacky, trying too hard (Hindi) |
 | todo | todo | to-do list |
 
 ## Typos
@@ -93,6 +180,24 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | idialect | idiolect |
 | atleast | at least |
 | everytime | every time |
+| ehat | what |
+| ehy | why |
+| whej | when |
+| thej | then |
+| theb | then |
+| tgat | that |
+| thaf | that |
+| domt | don't |
+| lnow | know |
+| xuz | cuz |
+| ecen | even |
+| guve | give |
+| waot | wait |
+| eait | wait |
+| nixe | nice |
+| keeo | keep |
+| nezt | next |
+| giys | guys |
 
 ## Intent cues
 | Phrase | Intent |

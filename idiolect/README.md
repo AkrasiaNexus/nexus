@@ -89,13 +89,13 @@ python -m idiolect learn ~/.claude/projects/                 # Claude Code trans
 python -m idiolect learn --private private/instagram/        # Instagram export (your DMs only)
 ```
 
-Instagram: Accounts Center → Your information and permissions → Download your information → pick **Messages**, format **JSON** (HTML exports work too). Unzip it into `private/` (gitignored) and run it on your own machine; the export never needs to leave it. With `--private` the output is word lists, counts and aggregate style stats (lowercase rate, punctuation, emoji, intent mix) only: no sentences, and no word said fewer than 3 times, which keeps out names and one-offs. Read it before you paste it anywhere. Only your own typed messages are read. Friends' messages, reactions, shares, calls, unsends and group events are dropped. You're detected as the one person in every thread; if that's ambiguous, pass `--me "Your display name"`.
+Instagram: Accounts Center → Your information and permissions → Download your information → pick **Messages**, format **JSON** (HTML exports work too). Unzip it into `private/` (gitignored) and run it on your own machine; the export never needs to leave it. With `--private` the output is word lists, counts and aggregate style stats (lowercase rate, punctuation, emoji, intent mix) only: no sentences, and no word said fewer than 3 times, which keeps out one-offs. Names you use often still appear, so read it and delete them before you paste it anywhere. Only your own typed messages are read. Friends' messages, reactions, shares, calls, unsends and group events are dropped. You're detected as the one person in every thread; if that's ambiguous, pass `--me "Your display name"`.
 
 The learner ranks your words by **keyness**: how much more often you use a word than English in general does (log10 of your rate over the English rate from `wordfreq`). High-keyness words are slang, names or typos:
 - A word one edit away from a much more common word becomes a **typo** suggestion, marked *self-corrected* if you also wrote the right spelling ("charactaer" and "character" in the same message).
 - Everything else goes on a **slang** list with example sentences, for you to fill in the meaning.
 
-On the held-out test messages, the learner surfaced **8 of the 14** word types the profile missed (aigh, allat, annd, asw, charactaer, liscense, rooll, seperate). It proposed 6 typo fixes, 4 of them correct, and flagged one correct word (the place name "bateen"). It misses words that are also real English words ("its", "ill", "everyday"), which need context or a human to resolve.
+On the held-out test messages, the learner surfaced **8 of the 14** word types the profile missed (aigh, allat, annd, asw, charactaer, liscense, rooll, seperate). It proposed 4 typo fixes, 3 of them correct, and none on correct words. A fix must look like a finger slip (neighbouring key, swapped or doubled letter) or a vowel mix-up, and be rarer in your writing than the word it fixes. Before that rule it flagged the place name "bateen". Stretched words ("byeeee") count as their plain form, laughs ("lmaoaoqoa", "bahahqhq") are ignored, and duplicate HTML export pages are read once. It misses words that are also real English words ("its", "ill", "everyday"), which need context or a human to resolve.
 
 ## Profile format
 
@@ -157,7 +157,7 @@ Voice: pass `me.whisper_hotwords()` as faster-whisper's `hotwords` (or `initial_
 python -m unittest discover -s tests
 ```
 
-48 tests: profile parsing and merging, context rules (including naming a word without changing it), automatic typo repair (keyboard slips, dropped letters, protected words), Unicode-safe tokenization (Arabic, accents, emoji), splice-in-place output, multi-word expansion, intent labels and personal-cue precedence, all three chat export formats (claude.ai, Claude Code, Instagram), the learner's typo and slang logic, private mode leaking no sentences, ERR maths, gold-alignment validation, and a regression check that the headline result still holds.
+54 tests: profile parsing and merging, context rules (including naming a word without changing it), automatic typo repair (keyboard slips, dropped letters, protected words), Unicode-safe tokenization (Arabic, accents, emoji), splice-in-place output, multi-word expansion, intent labels and personal-cue precedence, all three chat export formats (claude.ai, Claude Code, Instagram), the learner's typo and slang logic, private mode leaking no sentences, ERR maths, gold-alignment validation, and a regression check that the headline result still holds.
 
 ## Limitations and next steps
 

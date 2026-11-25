@@ -1,12 +1,13 @@
 import json
 import tempfile
 import unittest
+from collections import Counter
 from pathlib import Path
 
 from idiolect import classify, load, normalize, parse, tokenize
 from idiolect.normalize import normalize_tokens
 from idiolect.evaluate import err, load_examples, mcnemar_p, word_accuracy
-from idiolect.learn import (instagram_owner, messages_from_instagram_html, messages_from_claude_code, messages_from_claude_export,
+from idiolect.learn import (_merge_stretched, instagram_owner, messages_from_instagram_html, messages_from_claude_code, messages_from_claude_export,
                             messages_from_instagram, read_messages, suggest)
 from idiolect.profile import Profile
 from idiolect.style import style_report
@@ -200,6 +201,27 @@ class LearnTests(unittest.TestCase):
         self.assertEqual([t for t, *_ in s.slang], ["abso"])
         self.assertIn("| charcter | character | you also wrote 'character' |", s.to_markdown())
 
+    def test_stretched_letters_count_as_one_word(self):
+        s = suggest(["absooo", "abso", "absoooo"], self.zipf, self.RANK)
+        self.assertEqual([(t, n) for t, n, _ in s.slang], [("abso", 3)])
+        english = {"good": 6.0, "god": 5.5, "bye": 5.0}.get
+        head = _merge_stretched(Counter(god=5, good=3, goood=2, byeee=1, byee=4, bye=9), lambda w: english(w, 0.0))
+        self.assertEqual(head, {"goood": "good", "byeee": "bye"})  # god is more used, but goood means good
+
+    def test_laughs_and_keysmash_are_not_slang(self):
+        s = suggest(["lmaoaoqoa", "bahahqhq", "hahahahq", "yayayayq", "abso"], lambda t: self.ZIPF.get(t, 1.0), self.RANK)
+        self.assertEqual(s.tokens, {"abso"})
+
+    def test_typo_must_look_like_a_keyboard_slip(self):
+        zipf = {**self.ZIPF, "watxh": 0.0, "watch": 5.0, "sussy": 0.0, "pussy": 4.0}.get
+        rank = {**self.RANK, "watch": 400, "pussy": 5000}
+        s = suggest(["watxh watch", "sussy pussy"], lambda t: zipf(t, 6.0), rank)
+        self.assertEqual([(t, fix) for t, fix, *_ in s.typos], [("watxh", "watch")])
+
+    def test_slang_is_listed_most_used_first_and_capped(self):
+        s = suggest(["abso", "zork zork zork", "abso"], lambda t: self.ZIPF.get(t, 1.0), self.RANK, limit=1)
+        self.assertEqual([t for t, *_ in s.slang], ["zork"])
+
     def test_known_entries_are_skipped(self):
         s = suggest(["abso abso"], self.zipf, self.RANK, known_entries=["abso"])
         self.assertEqual(s.tokens, set())
@@ -279,6 +301,16 @@ class LearnTests(unittest.TestCase):
                 path.write_text(html, encoding="utf-8")
             self.assertEqual(sorted(read_messages(tmp)), ["jus testing", "yo"])
 
+    def test_instagram_html_duplicate_pages_count_once(self):
+        page = self._ig_html(("Me Myself", "jus testing"), ("Friend", "no"))
+        other = self._ig_html(("Other", "nope"), ("Me Myself", "yo"))
+        with tempfile.TemporaryDirectory() as tmp:
+            for name, html in (("a_1", page), ("copy/a_1", page), ("b_2", other)):
+                path = Path(tmp, name, "message_1.html")
+                path.parent.mkdir(parents=True)
+                path.write_text(html, encoding="utf-8")
+            self.assertEqual(sorted(read_messages(tmp)), ["jus testing", "yo"])
+
     def test_instagram_skips_system_lines_and_malformed_entries(self):
         thread = self._ig_thread(
             {"sender_name": "Me Myself", "content": "Me Myself named the group Squad"},
@@ -322,6 +354,11 @@ class SpellTests(unittest.TestCase):
     def speller(self, protected=()):
         return Speller(self.zipf, frozenset(w for w, z in self.ZIPF.items() if z >= 3), frozenset(protected))
 
+    def test_live_profile_slang_is_never_autocorrected(self):
+        zipf = {"tapped": 4.0, "yapped": 1.5, "the": 7.7}.get
+        sp = Speller.for_profile(load(ROOT / "profiles" / "me.md"), lambda w: zipf(w, 0.0), ["tapped", "the"])
+        self.assertEqual(sp.correct("yapped"), "yapped")  # yapped means talked a lot, not tapped
+
     def test_fixes_fast_typing_slips(self):
         sp = self.speller()
         self.assertEqual(sp.correct("assisntant"), "assistant")  # extra letter
@@ -359,10 +396,11 @@ class SpellTests(unittest.TestCase):
 
 class StyleTests(unittest.TestCase):
     def test_style_report_is_aggregate_only(self):
-        msgs = ["lowk wanna go 🔥🔥", "nah", "where u at?", "OKAY bet", "secret plan tonight"]
+        msgs = ["lowk wanna go 🔥🔥", "nah", "where u at?", "OKAY! bet", "Secret plan tonight"]
         report = style_report(msgs, load(ROOT / "profiles" / "me-v0.md"))
         self.assertIn("5 messages", report)
-        self.assertIn("80% all lowercase", report)
+        self.assertIn("60% all lowercase, 80% lowercase after the first letter (phones capitalise it)", report)
+        self.assertIn("20% have a word in ALL CAPS", report)
         self.assertIn("80% end without . ! or ?", report)
         self.assertIn("🔥", report)
         self.assertIn("reject 20%", report)

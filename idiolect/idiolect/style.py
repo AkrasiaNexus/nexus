@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import statistics
+import string
 import unicodedata
 from collections import Counter
 
@@ -25,6 +26,8 @@ def style_report(messages: list[str], profile: Profile) -> str:
     if not n:
         return "No messages.\n"
     lower = sum(any(c.isalpha() for c in m) and not any(c.isupper() for c in m) for m in msgs)
+    lower_rest = sum(any(c.isalpha() for c in m) and not any(c.isupper() for c in m[1:]) for m in msgs)
+    caps = sum(any(len(w) > 1 and w.isalpha() and w.isupper() for w in (x.strip(string.punctuation) for x in m.split())) for m in msgs)
     bare = sum(not m.rstrip("".join(_emoji(m)) + " ").endswith(tuple(END_PUNCTUATION)) for m in msgs)
     emoji = Counter(e for m in msgs for e in _emoji(m))
     with_emoji = sum(bool(_emoji(m)) for m in msgs)
@@ -33,7 +36,8 @@ def style_report(messages: list[str], profile: Profile) -> str:
     lines = [
         "## How I text (aggregate stats, no message content)",
         f"- {n} messages, median {statistics.median(len(m.split()) for m in msgs):g} words each",
-        f"- {_pct(lower, n)} all lowercase",
+        f"- {_pct(lower, n)} all lowercase, {_pct(lower_rest, n)} lowercase after the first letter (phones capitalise it)",
+        f"- {_pct(caps, n)} have a word in ALL CAPS",
         f"- {_pct(bare, n)} end without . ! or ?",
         f"- emoji in {_pct(with_emoji, n)} of messages; top: {top_emoji}",
         "- intent: " + ", ".join(f"{label} {_pct(c, n)}" for label, c in intents.most_common()),
