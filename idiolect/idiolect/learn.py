@@ -361,8 +361,13 @@ def interpretations(messages: list[str], profile, speller=None, limit: int | Non
     shortcut: reads each word alone, so context rules that look at neighbours ("its", "ill") aren't shown.
     """
     counts = Counter(tok for msg in messages for tok in tokenize(msg) if tok.isalpha())
-    rows = [(tok, new, n) for tok, n in counts.most_common() if (new := normalize_tokens([tok], profile, speller)[0]) != tok]
-    return rows[:limit]
+    rows = []
+    for tok, n in counts.most_common():  # stop at `limit`: the typo search is slow on rare long words
+        if limit is not None and len(rows) >= limit:
+            break
+        if (new := normalize_tokens([tok], profile, speller)[0]) != tok:
+            rows.append((tok, new, n))
+    return rows
 
 
 def interpretations_markdown(rows: list[tuple[str, str, int]]) -> str:
