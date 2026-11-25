@@ -233,6 +233,10 @@ class LearnTests(unittest.TestCase):
         s = suggest(["barly"], lambda t: zipf(t, 6.0), {**self.RANK, "barley": 3000})
         self.assertEqual(s.typos, [])  # probably a name; you never wrote "barley"
 
+    def test_possessive_of_a_known_name_is_skipped(self):
+        s = suggest(["absos abso"], lambda t: self.ZIPF.get(t, 1.0), self.RANK, known_entries=["abso"])
+        self.assertEqual(s.tokens, set())  # "absos" is "abso's"
+
     def test_known_entries_are_skipped(self):
         s = suggest(["abso abso"], self.zipf, self.RANK, known_entries=["abso"])
         self.assertEqual(s.tokens, set())

@@ -328,7 +328,7 @@ def suggest(
 
     slang, typos = [], []
     for tok in sorted(counts, key=keyness, reverse=True):
-        if tok in skip or not tok.isalpha() or counts[tok] < min_count or keyness(tok) < min_keyness or LAUGH.fullmatch(tok):
+        if tok in skip or tok[:-1] in skip and tok.endswith("s") or not tok.isalpha() or counts[tok] < min_count or keyness(tok) < min_keyness or LAUGH.fullmatch(tok):
             continue
         fixes = []
         if len(tok) >= MIN_TYPO_LENGTH and zipf(tok) < MAX_TYPO_ZIPF:
