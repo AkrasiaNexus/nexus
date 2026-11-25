@@ -13,6 +13,7 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 - Laughter is key-mashed: "lmaoaoqoa", "bahahqhq", "hahahq", "yayayayq". Longer means funnier. 😭 is laughing or overwhelmed, not sad.
 - I shorten and nickname people and places, and add "s" for possessive with no apostrophe ("sams" = Sam's). An unknown word that looks like a name is a name: leave it alone, don't correct it.
 - I mix in Tamil, Hindi and Arabic words. "-ma"/"-maa" on the end ("sorrymaa", "okayma") is affectionate Tamil, not a typo.
+- "-ass" on the end ("stupidass", "randomass", "bitchass") is an intensifier: "really stupid", "really random".
 - Texts are short (median 3 words) and almost never end in punctuation.
 - "u" is you, the assistant. "urself" means your own setup and tools.
 - When I name a word instead of using it ("do the its ill fix"), it stays as written.
@@ -141,6 +142,57 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | khalas | khalas | enough, done (Arabic) |
 | wallah | wallah | i swear (Arabic) |
 | chapri | chapri | tacky, trying too hard (Hindi) |
+| maa | ma | dear (Tamil, affectionate) |
+| comn | come on | come on |
+| thoo | though | though |
+| whyd | why'd | why did |
+| shii | shit | stuff |
+| shyt | shit | stuff |
+| idfk | i don't fucking know | i don't know |
+| fym | fuck you mean | what do you mean (blunt) |
+| tgr | together | together |
+| okok | okay okay | okay |
+| yeye | yeah yeah | yes |
+| betbet | bet | okay, deal |
+| allg | all good | all good |
+| issok | it's okay | it's okay |
+| ihy | i hate you | i hate you (joking) |
+| icic | i see i see | i see |
+| ikik | i know i know | i know |
+| tyty | thank you | thank you |
+| truu | true | true, agreeing |
+| yipee | yippee | yay |
+| mwuah | mwah | kiss |
+| bootyful | beautiful | beautiful (joking) |
+| bizzness | business | business (joking) |
+| chocy | chocolate | chocolate |
+| chocys | chocolates | chocolates |
+| asf | as fuck | very |
+| bsfs | best friends | best friends |
+| rlsp | relationship | relationship |
+| mssged | messaged | messaged |
+| dlted | deleted | deleted |
+| sorryim | sorry i'm | sorry i'm |
+| wensday | wednesday | wednesday |
+| stayback | stay back | staying back after school |
+| interhouse | interhouse | inter-house school competition |
+| sybau | shut up | shut up (playful) |
+| randomass | random | really random |
+| stupidass | stupid | really stupid |
+| bitchass | bitch | insult between friends |
+| fuckass | fucking | intensifier |
+| phonk | phonk | the music genre |
+| buldak | buldak | Korean spicy noodles |
+| botim | Botim | the calling app |
+| ilaa | illa | no (Tamil) |
+| seriya | seriya | okay? / right? (Tamil) |
+| okayva | okay va | is it okay? (Tamil) |
+| ippa | ippa | now (Tamil) |
+| intha | intha | here, take this (Tamil) |
+| ennakagu | ennaku | for me (Tamil) |
+| nejema | nejama | really? (Tamil) |
+| pannuma | pannu ma | do it, dear (Tamil) |
+| mashallah | mashallah | praise, how lovely (Arabic) |
 | todo | todo | to-do list |
 
 ## Typos
@@ -180,6 +232,40 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | idialect | idiolect |
 | atleast | at least |
 | everytime | every time |
+| yhe | the |
+| beo | bro |
+| vru | bro |
+| rnn | rn |
+| giy | guy |
+| gius | guys |
+| oje | one |
+| evej | even |
+| tyem | them |
+| ehen | when |
+| ehan | when |
+| ehay | what |
+| ehats | whats |
+| daid | said |
+| sejd | send |
+| telk | tell |
+| onow | know |
+| pkay | okay |
+| obly | only |
+| tyoe | type |
+| ledt | left |
+| muxh | much |
+| ciz | cuz |
+| damj | damn |
+| caom | calm |
+| tokd | told |
+| cabt | can't |
+| onxe | once |
+| bsck | back |
+| bomv | bomb |
+| tezt | text |
+| tmrv | tmrw |
+| comfirmed | confirmed |
+| firee | fire |
 | ehat | what |
 | ehy | why |
 | whej | when |
@@ -222,4 +308,4 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | remember | context |
 
 ## Hotwords
-Jarvis, Nexus, Nudge, Lore, Idiolect, Campfire, forge_change, Claude, Qwen, Gemma, Ollama, Tauri, graphify, Playwright, Moovit, Darb, Hudayriyat, Bateen, Mina, Saadiyat, Corniche, Wathba, lowk, ykwim
+Jarvis, Nexus, Nudge, Lore, Idiolect, Campfire, forge_change, Claude, Qwen, Gemma, Ollama, Tauri, graphify, Playwright, Moovit, Darb, Hudayriyat, Bateen, Mina, Saadiyat, Corniche, Wathba, Mussafah, Motiongate, lowk, ykwim

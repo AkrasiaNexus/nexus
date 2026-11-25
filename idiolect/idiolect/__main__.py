@@ -13,7 +13,12 @@ from .style import style_report
 
 HERE = Path(__file__).resolve().parent.parent
 PRIVATE_MIN_COUNT = 3  # below this, a word is likely a name or a one-off
-DEFAULT_PROFILES = [str(HERE / "profiles" / name) for name in ("generic.md", "context.md", "me.md")]
+PRIVATE = HERE / "private"  # gitignored: names, nicknames and words you don't want public
+
+
+def default_profiles(private: Path = PRIVATE) -> list[str]:
+    public = [str(HERE / "profiles" / name) for name in ("generic.md", "context.md", "me.md")]
+    return public + sorted(str(f) for f in private.glob("*.md"))
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -38,7 +43,7 @@ def main(argv: list[str] | None = None) -> None:
     e.add_argument("--data", default=str(HERE / "data" / "eval.jsonl"))
     args = ap.parse_args(argv)
 
-    profile = load(*(args.profile or DEFAULT_PROFILES))
+    profile = load(*(args.profile or default_profiles()))
     if args.cmd == "normalize":
         speller = Speller.from_wordfreq(profile) if args.spell else None
         result = normalize(args.text, profile, speller)
@@ -58,7 +63,8 @@ def main(argv: list[str] | None = None) -> None:
             messages = read_messages(args.source, args.me)
         except ValueError as e:
             ap.error(str(e))
-        found = suggest(messages, zipf, rank, profile.replacements.keys(), args.min_keyness,
+        known = set(profile.replacements) | {h.lower() for h in profile.hotwords}
+        found = suggest(messages, zipf, rank, known, args.min_keyness,
                         min_count=PRIVATE_MIN_COUNT if args.private else 1, limit=max(args.top, 0) or None)
         print(found.to_markdown(private=args.private))
         if args.private:

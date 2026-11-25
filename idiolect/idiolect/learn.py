@@ -261,13 +261,16 @@ def _vowel_edit(typo: str, word: str) -> bool:
 
 
 def _merge_stretched(counts: Counter[str], zipf: Callable[[str], float]) -> dict[str, str]:
-    """Map each stretched token (3+ of a letter: "byeee", "goood") to its run cut to 1 or 2 letters: a form you wrote, then the more English one, then the more used."""
+    """Map each stretched token to its plain form: 3+ of a letter ("byeee", "goood") cut to 1 or 2, preferring
+    a form you wrote, then the more English one, then the more used; or a doubled last letter ("okayy", "firee")."""
     head = {}
     for tok in counts:
         if STRETCH.search(tok):
             forms = [re.sub(r"(.)\1{2,}", r"\1", tok), re.sub(r"(.)\1{2,}", r"\1\1", tok)]
             head[tok] = max(forms, key=lambda f: (f in counts, round(zipf(f), 1), counts.get(f, 0), f == forms[1]))
-    return head
+        elif len(tok) > 2 and tok[-1] == tok[-2] and tok[:-1] in counts and zipf(tok) < MAX_TYPO_ZIPF:
+            head[tok] = tok[:-1]  # "too" stays: it's common English, not a stretched "to"
+    return {tok: head.get(h, h) for tok, h in head.items()}
 
 
 def _example(examples: list[str], private: bool) -> str:
@@ -329,8 +332,8 @@ def suggest(
             continue
         fixes = []
         if len(tok) >= MIN_TYPO_LENGTH and zipf(tok) < MAX_TYPO_ZIPF:
-            # A typo is a finger slip, and rarer in your writing than the word you meant.
-            fixes = [w for w in edits1(tok) if w in vocab_rank and zipf(w) - zipf(tok) >= MIN_FIX_GAIN
+            # A typo is a finger slip of a word you also wrote, and rarer than it; a fix you never wrote is usually a name.
+            fixes = [w for w in edits1(tok) if w in vocab_rank and w in counts and zipf(w) - zipf(tok) >= MIN_FIX_GAIN
                      and (slip_bonus(tok, w) > 0 or _vowel_edit(tok, w)) and counts.get(w, counts[tok]) >= counts[tok]]
         if fixes:
             fix = min(fixes, key=lambda w: (w not in counts, vocab_rank[w]))

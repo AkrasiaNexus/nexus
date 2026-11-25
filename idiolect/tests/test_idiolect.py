@@ -11,6 +11,7 @@ from idiolect.learn import (_merge_stretched, instagram_owner, messages_from_ins
                             messages_from_instagram, read_messages, suggest)
 from idiolect.profile import Profile
 from idiolect.style import style_report
+from idiolect.__main__ import default_profiles
 from idiolect.spell import Speller, slip_bonus
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -206,7 +207,7 @@ class LearnTests(unittest.TestCase):
         self.assertEqual([(t, n) for t, n, _ in s.slang], [("abso", 3)])
         english = {"good": 6.0, "god": 5.5, "bye": 5.0}.get
         head = _merge_stretched(Counter(god=5, good=3, goood=2, byeee=1, byee=4, bye=9), lambda w: english(w, 0.0))
-        self.assertEqual(head, {"goood": "good", "byeee": "bye"})  # god is more used, but goood means good
+        self.assertEqual(head, {"goood": "good", "byeee": "bye", "byee": "bye"})  # god is more used, but goood means good
 
     def test_laughs_and_keysmash_are_not_slang(self):
         s = suggest(["lmaoaoqoa", "bahahqhq", "hahahahq", "yayayayq", "abso"], lambda t: self.ZIPF.get(t, 1.0), self.RANK)
@@ -221,6 +222,16 @@ class LearnTests(unittest.TestCase):
     def test_slang_is_listed_most_used_first_and_capped(self):
         s = suggest(["abso", "zork zork zork", "abso"], lambda t: self.ZIPF.get(t, 1.0), self.RANK, limit=1)
         self.assertEqual([t for t, *_ in s.slang], ["zork"])
+
+    def test_end_doubled_letter_counts_as_the_plain_word(self):
+        english = {"fire": 5.0, "free": 6.0, "too": 6.5, "to": 7.5}.get
+        head = _merge_stretched(Counter(firee=3, fire=2, free=9, too=4, to=9), lambda w: english(w, 0.0))
+        self.assertEqual(head, {"firee": "fire"})  # "too" is a real word, not a stretched "to"
+
+    def test_typo_fix_must_be_a_word_you_wrote(self):
+        zipf = {**self.ZIPF, "barly": 0.0, "barley": 4.0}.get
+        s = suggest(["barly"], lambda t: zipf(t, 6.0), {**self.RANK, "barley": 3000})
+        self.assertEqual(s.typos, [])  # probably a name; you never wrote "barley"
 
     def test_known_entries_are_skipped(self):
         s = suggest(["abso abso"], self.zipf, self.RANK, known_entries=["abso"])
@@ -334,6 +345,12 @@ class LearnTests(unittest.TestCase):
             Path(tmp, "message_2.json").write_text("{not json", encoding="utf-8")
             Path(tmp, "message_3.json").write_text("[1, 2]", encoding="utf-8")
             self.assertEqual(read_messages(tmp, me="Me Myself"), ["still works"])
+
+    def test_private_profiles_are_loaded_after_the_public_ones(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            Path(tmp, "names.md").write_text("## Hotwords\nRishan, Mussafah\n", encoding="utf-8")
+            self.assertEqual([Path(p).name for p in default_profiles(Path(tmp))][-1], "names.md")
+        self.assertNotIn("names.md", [Path(p).name for p in default_profiles(Path("/nonexistent"))])
 
     def test_private_output_never_contains_a_sentence(self):
         msgs = ["abso secret thing one", "abso secret thing two", "abso", "bobname once"]
