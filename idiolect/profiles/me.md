@@ -259,6 +259,14 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | wahda | Wahda | Al Wahda Mall |
 | para | paragraph | paragraph |
 | paras | paragraphs | paragraphs |
+| dumbo | dumbo | silly idiot (affectionate) |
+| ouu | ooh | ooh |
+| outa | outta | out of |
+| thos | those | those |
+| reall | really | really |
+| realll | really | really |
+| mb | my bad | sorry |
+| mbb | my bad | sorry |
 | todo | todo | to-do list |
 
 ## Typos
@@ -334,7 +342,7 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | yhe | the |
 | beo | bro |
 | vru | bro |
-| rnn | rn |
+| rnn | right now |
 | giy | guy |
 | gius | guys |
 | oje | one |
@@ -362,7 +370,7 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | bsck | back |
 | bomv | bomb |
 | tezt | text |
-| tmrv | tmrw |
+| tmrv | tomorrow |
 | comfirmed | confirmed |
 | firee | fire |
 | ehat | what |
