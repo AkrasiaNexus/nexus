@@ -254,6 +254,9 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | socials | socials | social media accounts |
 | shawerma | shawarma | shawarma |
 | hows | how's | how is |
+| calma | calma | it's fine, chill, nothing to worry about |
+| trig | trigonometry | trigonometry |
+| wahda | Wahda | Al Wahda Mall |
 | todo | todo | to-do list |
 
 ## Typos
@@ -402,4 +405,4 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | remember | context |
 
 ## Hotwords
-Jarvis, Nexus, Nudge, Lore, Idiolect, Campfire, forge_change, Claude, Qwen, Gemma, Ollama, Tauri, graphify, Playwright, Moovit, Darb, Hudayriyat, Bateen, Mina, Saadiyat, Corniche, Wathba, Mussafah, ADEK, Motiongate, lowk, ykwim
+Jarvis, Nexus, Nudge, Lore, Idiolect, Campfire, forge_change, Claude, Qwen, Gemma, Ollama, Tauri, graphify, Playwright, Moovit, Darb, Hudayriyat, Bateen, Mina, Saadiyat, Corniche, Wathba, Mussafah, ADEK, Wahda, Motiongate, lowk, ykwim
