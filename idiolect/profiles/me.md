@@ -194,7 +194,7 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | pannuma | pannu ma | do it, dear (Tamil) |
 | mashallah | mashallah | praise, how lovely (Arabic) |
 | despo | desperate | desperate |
-| huzz | huzz | girls (slang) |
+| huzz | huzz | attractive girls (slang) |
 | deadass | deadass | seriously, for real |
 | dih | dih | dick (slang) |
 | byebye | bye bye | bye |
