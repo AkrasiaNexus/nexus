@@ -173,14 +173,22 @@ def _keep(text: str, me: str) -> bool:
 
 def messages_from_instagram_html(pages: list[str], me: str) -> list[str]:
     """Only your own typed text from HTML-format exports; same filters as the JSON reader."""
-    return [text for page in pages for sender, text in _html_messages(page) if sender == me and _keep(text, me)]
+    return _mine([_html_messages(page) for page in pages], me)
+
+
+def _mine(chats: list[list[tuple[str, str]]], me: str) -> list[str]:
+    return [text for chat in chats for sender, text in chat if sender == me and _keep(text, me)]
 
 
 def instagram_html_owner(pages: list[str]) -> str:
+    return _html_owner([_html_messages(page) for page in pages])
+
+
+def _html_owner(chats: list[list[tuple[str, str]]]) -> str:
     """You are the sender who appears in the most chats; a tie or a single chat can't tell."""
-    counts = Counter(s for page in pages for s in {sender for sender, _ in _html_messages(page) if sender})
+    counts = Counter(s for chat in chats for s in {sender for sender, _ in chat if sender})
     top = counts.most_common(2)
-    if len(pages) < 2 or not top or (len(top) == 2 and top[0][1] == top[1][1]):
+    if len(chats) < 2 or not top or (len(top) == 2 and top[0][1] == top[1][1]):
         raise ValueError("can't tell which participant is you; pass --me 'Your Instagram name'")
     return top[0][0]
 
@@ -206,8 +214,13 @@ def read_messages(path: str | Path, me: str | None = None) -> list[str]:
         return messages_from_instagram(threads, me or instagram_owner(threads))
     html_files = sorted(path.rglob("message_*.html")) if path.is_dir() else []
     if html_files:
-        pages = [f.read_text(encoding="utf-8", errors="replace") for f in html_files]
-        return messages_from_instagram_html(pages, me or instagram_html_owner(pages))
+        chats = []
+        for n, f in enumerate(html_files, 1):  # each page parsed once; big exports take a while
+            chats.append(_html_messages(f.read_text(encoding="utf-8", errors="replace")))
+            if n % 25 == 0 or n == len(html_files):
+                print(f"\rread {n}/{len(html_files)} chat pages", end="", file=sys.stderr, flush=True)
+        print(file=sys.stderr)
+        return _mine(chats, me or _html_owner(chats))
     if path.is_dir():
         return [m for f in sorted(path.rglob("*.jsonl")) for m in messages_from_claude_code(f.read_text(encoding="utf-8").splitlines())]
     if path.suffix == ".jsonl":
