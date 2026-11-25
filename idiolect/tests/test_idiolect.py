@@ -7,7 +7,7 @@ from pathlib import Path
 from idiolect import classify, load, normalize, parse, tokenize
 from idiolect.normalize import normalize_tokens
 from idiolect.evaluate import err, load_examples, mcnemar_p, word_accuracy
-from idiolect.learn import (_merge_stretched, instagram_owner, messages_from_instagram_html, messages_from_claude_code, messages_from_claude_export,
+from idiolect.learn import (_merge_stretched, interpretations, interpretations_markdown, instagram_owner, messages_from_instagram_html, messages_from_claude_code, messages_from_claude_export,
                             messages_from_instagram, read_messages, suggest)
 from idiolect.profile import Profile
 from idiolect.style import style_report
@@ -225,8 +225,10 @@ class LearnTests(unittest.TestCase):
 
     def test_end_doubled_letter_counts_as_the_plain_word(self):
         english = {"fire": 5.0, "free": 6.0, "too": 6.5, "to": 7.5}.get
-        head = _merge_stretched(Counter(firee=3, fire=2, free=9, too=4, to=9), lambda w: english(w, 0.0))
+        head = _merge_stretched(Counter(firee=3, fire=5, free=9, too=4, to=9), lambda w: english(w, 0.0))
         self.assertEqual(head, {"firee": "fire"})  # "too" is a real word, not a stretched "to"
+        head = _merge_stretched(Counter(deadass=400, deadas=9), lambda w: 0.0)
+        self.assertEqual(head, {})  # the doubled form is the real word when you use it more
 
     def test_typo_fix_must_be_a_word_you_wrote(self):
         zipf = {**self.ZIPF, "barly": 0.0, "barley": 4.0}.get
@@ -355,6 +357,12 @@ class LearnTests(unittest.TestCase):
             Path(tmp, "names.md").write_text("## Hotwords\nRishan, Mussafah\n", encoding="utf-8")
             self.assertEqual([Path(p).name for p in default_profiles(Path(tmp))][-1], "names.md")
         self.assertNotIn("names.md", [Path(p).name for p in default_profiles(Path("/nonexistent"))])
+
+    def test_interpretations_list_each_rewritten_word_once_most_used_first(self):
+        p = parse(SAMPLE)
+        rows = interpretations(["jus go", "jus build secret plan", "fine"], p)
+        self.assertEqual(rows, [("jus", "just", 2)])
+        self.assertNotIn("secret", interpretations_markdown(rows))
 
     def test_private_output_never_contains_a_sentence(self):
         msgs = ["abso secret thing one", "abso secret thing two", "abso", "bobname once"]

@@ -193,6 +193,42 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | nejema | nejama | really? (Tamil) |
 | pannuma | pannu ma | do it, dear (Tamil) |
 | mashallah | mashallah | praise, how lovely (Arabic) |
+| despo | desperate | desperate |
+| huzz | huzz | girls (slang) |
+| deadass | deadass | seriously, for real |
+| dih | dih | dick (slang) |
+| byebye | bye bye | bye |
+| fyp | for you page | the TikTok/Instagram feed |
+| pleej | please | please |
+| yipe | yippee | yay |
+| talm | talking | talking about |
+| ogey | okay | okay |
+| okat | okay | okay |
+| brobro | bro | bro |
+| nahnah | nah | no |
+| plspls | please | please |
+| funzies | fun | fun |
+| mbmb | my bad | sorry |
+| pyqs | past year questions | past exam papers |
+| preboards | preboards | mock board exams |
+| ykyk | you know | you know |
+| iykyk | if you know you know | an inside joke |
+| imym | i miss you more | i miss you more |
+| ihysm | i hate you so much | i hate you so much (joking) |
+| syfm | shut your fucking mouth | shut up (playful) |
+| situationship | situationship | an undefined almost-relationship |
+| ragebaited | ragebaited | made angry on purpose |
+| netherite | netherite | the Minecraft material |
+| lifesteal | lifesteal | a Minecraft server mode |
+| bombaclat | bombaclat | exclamation, wow or damn |
+| butcheeks | butt cheeks | butt (joking) |
+| poopypants | poopypants | silly insult (joking) |
+| englishing | englishing | speaking English properly |
+| thongu | thoongu | sleep (Tamil) |
+| paravli | paravala | it's fine, no problem (Tamil) |
+| paravali | paravala | it's fine, no problem (Tamil) |
+| puritha | puriyutha | do you understand? (Tamil) |
+| ammamma | ammamma | grandma (Tamil) |
 | todo | todo | to-do list |
 
 ## Typos
@@ -232,6 +268,34 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | idialect | idiolect |
 | atleast | at least |
 | everytime | every time |
+| saod | said |
+| eay | way |
+| fewl | feel |
+| eveb | even |
+| eveh | even |
+| rky | rly |
+| tyen | then |
+| tjem | them |
+| whqt | what |
+| hwre | here |
+| twll | tell |
+| bacj | back |
+| bafk | back |
+| tkme | time |
+| mlre | more |
+| onlu | only |
+| noq | now |
+| suxh | such |
+| mucu | much |
+| fuxk | fuck |
+| fucl | fuck |
+| oranav | pranav |
+| kearla | kerala |
+| scred | scared |
+| clasy | class |
+| oants | wants |
+| eallah | wallah |
+| whatd | what'd |
 | yhe | the |
 | beo | bro |
 | vru | bro |

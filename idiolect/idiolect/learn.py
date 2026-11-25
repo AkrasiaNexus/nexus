@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable
 
-from .normalize import tokenize
+from .normalize import normalize_tokens, tokenize
 
 LETTERS = "abcdefghijklmnopqrstuvwxyz'"
 MIN_TYPO_LENGTH = 5
@@ -268,8 +268,8 @@ def _merge_stretched(counts: Counter[str], zipf: Callable[[str], float]) -> dict
         if STRETCH.search(tok):
             forms = [re.sub(r"(.)\1{2,}", r"\1", tok), re.sub(r"(.)\1{2,}", r"\1\1", tok)]
             head[tok] = max(forms, key=lambda f: (f in counts, round(zipf(f), 1), counts.get(f, 0), f == forms[1]))
-        elif len(tok) > 2 and tok[-1] == tok[-2] and tok[:-1] in counts and zipf(tok) < MAX_TYPO_ZIPF:
-            head[tok] = tok[:-1]  # "too" stays: it's common English, not a stretched "to"
+        elif len(tok) > 2 and tok[-1] == tok[-2] and counts.get(tok[:-1], 0) >= counts[tok] and zipf(tok) < MAX_TYPO_ZIPF:
+            head[tok] = tok[:-1]  # "too" stays (common English), and so does "deadass" (used more than "deadas")
     return {tok: head.get(h, h) for tok, h in head.items()}
 
 
@@ -353,3 +353,18 @@ def wordfreq_backend(vocab_size: int = 50000):
         raise SystemExit("Learning needs wordfreq: pip install wordfreq") from exc
     rank = {w: i for i, w in enumerate(top_n_list("en", vocab_size))}
     return (lambda tok: zipf_frequency(tok, "en")), rank
+
+
+def interpretations(messages: list[str], profile, speller=None, limit: int | None = None) -> list[tuple[str, str, int]]:
+    """(word, what idiolect reads it as, times seen) for every word it rewrites, most used first.
+
+    shortcut: reads each word alone, so context rules that look at neighbours ("its", "ill") aren't shown.
+    """
+    counts = Counter(tok for msg in messages for tok in tokenize(msg) if tok.isalpha())
+    rows = [(tok, new, n) for tok, n in counts.most_common() if (new := normalize_tokens([tok], profile, speller)[0]) != tok]
+    return rows[:limit]
+
+
+def interpretations_markdown(rows: list[tuple[str, str, int]]) -> str:
+    lines = ["## How idiolect reads your words (fix any that are wrong)", "| I write | Read as | Seen |", "|---|---|---|"]
+    return "\n".join(lines + [f"| {tok} | {new} | {n}x |" for tok, new, n in rows]) + "\n"

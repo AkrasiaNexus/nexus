@@ -7,7 +7,7 @@ from pathlib import Path
 
 from . import classify, load, normalize
 from .evaluate import learner_report, load_examples, report
-from .learn import read_messages, suggest, wordfreq_backend
+from .learn import interpretations, interpretations_markdown, read_messages, suggest, wordfreq_backend
 from .spell import Speller
 from .style import style_report
 
@@ -36,6 +36,7 @@ def main(argv: list[str] | None = None) -> None:
     lrn.add_argument("source", help="claude.ai conversations.json, a Claude Code .jsonl or folder, or an Instagram export folder")
     lrn.add_argument("--me", help="your Instagram display name, if it can't be detected")
     lrn.add_argument("--min-keyness", type=float, default=3.0)
+    lrn.add_argument("--check", action="store_true", help="instead, list how idiolect reads each word it rewrites, to spot wrong ones")
     lrn.add_argument("--top", type=int, default=300, help="show the N most used rows of each table (0 = all)")
     lrn.add_argument("--private", action="store_true",
                      help="words, counts and style stats only: no example sentences, nothing said under 3 times")
@@ -63,6 +64,9 @@ def main(argv: list[str] | None = None) -> None:
             messages = read_messages(args.source, args.me)
         except ValueError as e:
             ap.error(str(e))
+        if args.check:
+            print(interpretations_markdown(interpretations(messages, profile, Speller.from_wordfreq(profile), max(args.top, 0) or None)))
+            return
         known = set(profile.replacements) | {h.lower() for h in profile.hotwords}
         found = suggest(messages, zipf, rank, known, args.min_keyness,
                         min_count=PRIVATE_MIN_COUNT if args.private else 1, limit=max(args.top, 0) or None)
