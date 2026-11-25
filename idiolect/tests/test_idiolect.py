@@ -6,7 +6,7 @@ from pathlib import Path
 from idiolect import classify, load, normalize, parse, tokenize
 from idiolect.normalize import normalize_tokens
 from idiolect.evaluate import err, load_examples, mcnemar_p, word_accuracy
-from idiolect.learn import (instagram_owner, messages_from_claude_code, messages_from_claude_export,
+from idiolect.learn import (instagram_owner, messages_from_instagram_html, messages_from_claude_code, messages_from_claude_export,
                             messages_from_instagram, read_messages, suggest)
 from idiolect.profile import Profile
 from idiolect.style import style_report
@@ -254,6 +254,30 @@ class LearnTests(unittest.TestCase):
             path.parent.mkdir(parents=True)
             path.write_text(json.dumps(thread), encoding="utf-8")
             self.assertEqual(read_messages(tmp, me="Me Myself"), ["jus testing"])
+
+    @staticmethod
+    def _ig_html(*msgs):
+        def block(sender, text, extra=""):
+            return ('<div class="pam _3-95 _2ph- _a6-g uiBoxWhite noborder"><h2 class="_3-95 _2pim _a6-h _a6-i">'
+                    f'{sender}</h2><div class="_3-95 _a6-p"><div><div></div><div>{text}</div><div>{extra}</div>'
+                    '<div></div></div></div><div class="_3-94 _a6-o">Nov 20, 2026 10:00 pm</div></div>')
+        return ('<html><body><main class="_a706" role="main">' + "".join(block(*m) for m in msgs) + "</main></body></html>")
+
+    def test_instagram_html_keeps_only_my_text(self):
+        html = self._ig_html(("Me Myself", "alr bet &amp; lowk fire \U0001F525"), ("Friend", "their words stay out"),
+                             ("Me Myself", "Liked a message"), ("Me Myself", "", '<img src="x.jpg">'),
+                             ("Me Myself", "https://www.instagram.com/reel/abc/"))
+        self.assertEqual(messages_from_instagram_html([html], "Me Myself"), ["alr bet & lowk fire \U0001F525"])
+
+    def test_instagram_html_folder_detects_me_across_threads(self):
+        a = self._ig_html(("Me Myself", "jus testing"), ("Friend", "no"))
+        b = self._ig_html(("Other", "nope"), ("Me Myself", "yo"))
+        with tempfile.TemporaryDirectory() as tmp:
+            for name, html in (("a_1", a), ("b_2", b)):
+                path = Path(tmp, "messages", "inbox", name, "message_1.html")
+                path.parent.mkdir(parents=True)
+                path.write_text(html, encoding="utf-8")
+            self.assertEqual(sorted(read_messages(tmp)), ["jus testing", "yo"])
 
     def test_instagram_skips_system_lines_and_malformed_entries(self):
         thread = self._ig_thread(

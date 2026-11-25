@@ -17,6 +17,7 @@ import json
 import math
 import re
 import sys
+from html.parser import HTMLParser
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -108,6 +109,82 @@ def messages_from_instagram(threads: list[dict], me: str) -> list[str]:
     return out
 
 
+VOID_TAGS = {"img", "br", "hr", "meta", "link", "input", "source", "wbr"}
+TEXT_SLOT = 1  # Meta's HTML export puts each message's text in the 2nd of 4 slots (then media, reactions)
+
+
+class _InstagramHtml(HTMLParser):
+    """Collects (sender, slots) per message block of an Instagram "Download your information" HTML page."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.stack: list[str] = []
+        self.messages: list[tuple[str, list[str]]] = []
+        self._msg_depth = self._body_depth = None
+        self._in_sender = False
+        self._sender, self._slots = "", []
+
+    def handle_starttag(self, tag, attrs):
+        if tag in VOID_TAGS:
+            return
+        cls = dict(attrs).get("class") or ""
+        self.stack.append(tag)
+        depth = len(self.stack)
+        if tag == "div" and "_a6-g" in cls.split():
+            self._msg_depth, self._sender, self._slots = depth, "", []
+        elif self._msg_depth and tag == "h2" and "_a6-h" in cls.split():
+            self._in_sender = True
+        elif self._msg_depth and tag == "div" and "_a6-p" in cls.split():
+            self._body_depth = depth
+        elif self._body_depth and tag == "div" and depth == self._body_depth + 2:
+            self._slots.append("")
+
+    def handle_endtag(self, tag):
+        if tag in VOID_TAGS or not self.stack:
+            return
+        depth = len(self.stack)
+        self.stack.pop()
+        if tag == "h2":
+            self._in_sender = False
+        if self._body_depth and depth == self._body_depth:
+            self._body_depth = None
+        if self._msg_depth and depth == self._msg_depth:
+            self.messages.append((self._sender.strip(), self._slots))
+            self._msg_depth = None
+
+    def handle_data(self, data):
+        if self._in_sender:
+            self._sender += data
+        elif self._body_depth and self._slots and len(self.stack) >= self._body_depth + 2:
+            self._slots[-1] += data
+
+
+def _html_messages(html: str) -> list[tuple[str, str]]:
+    parser = _InstagramHtml()
+    parser.feed(html)
+    return [(sender, slots[TEXT_SLOT].strip() if len(slots) > TEXT_SLOT else "") for sender, slots in parser.messages]
+
+
+def _keep(text: str, me: str) -> bool:
+    event = re.compile(IG_EVENT.format(who="you|" + re.escape(me)), re.I)
+    is_link = re.fullmatch(r"https?://\S+", text) is not None
+    return bool(text) and not is_link and not IG_NOISE.match(text) and not event.match(text)
+
+
+def messages_from_instagram_html(pages: list[str], me: str) -> list[str]:
+    """Only your own typed text from HTML-format exports; same filters as the JSON reader."""
+    return [text for page in pages for sender, text in _html_messages(page) if sender == me and _keep(text, me)]
+
+
+def instagram_html_owner(pages: list[str]) -> str:
+    """You are the sender who appears in the most chats; a tie or a single chat can't tell."""
+    counts = Counter(s for page in pages for s in {sender for sender, _ in _html_messages(page) if sender})
+    top = counts.most_common(2)
+    if len(pages) < 2 or not top or (len(top) == 2 and top[0][1] == top[1][1]):
+        raise ValueError("can't tell which participant is you; pass --me 'Your Instagram name'")
+    return top[0][0]
+
+
 def _read_threads(files: list[Path]) -> list[dict]:
     threads = []
     for f in files:
@@ -127,6 +204,10 @@ def read_messages(path: str | Path, me: str | None = None) -> list[str]:
     if ig_files:
         threads = _read_threads(ig_files)
         return messages_from_instagram(threads, me or instagram_owner(threads))
+    html_files = sorted(path.rglob("message_*.html")) if path.is_dir() else []
+    if html_files:
+        pages = [f.read_text(encoding="utf-8", errors="replace") for f in html_files]
+        return messages_from_instagram_html(pages, me or instagram_html_owner(pages))
     if path.is_dir():
         return [m for f in sorted(path.rglob("*.jsonl")) for m in messages_from_claude_code(f.read_text(encoding="utf-8").splitlines())]
     if path.suffix == ".jsonl":
