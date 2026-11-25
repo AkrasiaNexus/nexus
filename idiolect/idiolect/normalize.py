@@ -5,6 +5,7 @@ spacing, punctuation, Arabic, emoji) comes back exactly as written.
 """
 from __future__ import annotations
 
+import re
 import unicodedata
 from dataclasses import dataclass
 
@@ -71,6 +72,30 @@ def _neighbour(tokens: list[str], i: int, step: int, profile: Profile) -> set[st
     return {tokens[j], words[0] if step > 0 else words[-1]}
 
 
+PLAIN_ZIPF = 3.5  # a plain form must be this common in English to count as the word you stretched
+
+
+def _plain_forms(tok: str) -> list[str]:
+    """Unstretched spellings, closest first: "byeeee" -> byee, bye; "goodd" -> good; "jusss" -> juss, jus."""
+    forms = []
+    for f in (re.sub(r"(.)\1{2,}", r"\1\1", tok), re.sub(r"(.)\1{2,}", r"\1", tok)):
+        forms += [f, f[:-1]] if len(f) > 2 and f[-1] == f[-2] else [f]
+    return [f for f in dict.fromkeys(forms) if f != tok]
+
+
+def _destretch(tok: str, profile: Profile, speller) -> str | None:
+    """What a stretched word ("yeaa", "frrr", "tooo") means: a profile word first, then a common English word."""
+    if speller is not None and (tok in speller.vocab or speller.zipf(tok) >= PLAIN_ZIPF):
+        return None  # a real word that happens to repeat a letter: "hiss", "moo", "shhh"
+    forms = _plain_forms(tok)
+    for f in forms:
+        if f in profile.replacements:
+            return profile.replacements[f]
+    if speller is not None:
+        return next((f for f in forms if f in speller.vocab and speller.zipf(f) >= PLAIN_ZIPF), None)
+    return None
+
+
 def _replace(tokens: list[str], i: int, profile: Profile, speller=None) -> str:
     tok = tokens[i]
     if tok in profile.replacements:
@@ -78,6 +103,9 @@ def _replace(tokens: list[str], i: int, profile: Profile, speller=None) -> str:
     rule = profile.context_rules.get(tok)
     if rule and rule.applies(_neighbour(tokens, i, -1, profile), _neighbour(tokens, i, 1, profile)):
         return rule.standard
+    plain = _destretch(tok, profile, speller) if tok.isalpha() else None
+    if plain is not None:
+        return plain
     return speller.correct(tok) if speller else tok
 
 

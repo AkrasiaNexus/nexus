@@ -388,6 +388,16 @@ class SpellTests(unittest.TestCase):
         sp = Speller.for_profile(load(ROOT / "profiles" / "me.md"), lambda w: zipf(w, 0.0), ["tapped", "the"])
         self.assertEqual(sp.correct("yapped"), "yapped")  # yapped means talked a lot, not tapped
 
+    def test_stretched_words_read_as_the_plain_word(self):
+        zipf = {"too": 6.5, "to": 7.5, "bye": 5.0, "breeze": 4.5, "fire": 5.0, "free": 6.0, "year": 6.0, "yeah": 6.0}.get
+        sp = Speller(lambda w: zipf(w, 0.0), frozenset(["too", "to", "bye", "breeze", "fire", "free", "year", "yeah"]))
+        p = parse(SAMPLE.replace("| teh | the |", "| teh | the |\n| yea | yeah |\n| fr | for real |"))
+        read = lambda w: normalize_tokens([w], p, sp)[0]
+        self.assertEqual([read(w) for w in ("yeaa", "frrr", "tooo", "byeeee", "fireee", "jusss")],
+                         ["yeah", "for real", "too", "bye", "fire", "just"])
+        sp = Speller(lambda w: {"his": 6.0, "hiss": 3.0, "go": 7.0, "goo": 3.0}.get(w, 0.0), frozenset(["his", "hiss", "go", "goo"]))
+        self.assertEqual([normalize_tokens([w], p, sp)[0] for w in ("hiss", "goo")], ["hiss", "goo"])  # real words stay
+
     def test_fixes_fast_typing_slips(self):
         sp = self.speller()
         self.assertEqual(sp.correct("assisntant"), "assistant")  # extra letter

@@ -235,6 +235,25 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | ywa | yea | yes |
 | fuj | fun | fun, or "fuh" (fuck) depending on context |
 | adek | ADEK | Abu Dhabi school sports events (ADEK) |
+| yee | yeah | yes, excited |
+| nono | no no | no |
+| enna | enna | what (Tamil) |
+| needa | need to | need to |
+| woulda | would have | would have |
+| coulda | could have | could have |
+| shoulda | should have | should have |
+| dint | didn't | didn't |
+| bday | birthday | birthday |
+| bett | bet | okay, deal |
+| duper | duper | very (super duper) |
+| pookie | pookie | cute nickname, babe |
+| hoes | hoes | hoes |
+| fatass | fat ass | insult between friends |
+| chud | chud | loser (slang) |
+| mallu | mallu | Malayali (from Kerala) |
+| socials | socials | social media accounts |
+| shawerma | shawarma | shawarma |
+| hows | how's | how is |
 | todo | todo | to-do list |
 
 ## Typos
@@ -274,6 +293,8 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | idialect | idiolect |
 | atleast | at least |
 | everytime | every time |
+| helo | hello |
+| olay | okay |
 | ajd | and |
 | jeed | need |
 | barly | barely |
