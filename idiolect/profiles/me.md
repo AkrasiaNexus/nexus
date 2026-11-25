@@ -229,6 +229,12 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | paravali | paravala | it's fine, no problem (Tamil) |
 | puritha | puriyutha | do you understand? (Tamil) |
 | ammamma | ammamma | grandma (Tamil) |
+| chammak | chammak | a wannabe-cool menace who parties a lot and does dodgy stuff to look cool |
+| chammaks | chammaks | wannabe-cool menaces |
+| gwat | gyat | damn, wow (gwat damn) |
+| ywa | yea | yes |
+| fuj | fun | fun, or "fuh" (fuck) depending on context |
+| adek | ADEK | Abu Dhabi school sports events (ADEK) |
 | todo | todo | to-do list |
 
 ## Typos
@@ -268,6 +274,9 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | idialect | idiolect |
 | atleast | at least |
 | everytime | every time |
+| ajd | and |
+| jeed | need |
+| barly | barely |
 | saod | said |
 | eay | way |
 | fewl | feel |
@@ -372,4 +381,4 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | remember | context |
 
 ## Hotwords
-Jarvis, Nexus, Nudge, Lore, Idiolect, Campfire, forge_change, Claude, Qwen, Gemma, Ollama, Tauri, graphify, Playwright, Moovit, Darb, Hudayriyat, Bateen, Mina, Saadiyat, Corniche, Wathba, Mussafah, Motiongate, lowk, ykwim
+Jarvis, Nexus, Nudge, Lore, Idiolect, Campfire, forge_change, Claude, Qwen, Gemma, Ollama, Tauri, graphify, Playwright, Moovit, Darb, Hudayriyat, Bateen, Mina, Saadiyat, Corniche, Wathba, Mussafah, ADEK, Motiongate, lowk, ykwim
