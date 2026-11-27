@@ -179,8 +179,8 @@ v1 was written by Claude on 21 Nov 2026 after reading all 48 messages this perso
 | sybau | shut up | shut up (playful) |
 | randomass | random | really random |
 | stupidass | stupid | really stupid |
-| bitchass | bitch | insult between friends |
-| fuckass | fucking | intensifier |
+| bitchass | bitchass | insult between friends |
+| fuckass | fuckass | stupid, annoying ("this fuckass homework") |
 | phonk | phonk | the music genre |
 | buldak | buldak | Korean spicy noodles |
 | botim | Botim | the calling app |
